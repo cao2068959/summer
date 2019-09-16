@@ -1,0 +1,32 @@
+package com.chy.summer.framework.context.annotation;
+
+import com.chy.summer.framework.beans.config.BeanDefinition;
+import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
+
+import java.io.IOException;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+public class ClassPathBeanDefinitionScanner {
+
+    BeanDefinitionRegistry registry;
+
+    public static final String CLASSPATH_ALL_URL_PREFIX = "classpath*:";
+
+
+    public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry) {
+        this.registry = registry;
+    }
+
+    public void scan(String... basePackages) {
+
+
+        for (String basePackage : basePackages) {
+
+        }
+
+
+    }
+
+
+}
