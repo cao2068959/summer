@@ -1,9 +1,10 @@
 package com.chy.summer.framework.context.annotation;
 
-import com.chy.summer.framework.context.AnnotationApplicationContext;
+
+import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 
 public class AnnotatedBeanDefinitionReader {
-    public AnnotatedBeanDefinitionReader(AnnotationApplicationContext annotationApplicationContext) {
+    public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
 
     }
 }

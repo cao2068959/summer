@@ -1,6 +1,7 @@
 package com.chy.summer.framework.context.annotation;
 
 import com.chy.summer.framework.beans.config.BeanDefinition;
+import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 
 import java.io.IOException;
@@ -18,13 +19,21 @@ public class ClassPathBeanDefinitionScanner {
         this.registry = registry;
     }
 
+
+
     public void scan(String... basePackages) {
-
-
+        Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<BeanDefinitionHolder>();
         for (String basePackage : basePackages) {
+            Set<BeanDefinition> candidates = scanCandidateComponents(basePackage);
 
         }
 
+
+    }
+
+
+
+    public Set<BeanDefinition> scanCandidateComponents(String basePackage) {
 
     }
 
