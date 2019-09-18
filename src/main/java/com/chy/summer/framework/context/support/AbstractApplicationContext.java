@@ -39,29 +39,29 @@ public abstract class AbstractApplicationContext   implements ApplicationContext
             //这里开始扫描包路径下的类，把标记了注解的玩意生成 beanDefintion
             postProcessBeanFactory(beanFactory);
 
-            // Invoke factory processors registered as beans in the context.
-            invokeBeanFactoryPostProcessors(beanFactory);
-
-            // Register bean processors that intercept bean creation.
-            registerBeanPostProcessors(beanFactory);
-
-            // Initialize message source for this context.
-            initMessageSource();
-
-            // Initialize event multicaster for this context.
-            initApplicationEventMulticaster();
-
-            // Initialize other special beans in specific context subclasses.
-            onRefresh();
-
-            // Check for listener beans and register them.
-            registerListeners();
-
-            // Instantiate all remaining (non-lazy-init) singletons.
-            finishBeanFactoryInitialization(beanFactory);
-
-            // Last step: publish corresponding event.
-            finishRefresh();
+//            // Invoke factory processors registered as beans in the context.
+//            invokeBeanFactoryPostProcessors(beanFactory);
+//
+//            // Register bean processors that intercept bean creation.
+//            registerBeanPostProcessors(beanFactory);
+//
+//            // Initialize message source for this context.
+//            initMessageSource();
+//
+//            // Initialize event multicaster for this context.
+//            initApplicationEventMulticaster();
+//
+//            // Initialize other special beans in specific context subclasses.
+//            onRefresh();
+//
+//            // Check for listener beans and register them.
+//            registerListeners();
+//
+//            // Instantiate all remaining (non-lazy-init) singletons.
+//            finishBeanFactoryInitialization(beanFactory);
+//
+//            // Last step: publish corresponding event.
+//            finishRefresh();
         }
     }
 

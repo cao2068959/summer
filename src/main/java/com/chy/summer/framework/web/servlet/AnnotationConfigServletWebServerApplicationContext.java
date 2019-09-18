@@ -35,11 +35,11 @@ public class AnnotationConfigServletWebServerApplicationContext extends ServletW
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
         //开扫描对应路径下的类
         if (this.basePackages != null && this.basePackages.length > 0) {
-            this.scanner.scan(this.basePackages);
+           // this.scanner.scan(this.basePackages);
         }
 
-        if (!this.annotatedClasses.isEmpty()) {
-            this.reader.register(ClassUtils.toClassArray(this.annotatedClasses));
-        }
+//        if (!this.annotatedClasses.isEmpty()) {
+//            this.reader.register(ClassUtils.toClassArray(this.annotatedClasses));
+//        }
     }
 }

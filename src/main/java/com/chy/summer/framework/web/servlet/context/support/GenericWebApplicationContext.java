@@ -1,6 +1,7 @@
 package com.chy.summer.framework.web.servlet.context.support;
 
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
+import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.context.ApplicationContext;
 import com.chy.summer.framework.context.support.AbstractApplicationContext;
 
@@ -13,5 +14,23 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     }
 
 
+    @Override
+    public ConfigurableListableBeanFactory getBeanFactory() {
+        return null;
+    }
 
+    @Override
+    public void freshBeanFactory() {
+
+    }
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+
+    }
+
+    @Override
+    public Object getBean(String name) {
+        return null;
+    }
 }
