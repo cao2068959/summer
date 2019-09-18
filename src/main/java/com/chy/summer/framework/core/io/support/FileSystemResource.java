@@ -35,17 +35,22 @@ public class FileSystemResource implements Resource {
         return this.path;
     }
 
-
+    @Override
     public boolean exists() {
         return this.file.exists();
     }
 
-
+    @Override
     public boolean isReadable() {
         return (this.file.canRead() && !this.file.isDirectory());
     }
 
+    @Override
+    public boolean isOpen() {
+        return false;
+    }
 
+    @Override
     public InputStream getInputStream() throws IOException {
         try {
             return Files.newInputStream(this.file.toPath());
@@ -65,27 +70,27 @@ public class FileSystemResource implements Resource {
         return Files.newOutputStream(this.file.toPath());
     }
 
-
+    @Override
     public URL getURL() throws IOException {
         return this.file.toURI().toURL();
     }
 
-
+    @Override
     public URI getURI() throws IOException {
         return this.file.toURI();
     }
 
-
+    @Override
     public boolean isFile() {
         return true;
     }
 
-
+    @Override
     public File getFile() {
         return this.file;
     }
 
-
+    @Override
     public ReadableByteChannel readableChannel() throws IOException {
         try {
             return FileChannel.open(this.file.toPath(), StandardOpenOption.READ);
@@ -100,35 +105,40 @@ public class FileSystemResource implements Resource {
         return FileChannel.open(this.file.toPath(), StandardOpenOption.WRITE);
     }
 
-
+    @Override
     public long contentLength() throws IOException {
         return this.file.length();
     }
 
+    @Override
+    public long lastModified() throws IOException {
+        return 0;
+    }
 
+    @Override
     public Resource createRelative(String relativePath) {
         String pathToUse = StringUtils.applyRelativePath(this.path, relativePath);
         return new FileSystemResource(pathToUse);
     }
 
-
+    @Override
     public String getFilename() {
         return this.file.getName();
     }
 
-
+    @Override
     public String getDescription() {
         return "file [" + this.file.getAbsolutePath() + "]";
     }
 
 
-
+    @Override
     public boolean equals(Object other) {
         return (this == other || (other instanceof FileSystemResource &&
                 this.path.equals(((FileSystemResource) other).path)));
     }
 
-
+    @Override
     public int hashCode() {
         return this.path.hashCode();
     }

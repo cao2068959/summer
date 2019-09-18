@@ -21,6 +21,6 @@ public class DefaultResourceLoader implements ResourceLoader {
 
     @Override
     public ClassLoader getClassLoader() {
-        return null;
+        return classLoader;
     }
 }
