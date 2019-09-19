@@ -1,31 +1,41 @@
 package com.chy.summer.framework.context.support;
 
-import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
-import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
 import com.chy.summer.framework.context.ApplicationContext;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class AbstractApplicationContext   implements ApplicationContext {
+/**
+ * 应用程序的上下文
+ * 实现了通用的方法，总管bean的生命周期和bean对象的资源获取，但不实现资源获取和方法的细节
+ */
+public abstract class AbstractApplicationContext implements ApplicationContext {
 
     /**
      * 用来refresh 的时候上锁
      */
     private final Object startupShutdownMonitor = new Object();
 
-    /** 容器刷新的开始时间 */
+    /**
+     * 容器刷新的开始时间
+     */
     private long startupDate;
 
-    /** 容器是否开始活动的一个状态 */
+    /**
+     * 容器是否开始活动的一个状态
+     */
     private final AtomicBoolean active = new AtomicBoolean();
 
-    /** 容器是否关闭的一个状态 */
+    /**
+     * 容器是否关闭的一个状态
+     */
     private final AtomicBoolean closed = new AtomicBoolean();
 
-
-    protected void refresh(){
-        synchronized (startupShutdownMonitor){
+    /**
+     * 开启summer的生命周期
+     */
+    protected void refresh() {
+        synchronized (startupShutdownMonitor) {
             //容器刷新之前的准备，记录一下活动状态，以及容器开始刷新的时间
             prepareRefresh();
 
@@ -87,7 +97,8 @@ public abstract class AbstractApplicationContext   implements ApplicationContext
     public abstract ConfigurableListableBeanFactory getBeanFactory();
 
     public abstract void freshBeanFactory();
-//==========================AnnotationConfigServletWebServerApplicationContext 来实现的模板方法==========================
+
+    //==========================AnnotationConfigServletWebServerApplicationContext 来实现的模板方法==========================
     public abstract void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory);
 
 }

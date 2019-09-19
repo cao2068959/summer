@@ -9,11 +9,22 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * 元数据读取器工厂
+ */
 public class DefaultMetadataReaderFactory implements MetadataReaderFactory {
 
-
+    /**
+     * 用于访问注释的元数据
+     */
     private ClassMetadataReadingVisitor annotationMetadata;
+    /**
+     * 用于访问类对象的元数据
+     */
     private ClassMetadataReadingVisitor classMetadata;
+    /**
+     * 元数据的缓存
+     */
     private Resource resource;
 
     @Override
@@ -23,6 +34,7 @@ public class DefaultMetadataReaderFactory implements MetadataReaderFactory {
 
     /**
      * 用 asm 来解析 注解
+     *
      * @param resource
      * @return
      * @throws IOException
@@ -34,18 +46,16 @@ public class DefaultMetadataReaderFactory implements MetadataReaderFactory {
 
         try {
             classReader = new ClassReader(is);
-        }
-        catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException();
-        }
-        finally {
+        } finally {
             is.close();
         }
 
         ClassMetadataReadingVisitor visitor = new ClassMetadataReadingVisitor();
         classReader.accept(visitor, ClassReader.SKIP_DEBUG);
 
-        MetadataReader result = new SimpleMetadataReader(null,visitor,resource);
+        MetadataReader result = new SimpleMetadataReader(null, visitor, resource);
 
         this.annotationMetadata = visitor;
         this.classMetadata = visitor;

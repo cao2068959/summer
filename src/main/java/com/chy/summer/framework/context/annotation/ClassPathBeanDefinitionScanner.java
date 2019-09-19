@@ -14,14 +14,31 @@ import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * 定义bean的扫描器，检测指定包路径上的所有class，找出bean的候选类，
+ * 使用指定的注册器注册相应的bean。
+ * 默认扫描带有@component、@repository、@service或@controller的类
+ */
 public class ClassPathBeanDefinitionScanner {
-
+    /**
+     * 用来保存bean的定义
+     */
     BeanDefinitionRegistry registry;
-
+    /**
+     * 用来保存资源文件的路径，提供带有*号通配符的资源路径
+     */
     ResourcePatternResolver resourcePatternResolver;
+
+    /**
+     * 元数据读取器工厂，可以为每个原始资源创建用于缓存元数据的读取器
+     */
     private DefaultMetadataReaderFactory metadataReaderFactory;
 
-
+    /**
+     * 根据定义对象创建ClassPathBeanDefinitionScanner
+     *
+     * @param registry
+     */
     public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry) {
         this.registry = registry;
         this.resourcePatternResolver = new PathMatchingResourcePatternResolver();
@@ -34,6 +51,7 @@ public class ClassPathBeanDefinitionScanner {
 
     /**
      * 扫描 的总入口
+     *
      * @param basePackages
      * @throws IOException
      */
@@ -50,6 +68,7 @@ public class ClassPathBeanDefinitionScanner {
 
     /**
      * 扫描所有class文件然后用asm加载后 判断是否有注解,有的就放入 set中
+     *
      * @param basePackage
      * @return
      * @throws IOException
@@ -68,7 +87,6 @@ public class ClassPathBeanDefinitionScanner {
     }
 
 
-
     public final MetadataReaderFactory getMetadataReaderFactory() {
         if (this.metadataReaderFactory == null) {
             this.metadataReaderFactory = new DefaultMetadataReaderFactory();
@@ -77,15 +95,10 @@ public class ClassPathBeanDefinitionScanner {
     }
 
 
-
-
     public static void main(String[] args) throws IOException {
         ClassPathBeanDefinitionScanner p = new ClassPathBeanDefinitionScanner(null);
         p.scanCandidateComponents("classpath*:com/chy");
     }
-
-
-
 
 
 }

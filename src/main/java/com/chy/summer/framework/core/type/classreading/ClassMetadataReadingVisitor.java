@@ -10,6 +10,9 @@ import jdk.internal.org.objectweb.asm.*;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * 元数据的访问器
+ */
 public class ClassMetadataReadingVisitor extends ClassVisitor implements AnnotationMetadata,ClassMetadata {
     private String className = "";
 
