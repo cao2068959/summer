@@ -33,7 +33,8 @@ public class DefaultMetadataReaderFactory implements MetadataReaderFactory {
     }
 
     /**
-     * 用 asm 来解析 注解
+     * 通过一个class文件的地址，用asm去解析这个class里面对应的
+     * 类信息，或者注解信息，避免了把大量无用的class装载到jvm中
      *
      * @param resource
      * @return
@@ -55,13 +56,6 @@ public class DefaultMetadataReaderFactory implements MetadataReaderFactory {
         ClassMetadataReadingVisitor visitor = new ClassMetadataReadingVisitor();
         classReader.accept(visitor, ClassReader.SKIP_DEBUG);
 
-        MetadataReader result = new SimpleMetadataReader(null, visitor, resource);
-
-        this.annotationMetadata = visitor;
-        this.classMetadata = visitor;
-        this.resource = resource;
-
-
-        return result;
+        return new SimpleMetadataReader(null, visitor, resource);
     }
 }

@@ -5,6 +5,7 @@ import com.chy.summer.framework.context.annotation.AnnotatedBeanDefinitionReader
 import com.chy.summer.framework.context.annotation.ClassPathBeanDefinitionScanner;
 import com.chy.summer.framework.web.servlet.context.ServletWebServerApplicationContext;
 
+import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -54,10 +55,10 @@ public class AnnotationConfigServletWebServerApplicationContext extends ServletW
     }
 
     @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws IOException {
         //开扫描对应路径下的类
         if (this.basePackages != null && this.basePackages.length > 0) {
-            // this.scanner.scan(this.basePackages);
+             this.scanner.scan(this.basePackages);
         }
 
 //        if (!this.annotatedClasses.isEmpty()) {

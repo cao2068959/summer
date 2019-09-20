@@ -3,6 +3,7 @@ package com.chy.summer.framework.context.support;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.context.ApplicationContext;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -45,11 +46,11 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
             // beanFactory 工厂 的准备工作，设置一些属性
             prepareBeanFactory(beanFactory);
 
-            //beanFactory 初始化结束后做一些事情，在spring里面这是个扩展点。
-            //这里开始扫描包路径下的类，把标记了注解的玩意生成 beanDefintion
-            postProcessBeanFactory(beanFactory);
+            try {
+                //beanFactory 初始化结束后做一些事情，在spring里面这是个扩展点。
+                //这里开始扫描包路径下的类，把标记了注解的玩意生成 beanDefintion
+                postProcessBeanFactory(beanFactory);
 
-//            // Invoke factory processors registered as beans in the context.
 //            invokeBeanFactoryPostProcessors(beanFactory);
 //
 //            // Register bean processors that intercept bean creation.
@@ -72,6 +73,15 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
 //
 //            // Last step: publish corresponding event.
 //            finishRefresh();
+
+
+            }catch (Exception e){
+                e.printStackTrace();
+                throw new RuntimeException(e.getMessage());
+            }
+
+
+
         }
     }
 
@@ -99,6 +109,6 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
     public abstract void freshBeanFactory();
 
     //==========================AnnotationConfigServletWebServerApplicationContext 来实现的模板方法==========================
-    public abstract void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory);
+    public abstract void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws IOException;
 
 }

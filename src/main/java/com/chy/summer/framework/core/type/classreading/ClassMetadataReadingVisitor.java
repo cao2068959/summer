@@ -49,7 +49,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     /**
      * 存放注解里面对应设置的属性值
      */
-    private final Map<String, AnnotationAttributes> attributesMap = new HashMap<>();
+    private final Map<String, AnnotationAttributes> annotationAttributes = new HashMap<>();
 
     /**
      * 存放 注解的父类有哪些
@@ -118,11 +118,16 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     /**
      * 注解的解析处理
      */
+    @Override
     public AnnotationVisitor visitAnnotation(final String desc, boolean visible) {
+        if(isAnnotation){
+            //如果这个source本身就是annotion就跳过
+            return null;
+        }
+
         String className = Type.getType(desc).getClassName();
         this.annotationSet.add(className);
-
-        return new MetadataAnnotationVisitorHandle();
+        return new MetadataAnnotationVisitorHandle(className,annotationAttributes,metaAnnotationMap);
     }
 
 

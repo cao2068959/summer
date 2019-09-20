@@ -5,6 +5,8 @@ import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.context.ApplicationContext;
 import com.chy.summer.framework.context.support.AbstractApplicationContext;
 
+import java.io.IOException;
+
 public class GenericWebApplicationContext extends AbstractApplicationContext implements BeanDefinitionRegistry {
 
 
@@ -25,7 +27,7 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     }
 
     @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws IOException {
 
     }
 
