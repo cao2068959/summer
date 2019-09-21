@@ -14,7 +14,7 @@ import java.util.*;
 
 
 /**
- * 用了解析注解的一些数据,以及注解的所有继承信息
+ * 用来解析注解的一些数据,以及注解的所有继承信息
  */
 public class MetadataAnnotationVisitorHandle extends AnnotationVisitor  {
     /**
