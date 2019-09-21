@@ -1,14 +1,19 @@
 package com.chy.summer.framework.annotation.core;
 
-import java.lang.annotation.Annotation;
+import java.lang.annotation.*;
 
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+@Documented
 public @interface AliasFor {
 
-    @AliasFor("attribute")
-    String value() default "";
+    /**
+     *  目标属性的名字是什么,如果不写默认就是这个注解下面方法的名字
+     */
+    String name() default "";
 
-    @AliasFor("value")
-    String attribute() default "";
-
-    Class<? extends Annotation> annotation() default Annotation.class;
+    /**
+     *  目标注解的类
+     */
+    Class<? extends Annotation> annotation();
 }

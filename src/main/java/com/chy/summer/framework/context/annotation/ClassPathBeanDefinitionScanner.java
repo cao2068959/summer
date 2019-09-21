@@ -80,7 +80,7 @@ public class ClassPathBeanDefinitionScanner {
         //拿到所有的class后用asm加载,判断是否有对应的注解,这里用 元数据处理器来解析
         for (Resource resource : resources) {
             MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
-
+            System.out.println(metadataReader);
         }
 
         return null;
@@ -97,7 +97,7 @@ public class ClassPathBeanDefinitionScanner {
 
     public static void main(String[] args) throws IOException {
         ClassPathBeanDefinitionScanner p = new ClassPathBeanDefinitionScanner(null);
-        p.scanCandidateComponents("classpath*:com/chy");
+        p.scanCandidateComponents("classpath*:com/chy/test");
     }
 
 

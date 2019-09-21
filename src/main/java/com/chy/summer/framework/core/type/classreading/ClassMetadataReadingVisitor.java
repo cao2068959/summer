@@ -124,7 +124,6 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
             //如果这个source本身就是annotion就跳过
             return null;
         }
-
         String className = Type.getType(desc).getClassName();
         this.annotationSet.add(className);
         return new MetadataAnnotationVisitorHandle(className,annotationAttributes,metaAnnotationMap);

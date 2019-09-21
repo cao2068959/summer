@@ -14,18 +14,6 @@ import java.io.InputStream;
  */
 public class DefaultMetadataReaderFactory implements MetadataReaderFactory {
 
-    /**
-     * 用于访问注释的元数据
-     */
-    private ClassMetadataReadingVisitor annotationMetadata;
-    /**
-     * 用于访问类对象的元数据
-     */
-    private ClassMetadataReadingVisitor classMetadata;
-    /**
-     * 元数据的缓存
-     */
-    private Resource resource;
 
     @Override
     public MetadataReader getMetadataReader(String className) throws IOException {
@@ -52,10 +40,8 @@ public class DefaultMetadataReaderFactory implements MetadataReaderFactory {
         } finally {
             is.close();
         }
-
         ClassMetadataReadingVisitor visitor = new ClassMetadataReadingVisitor();
         classReader.accept(visitor, ClassReader.SKIP_DEBUG);
-
-        return new SimpleMetadataReader(null, visitor, resource);
+        return new SimpleMetadataReader(visitor, visitor, resource);
     }
 }
