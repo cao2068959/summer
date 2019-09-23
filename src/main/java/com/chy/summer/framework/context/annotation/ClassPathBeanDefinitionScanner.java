@@ -1,5 +1,6 @@
 package com.chy.summer.framework.context.annotation;
 
+import com.chy.summer.framework.annotation.stereotype.Component;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
@@ -9,9 +10,14 @@ import com.chy.summer.framework.core.io.support.ResourcePatternResolver;
 import com.chy.summer.framework.core.type.classreading.DefaultMetadataReaderFactory;
 import com.chy.summer.framework.core.type.classreading.MetadataReader;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
+import com.chy.summer.framework.core.type.filter.AnnotationTypeFilter;
+import com.chy.summer.framework.core.type.filter.TypeFilter;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,6 +41,15 @@ public class ClassPathBeanDefinitionScanner {
     private DefaultMetadataReaderFactory metadataReaderFactory;
 
     /**
+     * 用于判断 一个class是否是符合标准的类型,比如 是否是打了注解 @Component的
+     */
+    private final List<TypeFilter> includeFilters = new LinkedList<>();
+    /**
+     * 同上,只是是排除,这里先把 入口 xxApplication的类给排除了,因为上面注解数量比较多,比较影响效率
+     */
+    private final List<TypeFilter> excludeFilters = new LinkedList<>();
+
+    /**
      * 根据定义对象创建ClassPathBeanDefinitionScanner
      *
      * @param registry
@@ -42,6 +57,7 @@ public class ClassPathBeanDefinitionScanner {
     public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry) {
         this.registry = registry;
         this.resourcePatternResolver = new PathMatchingResourcePatternResolver();
+        registerDefaultFilters();
     }
 
 
@@ -92,6 +108,14 @@ public class ClassPathBeanDefinitionScanner {
             this.metadataReaderFactory = new DefaultMetadataReaderFactory();
         }
         return this.metadataReaderFactory;
+    }
+
+
+    /**
+     * 初始化默认的 类型过滤器
+     */
+    protected void registerDefaultFilters() {
+        this.includeFilters.add(new AnnotationTypeFilter(Component.class));
     }
 
 
