@@ -96,9 +96,11 @@ public class ClassPathBeanDefinitionScanner {
         //拿到所有的class后用asm加载,判断是否有对应的注解,这里用 元数据处理器来解析
         for (Resource resource : resources) {
             MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
-            System.out.println(metadataReader);
+            //判断class 文件是否符合条件,比如是否有某个注解
+            if(isCandidateComponent(metadataReader)){
+                System.out.println(metadataReader);
+            }
         }
-
         return null;
     }
 
@@ -118,10 +120,24 @@ public class ClassPathBeanDefinitionScanner {
         this.includeFilters.add(new AnnotationTypeFilter(Component.class));
     }
 
+    protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
+        for (TypeFilter tf : this.excludeFilters) {
+            if (tf.match(metadataReader, getMetadataReaderFactory())) {
+                return false;
+            }
+        }
+        for (TypeFilter tf : this.includeFilters) {
+            if (tf.match(metadataReader, getMetadataReaderFactory())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public static void main(String[] args) throws IOException {
         ClassPathBeanDefinitionScanner p = new ClassPathBeanDefinitionScanner(null);
-        p.scanCandidateComponents("classpath*:com/chy/test");
+        p.scanCandidateComponents("classpath*:com/chy");
     }
 
 

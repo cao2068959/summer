@@ -129,7 +129,18 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
         return new MetadataAnnotationVisitorHandle(className,annotationAttributes,metaAnnotationMap);
     }
 
+    //================================下面是AnnotationMetadata接口的实现======================================
 
+    @Override
+    public boolean hasAnnotation(String annotationName) {
+        return annotationSet.contains(annotationName);
+    }
+
+    @Override
+    public boolean hasMetaAnnotation(String metaAnnotationName) {
+        return metaAnnotationMap.values().stream()
+                .anyMatch(metaAnnotationSet -> metaAnnotationSet.contains(metaAnnotationName));
+    }
 
     //================================下面是暂时不需要的属性,都是空实现,需要的时候再去重写======================================
 
@@ -159,7 +170,6 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     public void visitEnd() {
         // no-op
     }
-
 
 
     private static class EmptyMethodVisitor extends MethodVisitor {
