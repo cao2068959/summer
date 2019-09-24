@@ -1,12 +1,14 @@
 package com.chy.summer.framework.context.annotation;
 
 import com.chy.summer.framework.annotation.stereotype.Component;
+import com.chy.summer.framework.beans.config.AnnotatedBeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.core.io.support.PathMatchingResourcePatternResolver;
 import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.core.io.support.ResourcePatternResolver;
+import com.chy.summer.framework.core.type.AnnotationMetadata;
 import com.chy.summer.framework.core.type.classreading.DefaultMetadataReaderFactory;
 import com.chy.summer.framework.core.type.classreading.MetadataReader;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
@@ -14,7 +16,6 @@ import com.chy.summer.framework.core.type.filter.AnnotationTypeFilter;
 import com.chy.summer.framework.core.type.filter.TypeFilter;
 
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -75,6 +76,9 @@ public class ClassPathBeanDefinitionScanner {
         Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<BeanDefinitionHolder>();
         for (String basePackage : basePackages) {
             Set<BeanDefinition> candidates = scanCandidateComponents(basePackage);
+            for (BeanDefinition definition : candidates) {
+
+            }
 
         }
 
@@ -90,6 +94,7 @@ public class ClassPathBeanDefinitionScanner {
      * @throws IOException
      */
     public Set<BeanDefinition> scanCandidateComponents(String basePackage) throws IOException {
+        Set<BeanDefinition> result = new LinkedHashSet<>();
         //扫描class文件，全部放入resource中，这里的实例类是FileSystemResource
         //resources会保存文件的句柄d
         Resource[] resources = getResourcePatternResolver().getResources(basePackage);
@@ -98,10 +103,14 @@ public class ClassPathBeanDefinitionScanner {
             MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
             //判断class 文件是否符合条件,比如是否有某个注解
             if(isCandidateComponent(metadataReader)){
-                System.out.println(metadataReader);
+                ScannedGenericBeanDefinition scannedGenericBeanDefinition = new ScannedGenericBeanDefinition(metadataReader);
+                scannedGenericBeanDefinition.setResource(resource);
+                if(isCandidateComponent(scannedGenericBeanDefinition)){
+                    result.add(scannedGenericBeanDefinition);
+                }
             }
         }
-        return null;
+        return result;
     }
 
 
@@ -134,10 +143,23 @@ public class ClassPathBeanDefinitionScanner {
         return false;
     }
 
+    /**
+     * 把接口和抽象类排除
+     *
+     * @param beanDefinition
+     * @return
+     */
+    protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
+        AnnotationMetadata metadata = beanDefinition.getMetadata();
+        return (metadata.isIndependent() &&
+                (metadata.isConcrete() || (metadata.isAbstract() )));
+    }
+
 
     public static void main(String[] args) throws IOException {
         ClassPathBeanDefinitionScanner p = new ClassPathBeanDefinitionScanner(null);
-        p.scanCandidateComponents("classpath*:com/chy");
+        Set<BeanDefinition> beanDefinitions = p.scanCandidateComponents("classpath*:com/chy");
+        System.out.println(beanDefinitions);
     }
 
 

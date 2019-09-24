@@ -137,9 +137,29 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     }
 
     @Override
+    public String getClassName() {
+        return this.className;
+    }
+
+    @Override
     public boolean hasMetaAnnotation(String metaAnnotationName) {
         return metaAnnotationMap.values().stream()
                 .anyMatch(metaAnnotationSet -> metaAnnotationSet.contains(metaAnnotationName));
+    }
+
+    @Override
+    public boolean isIndependent() {
+        return (this.enclosingClassName == null || this.independentInnerClass);
+    }
+
+    @Override
+    public boolean isAbstract() {
+        return this.isAbstract;
+    }
+
+    @Override
+    public boolean isConcrete() {
+        return !(this.isInterface || this.isAbstract);
     }
 
     //================================下面是暂时不需要的属性,都是空实现,需要的时候再去重写======================================

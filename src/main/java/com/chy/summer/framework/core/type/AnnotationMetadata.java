@@ -12,4 +12,14 @@ public interface AnnotationMetadata {
      */
     boolean hasAnnotation(String metaAnnotationName);
 
+    String getClassName();
+
+    /**
+     * 判断是不是一个封闭的内部类
+     */
+    boolean isIndependent();
+
+    boolean isConcrete();
+
+    boolean isAbstract();
 }

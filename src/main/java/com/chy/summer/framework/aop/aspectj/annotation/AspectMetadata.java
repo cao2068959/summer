@@ -40,7 +40,7 @@ public class AspectMetadata implements Serializable {
 	 * summer AOP切入点对应于切面的表达式。
 	 * 切入点必须是单例的、规范的真正实例。
 	 */
-	private final Pointcut perClausePointcut;
+	private  Pointcut perClausePointcut;
 
 
 	/**
@@ -84,10 +84,10 @@ public class AspectMetadata implements Serializable {
 			case PERTARGET:
 			case PERTHIS:
 				AspectJExpressionPointcut ajexp = new AspectJExpressionPointcut();
-				ajexp.setLocation(aspectClass.getName());
-				ajexp.setExpression(findPerClause(aspectClass));
-				ajexp.setPointcutDeclarationScope(aspectClass);
-				this.perClausePointcut = ajexp;
+//				ajexp.setLocation(aspectClass.getName());
+//				ajexp.setExpression(findPerClause(aspectClass));
+//				ajexp.setPointcutDeclarationScope(aspectClass);
+//				this.perClausePointcut = ajexp;
 				return;
 			case PERTYPEWITHIN:
 				this.perClausePointcut = new ComposablePointcut(new TypePatternClassFilter(findPerClause(aspectClass)));
