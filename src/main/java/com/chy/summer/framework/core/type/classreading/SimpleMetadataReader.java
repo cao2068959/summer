@@ -18,16 +18,16 @@ public class SimpleMetadataReader implements MetadataReader {
 
     @Override
     public Resource getResource() {
-        return null;
+        return resource;
     }
 
     @Override
     public ClassMetadata getClassMetadata() {
-        return null;
+        return classMetadata;
     }
 
     @Override
     public AnnotationMetadata getAnnotationMetadata() {
-        return null;
+        return annotationMetadata;
     }
 }

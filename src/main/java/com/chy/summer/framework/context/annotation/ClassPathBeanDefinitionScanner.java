@@ -1,5 +1,6 @@
 package com.chy.summer.framework.context.annotation;
 
+import com.chy.summer.framework.annotation.stereotype.Component;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
@@ -9,9 +10,14 @@ import com.chy.summer.framework.core.io.support.ResourcePatternResolver;
 import com.chy.summer.framework.core.type.classreading.DefaultMetadataReaderFactory;
 import com.chy.summer.framework.core.type.classreading.MetadataReader;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
+import com.chy.summer.framework.core.type.filter.AnnotationTypeFilter;
+import com.chy.summer.framework.core.type.filter.TypeFilter;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,6 +41,15 @@ public class ClassPathBeanDefinitionScanner {
     private DefaultMetadataReaderFactory metadataReaderFactory;
 
     /**
+     * 用于判断 一个class是否是符合标准的类型,比如 是否是打了注解 @Component的
+     */
+    private final List<TypeFilter> includeFilters = new LinkedList<>();
+    /**
+     * 同上,只是是排除,这里先把 入口 xxApplication的类给排除了,因为上面注解数量比较多,比较影响效率
+     */
+    private final List<TypeFilter> excludeFilters = new LinkedList<>();
+
+    /**
      * 根据定义对象创建ClassPathBeanDefinitionScanner
      *
      * @param registry
@@ -42,6 +57,7 @@ public class ClassPathBeanDefinitionScanner {
     public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry) {
         this.registry = registry;
         this.resourcePatternResolver = new PathMatchingResourcePatternResolver();
+        registerDefaultFilters();
     }
 
 
@@ -80,9 +96,11 @@ public class ClassPathBeanDefinitionScanner {
         //拿到所有的class后用asm加载,判断是否有对应的注解,这里用 元数据处理器来解析
         for (Resource resource : resources) {
             MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
-            System.out.println(metadataReader);
+            //判断class 文件是否符合条件,比如是否有某个注解
+            if(isCandidateComponent(metadataReader)){
+                System.out.println(metadataReader);
+            }
         }
-
         return null;
     }
 
@@ -95,9 +113,31 @@ public class ClassPathBeanDefinitionScanner {
     }
 
 
+    /**
+     * 初始化默认的 类型过滤器
+     */
+    protected void registerDefaultFilters() {
+        this.includeFilters.add(new AnnotationTypeFilter(Component.class));
+    }
+
+    protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
+        for (TypeFilter tf : this.excludeFilters) {
+            if (tf.match(metadataReader, getMetadataReaderFactory())) {
+                return false;
+            }
+        }
+        for (TypeFilter tf : this.includeFilters) {
+            if (tf.match(metadataReader, getMetadataReaderFactory())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     public static void main(String[] args) throws IOException {
         ClassPathBeanDefinitionScanner p = new ClassPathBeanDefinitionScanner(null);
-        p.scanCandidateComponents("classpath*:com/chy/test");
+        p.scanCandidateComponents("classpath*:com/chy");
     }
 
 
