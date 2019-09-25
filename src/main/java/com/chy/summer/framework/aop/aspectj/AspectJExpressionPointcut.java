@@ -4,18 +4,16 @@ import com.chy.summer.framework.aop.ClassFilter;
 import com.chy.summer.framework.aop.IntroductionAwareMethodMatcher;
 import com.chy.summer.framework.aop.MethodMatcher;
 import com.chy.summer.framework.aop.ProxyMethodInvocation;
+import com.chy.summer.framework.aop.framework.ProxyCreationContext;
 import com.chy.summer.framework.aop.interceptor.ExposeInvocationInterceptor;
 import com.chy.summer.framework.aop.support.AopUtils;
+import com.chy.summer.framework.util.*;
 import org.aspectj.weaver.reflect.ReflectionWorld.ReflectionWorldException;
 import com.chy.summer.framework.aop.aopalliance.intercept.MethodInvocation;
 import com.chy.summer.framework.aop.support.AbstractExpressionPointcut;
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.ConfigurableBeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
-import com.chy.summer.framework.util.Assert;
-import com.chy.summer.framework.util.ClassUtils;
-import com.chy.summer.framework.util.ObjectUtils;
-import com.chy.summer.framework.util.StringUtils;
 import com.sun.istack.internal.Nullable;
 import org.aspectj.weaver.patterns.NamePattern;
 import org.aspectj.weaver.reflect.ReflectionWorld;
@@ -388,6 +386,7 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 					return false;
 				}
 				if (joinPointMatch.matches()) {
+					//匹配成功将方法的代理对象与连接点绑定
 					bindParameters(pmi, joinPointMatch);
 				}
 			}
@@ -403,10 +402,12 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 		}
 	}
 
+	/**
+	 * 获取当前代理的bean实例的名称。
+	 */
 	@Nullable
 	protected String getCurrentProxiedBeanName() {
-//		return ProxyCreationContext.getCurrentProxiedBeanName();
-		return "";
+		return ProxyCreationContext.getCurrentProxiedBeanName();
 	}
 
 
@@ -431,6 +432,11 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 		return null;
 	}
 
+	/**
+	 * 根据指定的shadowMatch获取动态运行测试器
+	 * @param shadowMatch
+	 * @return
+	 */
 	private RuntimeTestWalker getRuntimeTestWalker(ShadowMatch shadowMatch) {
 		if (shadowMatch instanceof DefensiveShadowMatch) {
 			return new RuntimeTestWalker(((DefensiveShadowMatch) shadowMatch).primary);
@@ -438,13 +444,16 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 		return new RuntimeTestWalker(shadowMatch);
 	}
 
+	/**
+	 * 将连接点匹配器绑定到invocation上
+	 */
 	private void bindParameters(ProxyMethodInvocation invocation, JoinPointMatch jpm) {
-		// Note: Can't use JoinPointMatch.getClass().getName() as the key, since
-		// Spring AOP does all the matching at a join point, and then all the invocations
-		// under this scenario, if we just use JoinPointMatch as the key, then
-		// 'last man wins' which is not what we want at all.
-		// Using the expression is guaranteed to be safe, since 2 identical expressions
-		// are guaranteed to bind in exactly the same way.
+		/*
+		不能使用JoinPointMatch.getClass().getName()作为键，
+		我们会在连接点处进行所有匹配，在这种情况下所有的连接点的关联都会被调用，
+		如果我们仅使用JoinPointMatch作为键，则最后一个执行的就会成为最终的结果，然而那是错误的。
+		保证使用表达式是安全的，因为可以保证两个完全相同的表达式以完全相同的方式绑定。
+		 */
 		invocation.setUserAttribute(resolveExpression(), jpm);
 	}
 
@@ -567,22 +576,20 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 			sb.append(getExpression());
 		}
 		else {
-			sb.append("<pointcut expression not set>");
+			sb.append("<切入点表达式未设置>");
 		}
 		return sb.toString();
 	}
 
 
 	/**
-	 * Handler for the Spring-specific {@code bean()} pointcut designator
-	 * extension to AspectJ.
-	 * <p>This handler must be added to each pointcut object that needs to
-	 * handle the {@code bean()} PCD. Matching context is obtained
-	 * automatically by examining a thread local variable and therefore a matching
-	 * context need not be set on the pointcut.
+	 * AspectJ切入点扩展实现，以便我们与AspectJ集成可以轻松添加自定义域特定标识符，
+	 * 并使它们与标准AspectJ标识符无缝互操作。切入点指示符只能用于匹配，而不能用于绑定。
 	 */
 	private class BeanPointcutDesignatorHandler implements PointcutDesignatorHandler {
-
+		/**
+		 * bean的代号
+		 */
 		private static final String BEAN_DESIGNATOR_NAME = "bean";
 
 		@Override
@@ -598,128 +605,188 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut
 
 
 	/**
-	 * Matcher class for the BeanNamePointcutDesignatorHandler.
-	 * <p>Dynamic match tests for this matcher always return true,
-	 * since the matching decision is made at the proxy creation time.
-	 * For static match tests, this matcher abstains to allow the overall
-	 * pointcut to match even when negation is used with the bean() pointcut.
+	 * Bean名称切入点标识符处理器 的匹配器
+	 * 此匹配器的动态匹配测试始终返回true，因为匹配决定是在代理创建时做出的。
+	 * 对于静态匹配测试，即使在bean（）切入点使用否定的情况下，该匹配器也不允许整体切入点匹配。
 	 */
 	private class BeanContextMatcher implements ContextBasedMatcher {
 
+		/**
+		 * 表达式格式
+		 */
 		private final NamePattern expressionPattern;
 
 		public BeanContextMatcher(String expression) {
 			this.expressionPattern = new NamePattern(expression);
 		}
 
+		/**
+		 * 判断指定class是否与切入点的类型匹配
+		 */
 		@Override
-		@SuppressWarnings("rawtypes")
 		@Deprecated
 		public boolean couldMatchJoinPointsInType(Class someClass) {
+			//判断匹配结果是否成功
 			return (contextMatch(someClass) == FuzzyBoolean.YES);
 		}
 
+		/**
+		 * 判断指定class是否与切入点的类型匹配
+		 */
 		@Override
-		@SuppressWarnings("rawtypes")
 		@Deprecated
 		public boolean couldMatchJoinPointsInType(Class someClass, MatchingContext context) {
+			//判断匹配结果是否成功
 			return (contextMatch(someClass) == FuzzyBoolean.YES);
 		}
 
+		/**
+		 * 动态匹配
+		 */
 		@Override
 		public boolean matchesDynamically(MatchingContext context) {
 			return true;
 		}
 
+		/**
+		 * 静态匹配
+		 */
 		@Override
 		public FuzzyBoolean matchesStatically(MatchingContext context) {
 			return contextMatch(null);
 		}
 
+		/**
+		 * 可能需要动态测试?
+		 */
 		@Override
 		public boolean mayNeedDynamicTest() {
 			return false;
 		}
 
+		/**
+		 * 上下文匹配
+		 * @param targetType 目标类型
+		 * @return
+		 */
 		private FuzzyBoolean contextMatch(@Nullable Class<?> targetType) {
-//			String advisedBeanName = getCurrentProxiedBeanName();
-//			if (advisedBeanName == null) {  // no proxy creation in progress
-//				// abstain; can't return YES, since that will make pointcut with negation fail
-//				return FuzzyBoolean.MAYBE;
-//			}
-//			if (BeanFactoryUtils.isGeneratedBeanName(advisedBeanName)) {
-//				return FuzzyBoolean.NO;
-//			}
-//			if (targetType != null) {
-//				boolean isFactory = FactoryBean.class.isAssignableFrom(targetType);
-//				return FuzzyBoolean.fromBoolean(
-//						matchesBean(isFactory ? BeanFactory.FACTORY_BEAN_PREFIX + advisedBeanName : advisedBeanName));
-//			}
-//			else {
-//				return FuzzyBoolean.fromBoolean(matchesBean(advisedBeanName) ||
-//						matchesBean(BeanFactory.FACTORY_BEAN_PREFIX + advisedBeanName));
-//			}
-			return FuzzyBoolean.MAYBE;
+			String advisedBeanName = getCurrentProxiedBeanName();
+			if (advisedBeanName == null) {
+				//没有创建代理
+				// 这里返回弃权，既没有成功也没有失败，甚至没有开始
+				return FuzzyBoolean.MAYBE;
+			}
+			if (BeanFactoryUtils.isGeneratedBeanName(advisedBeanName)) {
+				//判断是否是生成的beanName
+				//返回匹配失败
+				return FuzzyBoolean.NO;
+			}
+			if (targetType != null) {
+				//判断targetType是否是FactoryBean的子类，言下之意就是判断targetType是否是一个工厂bean
+				boolean isFactory = FactoryBean.class.isAssignableFrom(targetType);
+				return FuzzyBoolean.fromBoolean(
+						//如果是个工厂bean则对advisedBeanName进行转移，然后匹配bean
+						matchesBean(isFactory ? BeanFactory.FACTORY_BEAN_PREFIX + advisedBeanName : advisedBeanName));
+			}
+			else {
+				//如果没有目标对象，那么就要两种情况都考虑，并且都通过才能算成功
+				return FuzzyBoolean.fromBoolean(matchesBean(advisedBeanName) ||
+						matchesBean(BeanFactory.FACTORY_BEAN_PREFIX + advisedBeanName));
+			}
 		}
 
+		/**
+		 * 对bean进行匹配
+		 */
 		private boolean matchesBean(String advisedBeanName) {
-//			return BeanFactoryAnnotationUtils.isQualifierMatch(
-//					this.expressionPattern::matches, advisedBeanName, beanFactory);
-			return true;
+			//精确匹配
+			return BeanFactoryAnnotationUtils.isQualifierMatch(
+					this.expressionPattern::matches, advisedBeanName, beanFactory);
 		}
 	}
 
 
-	//---------------------------------------------------------------------
-	// Serialization support
-	//---------------------------------------------------------------------
+	/*
+	——————————————————————————————————
+	对序列化的是支持
+	——————————————————————————————————
+	*/
 
 	private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
-		// Rely on default serialization, just initialize state after deserialization.
+		//依靠默认序列化，只需在反序列化后初始化状态即可。
 		ois.defaultReadObject();
 
-		// Initialize transient fields.
-		// pointcutExpression will be initialized lazily by checkReadyToMatch()
+		//初始化transient字段。
+		//pointcutExpression将由checkReadyToMatch()延迟初始化
 		this.shadowMatchCache = new ConcurrentHashMap<>(32);
 	}
 
-
+	/**
+	 * 保守的ShadowMatch
+	 * 由于可能无法精确的查询出ShadowMatch，
+	 * 将通过切点表达式获取到的ShadowMatch和通过特殊的类加载器生成的切点表达式获取到的ShadowMatch一起保存下来
+	 */
 	private static class DefensiveShadowMatch implements ShadowMatch {
-
+		/**
+		 * 通过切点表达式获取到的ShadowMatch
+		 */
 		private final ShadowMatch primary;
 
+		/**
+		 * 通过特殊的类加载器生成的切点表达式获取到的ShadowMatch
+		 */
 		private final ShadowMatch other;
 
+		/**
+		 * 初始化
+		 */
 		public DefensiveShadowMatch(ShadowMatch primary, ShadowMatch other) {
 			this.primary = primary;
 			this.other = other;
 		}
 
+		/**
+		 * 这个ShadowMatch是不是总是匹配的
+		 */
 		@Override
 		public boolean alwaysMatches() {
 			return this.primary.alwaysMatches();
 		}
 
+		/**
+		 * 这个ShadowMatch是不是可能是匹配的
+		 */
 		@Override
 		public boolean maybeMatches() {
 			return this.primary.maybeMatches();
 		}
 
+		/**
+		 * 这个ShadowMatch是不是从来不匹配的
+		 */
 		@Override
 		public boolean neverMatches() {
 			return this.primary.neverMatches();
 		}
 
+		/**
+		 * 匹配切点表达式
+		 */
 		@Override
 		public JoinPointMatch matchesJoinPoint(Object thisObject, Object targetObject, Object[] args) {
 			try {
+				//先匹配基本的切点表达式
 				return this.primary.matchesJoinPoint(thisObject, targetObject, args);
 			}
 			catch (ReflectionWorldException ex) {
+				//失败之后再匹配特殊的类加载器生成的切点表达式
 				return this.other.matchesJoinPoint(thisObject, targetObject, args);
 			}
 		}
 
+		/**
+		 * 设置匹配上下文
+		 */
 		@Override
 		public void setMatchingContext(MatchingContext aMatchContext) {
 			this.primary.setMatchingContext(aMatchContext);
