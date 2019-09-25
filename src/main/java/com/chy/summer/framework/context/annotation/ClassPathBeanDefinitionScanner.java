@@ -50,6 +50,8 @@ public class ClassPathBeanDefinitionScanner {
      */
     private final List<TypeFilter> excludeFilters = new LinkedList<>();
 
+    private ScopeMetadataResolver scopeMetadataResolver = new AnnotationScopeMetadataResolver();
+
     /**
      * 根据定义对象创建ClassPathBeanDefinitionScanner
      *
@@ -77,7 +79,8 @@ public class ClassPathBeanDefinitionScanner {
         for (String basePackage : basePackages) {
             Set<BeanDefinition> candidates = scanCandidateComponents(basePackage);
             for (BeanDefinition definition : candidates) {
-
+                //解析 这个类的作用域,其实就是解析一下 @Scope 注解 没写就默认是单例模式
+                ScopeMetadata scopeMetadata = scopeMetadataResolver.resolveScopeMetadata(definition);
             }
 
         }
@@ -158,8 +161,7 @@ public class ClassPathBeanDefinitionScanner {
 
     public static void main(String[] args) throws IOException {
         ClassPathBeanDefinitionScanner p = new ClassPathBeanDefinitionScanner(null);
-        Set<BeanDefinition> beanDefinitions = p.scanCandidateComponents("classpath*:com/chy");
-        System.out.println(beanDefinitions);
+        p.scan("classpath*:com/chy");
     }
 
 

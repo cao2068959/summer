@@ -8,6 +8,7 @@ import com.chy.summer.framework.util.StringUtils;
 import com.sun.istack.internal.Nullable;
 import jdk.internal.org.objectweb.asm.*;
 
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -155,6 +156,11 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     @Override
     public boolean isAbstract() {
         return this.isAbstract;
+    }
+
+    @Override
+    public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
+        return annotationAttributes.get(type.getName());
     }
 
     @Override

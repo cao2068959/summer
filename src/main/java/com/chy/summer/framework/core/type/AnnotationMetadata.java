@@ -1,5 +1,9 @@
 package com.chy.summer.framework.core.type;
 
+import com.chy.summer.framework.core.annotation.AnnotationAttributes;
+
+import java.lang.annotation.Annotation;
+
 public interface AnnotationMetadata {
 
     /**
@@ -22,4 +26,11 @@ public interface AnnotationMetadata {
     boolean isConcrete();
 
     boolean isAbstract();
+
+    /**
+     * 获取 类中指定注解类型的 所有属性
+     * @param type
+     * @return
+     */
+    AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type);
 }
