@@ -38,7 +38,7 @@ public abstract class MethodMatchers {
 	}
 
 	/**
-	 * 将给定的方法匹配器应用于给定的方法
+	 * 是否可以将给定的方法匹配器应用于给定的方法
 	 * @param mm 需要应用的方法匹配器
 	 * @param method 指定方法
 	 * @param targetClass 目标类
