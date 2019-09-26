@@ -1,13 +1,14 @@
 package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.config.BeanDefinition;
+import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.chy.summer.framework.core.io.support.Resource;
 
 public abstract class AbstractBeanDefinition implements BeanDefinition {
 
     private String beanClassName;
 
-    private String scope;
+    private ScopeType scope;
 
     private boolean lazyInit;
     private Resource resource;
@@ -23,12 +24,12 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
     }
 
     @Override
-    public String getScope() {
+    public ScopeType getScope() {
         return scope;
     }
 
     @Override
-    public void setScope(String scope) {
+    public void setScope(ScopeType scope) {
         this.scope = scope;
     }
 

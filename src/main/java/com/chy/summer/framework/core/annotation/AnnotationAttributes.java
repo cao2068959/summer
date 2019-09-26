@@ -1,6 +1,7 @@
 package com.chy.summer.framework.core.annotation;
 
 import com.chy.summer.framework.util.Assert;
+import javafx.beans.binding.ObjectExpression;
 
 import java.lang.reflect.Array;
 import java.util.HashMap;
@@ -11,7 +12,12 @@ import java.util.Map;
  */
 public class AnnotationAttributes {
 
+    private final String className;
     private Map<String,AnnotationAttribute> datas = new HashMap<>();
+
+    public AnnotationAttributes(String name) {
+        this.className = name;
+    }
 
     public void put(String key,Object data,Object defaultValue){
         AnnotationAttribute annotationAttribute = new AnnotationAttribute();
@@ -35,20 +41,22 @@ public class AnnotationAttributes {
      */
     public Object getAttributeValue(String key){
         AnnotationAttribute annotationAttribute = datas.get(key);
-        if(annotationAttribute == null){
-            throw new RuntimeException(key+" 属性不存在");
-        }
+        //检查annotationAttribute 是否是Null，是的话直接抛出异常
+        assertAttributePresence(key,annotationAttribute);
         if(annotationAttribute.value == null){
             return annotationAttribute.defaultValue;
         }
         return annotationAttribute.value;
     }
 
-
-    private <T> T getRequiredAttribute(String attributeName, Class<T> expectedType) {
+    /**
+     * 根据属性的name获取值.
+     * @param attributeName 要获取的属性的名字
+     * @param expectedType 要获取的类型
+     */
+    public <T> T getRequiredAttribute(String attributeName, Class<T> expectedType) {
         //TODO 电脑没电了留坑
-        Object value = datas.get(attributeName);
-        assertAttributePresence(attributeName, value);
+        Object value = getAttributeValue(attributeName);
         if (!expectedType.isInstance(value) && expectedType.isArray() &&
                 expectedType.getComponentType().isInstance(value)) {
             Object array = Array.newInstance(expectedType.getComponentType(), 1);
@@ -62,7 +70,7 @@ public class AnnotationAttributes {
     private void assertAttributePresence(String attributeName, Object attributeValue) {
         Assert.notNull(attributeValue, () -> String.format(
                 "Attribute '%s' not found in attributes for annotation [%s]",
-                attributeName, this.displayName));
+                attributeName, this.className));
     }
 
     private void assertAttributeType(String attributeName, Object attributeValue, Class<?> expectedType) {
@@ -70,7 +78,7 @@ public class AnnotationAttributes {
             throw new IllegalArgumentException(String.format(
                     "Attribute '%s' is of type [%s], but [%s] was expected in attributes for annotation [%s]",
                     attributeName, attributeValue.getClass().getSimpleName(), expectedType.getSimpleName(),
-                    this.displayName));
+                    this.className));
         }
     }
 

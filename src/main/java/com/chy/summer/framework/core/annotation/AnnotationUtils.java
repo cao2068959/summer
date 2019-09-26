@@ -24,7 +24,7 @@ public  abstract class AnnotationUtils {
                                                                    Class<? extends Annotation> annotationClass,
                                                                    List<AliasForTask> aliasForTaskList) {
 
-        AnnotationAttributes attributes = new AnnotationAttributes();
+        AnnotationAttributes attributes = new AnnotationAttributes(annotationClass.getName());
         List<Method> methodsByCache = getMethodsByCache(annotationClass);
         methodsByCache.stream().forEach(method -> {
 

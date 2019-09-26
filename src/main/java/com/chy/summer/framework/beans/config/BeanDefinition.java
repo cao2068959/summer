@@ -1,16 +1,18 @@
 package com.chy.summer.framework.beans.config;
 
+import com.chy.summer.framework.context.annotation.constant.ScopeType;
+
 public interface BeanDefinition {
 
-    public String getBeanClassName();
+     String getBeanClassName();
 
-    public void setBeanClassName(String beanClassName);
+     void setBeanClassName(String beanClassName);
 
-    public String getScope();
+     ScopeType getScope();
 
-    public void setScope(String scope);
+     void setScope(ScopeType scope);
 
-    public boolean isLazyInit();
+     boolean isLazyInit();
 
-    public void setLazyInit(boolean lazyInit);
+     void setLazyInit(boolean lazyInit);
 }

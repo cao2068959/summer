@@ -5,6 +5,7 @@ import com.chy.summer.framework.beans.config.AnnotatedBeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
+import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.core.io.support.PathMatchingResourcePatternResolver;
 import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.core.io.support.ResourcePatternResolver;
@@ -50,8 +51,14 @@ public class ClassPathBeanDefinitionScanner {
      */
     private final List<TypeFilter> excludeFilters = new LinkedList<>();
 
+    /**
+     * bean生命周期的判断器
+     */
     private ScopeMetadataResolver scopeMetadataResolver = new AnnotationScopeMetadataResolver();
-
+    /**
+     * 名字生成器
+     */
+    private BeanNameGenerator beanNameGenerator = new AnnotationBeanNameGenerator();
     /**
      * 根据定义对象创建ClassPathBeanDefinitionScanner
      *
@@ -81,11 +88,11 @@ public class ClassPathBeanDefinitionScanner {
             for (BeanDefinition definition : candidates) {
                 //解析 这个类的作用域,其实就是解析一下 @Scope 注解 没写就默认是单例模式
                 ScopeMetadata scopeMetadata = scopeMetadataResolver.resolveScopeMetadata(definition);
+                definition.setScope(scopeMetadata.getScopeName());
+                //解析用户有没有自己指定了 beanName 如：@Service("xxx")
+                String beanName = this.beanNameGenerator.generateBeanName(definition, this.registry);
             }
-
         }
-
-
     }
 
 
