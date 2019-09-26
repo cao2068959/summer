@@ -2,10 +2,11 @@ package com.chy.summer.framework.core.annotation;
 
 
 import com.chy.summer.framework.annotation.core.AliasFor;
+import com.chy.summer.framework.util.Assert;
+import com.sun.istack.internal.Nullable;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -109,5 +110,26 @@ public  abstract class AnnotationUtils {
         return (method != null && method.getParameterCount() == 0 && method.getReturnType() != void.class);
     }
 
+    /**
+     * 在给定的类上找到相应的注解，遍历其接口、注解，如果注解没有直接出现在给定类本身上将遍历它的父类。
+     */
+    @Nullable
+    public static <A extends Annotation> A findAnnotation(Class<?> clazz, Class<A> annotationType) {
+        //TODO GYX 尚未实现
+        return null;
+    }
+
+    /**
+     * 在给定的方法上找到相应的注解，如果注解没有直接出现在给定方法上将遍历它的父方法或者父接口。
+     */
+    @Nullable
+    public static <A extends Annotation> A findAnnotation(Method method, @Nullable Class<A> annotationType) {
+        //TODO GYX 尚未实现
+        return null;
+    }
+
+
 
 }
+
+

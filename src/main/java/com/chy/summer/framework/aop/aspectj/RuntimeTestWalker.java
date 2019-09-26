@@ -17,11 +17,18 @@ import java.lang.reflect.Field;
 
 
 class RuntimeTestWalker {
-	//TODO 封装了acceptJ 有点复杂 慢慢研究
+	/**
+	 * 剩余的测试字段
+	 */
 	private static final Field residualTestField;
-
+	/**
+	 * 变量类型字段
+	 */
 	private static final Field varTypeField;
 
+	/**
+	 * myClass字段
+	 */
 	private static final Field myClassField;
 
 
@@ -30,9 +37,9 @@ class RuntimeTestWalker {
 			residualTestField = ShadowMatchImpl.class.getDeclaredField("residualTest");
 			varTypeField = ReflectionVar.class.getDeclaredField("varType");
 			myClassField = ReflectionBasedReferenceTypeDelegate.class.getDeclaredField("myClass");
-		} catch (NoSuchFieldException ex) {
-			throw new IllegalStateException("The version of aspectjtools.jar / aspectjweaver.jar " +
-					"on the classpath is incompatible with this version of Spring: " + ex);
+		}
+		catch (NoSuchFieldException ex) {
+			throw new IllegalStateException("aspectjtools.jar / aspectjweaver.jar的版本与summer的版本不兼容: " + ex);
 		}
 	}
 
@@ -45,15 +52,15 @@ class RuntimeTestWalker {
 		try {
 			ReflectionUtils.makeAccessible(residualTestField);
 			this.runtimeTest = (Test) residualTestField.get(shadowMatch);
-		} catch (IllegalAccessException ex) {
+		}
+		catch (IllegalAccessException ex) {
 			throw new IllegalStateException(ex);
 		}
 	}
 
 
 	/**
-	 * If the test uses any of the this, target, at_this, at_target, and at_annotation vars,
-	 * then it tests subtype sensitive vars.
+	 * 如果测试使用this，target，at_this，at_target和at_annotation变量中的任何一个，则它将测试子类型敏感的变量。
 	 */
 	public boolean testsSubtypeSensitiveVars() {
 		return (this.runtimeTest != null &&
@@ -124,7 +131,8 @@ class RuntimeTestWalker {
 			try {
 				ReflectionUtils.makeAccessible(varTypeField);
 				return (Integer) varTypeField.get(v);
-			} catch (IllegalAccessException ex) {
+			}
+			catch (IllegalAccessException ex) {
 				throw new IllegalStateException(ex);
 			}
 		}
@@ -164,18 +172,19 @@ class RuntimeTestWalker {
 					try {
 						ReflectionUtils.makeAccessible(myClassField);
 						typeClass = (Class<?>) myClassField.get(delegate);
-					} catch (IllegalAccessException ex) {
+					}
+					catch (IllegalAccessException ex) {
 						throw new IllegalStateException(ex);
 					}
 				}
 			}
 			try {
-				// Don't use ResolvedType.isAssignableFrom() as it won't be aware of (Spring) mixins
 				if (typeClass == null) {
 					typeClass = ClassUtils.forName(type.getName(), this.matchClass.getClassLoader());
 				}
 				this.matches = typeClass.isAssignableFrom(this.matchClass);
-			} catch (ClassNotFoundException ex) {
+			}
+			catch (ClassNotFoundException ex) {
 				this.matches = false;
 			}
 		}
@@ -183,7 +192,7 @@ class RuntimeTestWalker {
 
 
 	/**
-	 * Check if residue of target(TYPE) kind. See SPR-3783 for more details.
+	 * 检查目标（TYPE）是否剩余。 有关更多详细信息，请参见SPR-3783。
 	 */
 	private static class TargetInstanceOfResidueTestVisitor extends InstanceOfResidueTestVisitor {
 
@@ -197,16 +206,12 @@ class RuntimeTestWalker {
 	}
 
 
-	/**
-	 * Check if residue of this(TYPE) kind. See SPR-2979 for more details.
-	 */
 	private static class ThisInstanceOfResidueTestVisitor extends InstanceOfResidueTestVisitor {
 
 		public ThisInstanceOfResidueTestVisitor(Class<?> thisClass) {
 			super(thisClass, true, THIS_VAR);
 		}
 
-		// TODO: Optimization: Process only if this() specifies a type and not an identifier.
 		public boolean thisInstanceOfMatches(Test test) {
 			return instanceOfMatches(test);
 		}
@@ -239,7 +244,6 @@ class RuntimeTestWalker {
 
 		@Override
 		public void visit(HasAnnotation hasAnn) {
-			// If you thought things were bad before, now we sink to new levels of horror...
 			ReflectionVar v = (ReflectionVar) hasAnn.getVar();
 			int varType = getVarType(v);
 			if (varType == AT_THIS_VAR || varType == AT_TARGET_VAR || varType == AT_ANNOTATION_VAR) {
