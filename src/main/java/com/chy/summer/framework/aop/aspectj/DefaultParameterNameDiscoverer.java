@@ -3,6 +3,9 @@ package com.chy.summer.framework.aop.aspectj;
 import com.chy.summer.framework.core.PrioritizedParameterNameDiscoverer;
 import com.chy.summer.framework.core.StandardReflectionParameterNameDiscoverer;
 
+/**
+ * 参数名发现器，用于参数绑定
+ */
 public class DefaultParameterNameDiscoverer extends PrioritizedParameterNameDiscoverer {
 
 	public DefaultParameterNameDiscoverer() {

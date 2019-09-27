@@ -16,7 +16,7 @@ public interface Advisor {
 
 
 	/**
-	 * 获取这方面的通知，可以是拦截器，事前通知，抛出通知等
+	 * 获取这切面的通知，可以是拦截器，事前通知，抛出通知等
 	 */
 	Advice getAdvice();
 
