@@ -1,5 +1,8 @@
 package com.chy.summer.framework.beans.config;
 
+import com.chy.summer.framework.Exception.BeanDefinitionStoreException;
+import com.chy.summer.framework.Exception.NoSuchBeanDefinitionException;
+
 /**
  * 用于保存bean定义的注册表的接口
  *
@@ -7,4 +10,28 @@ package com.chy.summer.framework.beans.config;
  * bean定义注册器可以处理这个接口的实现类
  */
 public interface BeanDefinitionRegistry {
+
+    /**
+     * 查看在 容器内 是否存在对应name 的BeanDefinition
+     * @param beanName
+     * @return
+     */
+    boolean containsBeanDefinition(String beanName);
+
+    /**
+     * 根据名称拿 BeanDefinition
+     * @param beanName
+     * @return
+     * @throws NoSuchBeanDefinitionException
+     */
+    BeanDefinition getBeanDefinition(String beanName) throws NoSuchBeanDefinitionException;
+
+    /**
+     * 把 beanDefinition 注册进 容器中
+     * @param beanName
+     * @param beanDefinition
+     * @throws BeanDefinitionStoreException
+     */
+    void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
+            throws BeanDefinitionStoreException;
 }

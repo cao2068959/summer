@@ -10,7 +10,7 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
 
     private ScopeType scope;
 
-    private boolean lazyInit;
+    private boolean lazyInit = false;
     private Resource resource;
 
     @Override
@@ -45,6 +45,19 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
 
     public void setResource(Resource resource) {
         this.resource = resource;
+    }
+
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("class [");
+        sb.append(getBeanClassName()).append("]");
+        sb.append("; scope=").append(this.scope);
+        sb.append("; lazyInit=").append(this.lazyInit);
+        if (this.resource != null) {
+            sb.append("; defined in ").append(this.resource.getDescription());
+        }
+        return sb.toString();
     }
 
 

@@ -1,11 +1,14 @@
 package com.chy.summer.framework.context.annotation;
 
+import com.chy.summer.framework.Exception.BeanDefinitionCommonException;
 import com.chy.summer.framework.annotation.stereotype.Component;
 import com.chy.summer.framework.beans.config.AnnotatedBeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
+import com.chy.summer.framework.beans.support.BeanDefinitionReaderUtils;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
+import com.chy.summer.framework.context.annotation.utils.AnnotationConfigUtils;
 import com.chy.summer.framework.core.io.support.PathMatchingResourcePatternResolver;
 import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.core.io.support.ResourcePatternResolver;
@@ -90,7 +93,28 @@ public class ClassPathBeanDefinitionScanner {
                 ScopeMetadata scopeMetadata = scopeMetadataResolver.resolveScopeMetadata(definition);
                 definition.setScope(scopeMetadata.getScopeName());
                 //解析用户有没有自己指定了 beanName 如：@Service("xxx")
+                //如果没有指定就用默认的规则根据类名生成
                 String beanName = this.beanNameGenerator.generateBeanName(definition, this.registry);
+                //检查类上面是否还有一些其他影响类行为的注解把他对应设置的值放入BeanDefinition
+                //比如 @Lazy @DependsOn 等
+                if (definition instanceof AnnotatedBeanDefinition) {
+                    AnnotatedBeanDefinition annotatedBeanDefinition = (AnnotatedBeanDefinition) definition;
+                    AnnotationConfigUtils.processCommonDefinitionAnnotations(annotatedBeanDefinition,
+                            annotatedBeanDefinition.getMetadata());
+                }
+                //这里检查beanName 是否重名等其他的规则
+                if(checkCandidate(beanName,definition)){
+                    continue;
+                }
+                BeanDefinitionHolder beanDefinitionHolder = new BeanDefinitionHolder(definition,beanName);
+                // 如果在 @Scope 注解中设置了 代理模式，那么这里会把 beanDefinitionHolder 生成代理对象
+                //如果没设置那么直接 返回传入进去的那个 beanDefinitionHolder
+                beanDefinitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata,
+                        beanDefinitionHolder, this.registry);
+                beanDefinitions.add(beanDefinitionHolder);
+                BeanDefinitionReaderUtils.registerBeanDefinition(beanDefinitionHolder,this.registry);
+
+
             }
         }
     }
@@ -164,6 +188,27 @@ public class ClassPathBeanDefinitionScanner {
         return (metadata.isIndependent() &&
                 (metadata.isConcrete() || (metadata.isAbstract() )));
     }
+
+    /**
+     * 检查一下 生成的 beanName 是否已经存在
+     * @param beanName
+     * @param beanDefinition
+     * @return
+     * @throws IllegalStateException
+     */
+    protected boolean checkCandidate(String beanName, BeanDefinition beanDefinition) throws IllegalStateException {
+        //在 BeanDefinition 容器中没有对应的 beanName 就直接放行
+        BeanDefinition existingDef = this.registry.getBeanDefinition(beanName);
+        if (existingDef == null) {
+            return true;
+        }
+        //在原版spring中 BeanDefinition 会有包装类的形式要做对应的处理，而这里没有先忽略
+
+        throw new BeanDefinitionCommonException("Annotation-specified bean name '" + beanName +
+                "' for bean class [" + beanDefinition.getBeanClassName() + "] conflicts with existing, " +
+                "non-compatible bean definition of same name and class [" + existingDef.getBeanClassName() + "]");
+    }
+
 
 
     public static void main(String[] args) throws IOException {

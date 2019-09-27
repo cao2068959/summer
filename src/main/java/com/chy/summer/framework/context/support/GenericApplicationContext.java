@@ -1,5 +1,8 @@
 package com.chy.summer.framework.context.support;
 
+import com.chy.summer.framework.Exception.BeanDefinitionStoreException;
+import com.chy.summer.framework.Exception.NoSuchBeanDefinitionException;
+import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
@@ -29,13 +32,29 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 
     }
 
+    @Override
     public ApplicationContext getParent() {
         return null;
     }
 
+    @Override
     public Object getBean(String name) {
         return null;
     }
 
+    //===============BeanDefinitionRegistry 的实现实际上都是调用DefaultListableBeanFactory真正的实现===================
+    @Override
+    public boolean containsBeanDefinition(String beanName) {
+        return beanFactory.containsBeanDefinition(beanName);
+    }
 
+    @Override
+    public BeanDefinition getBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
+        return beanFactory.getBeanDefinition(beanName);
+    }
+
+    @Override
+    public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) throws BeanDefinitionStoreException {
+        beanFactory.registerBeanDefinition(beanName,beanDefinition);
+    }
 }

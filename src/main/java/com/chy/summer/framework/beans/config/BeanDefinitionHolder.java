@@ -11,6 +11,10 @@ public class BeanDefinitionHolder {
 
     private  String[] aliases;
 
+    public BeanDefinitionHolder(BeanDefinition definition, String beanName) {
+        this.beanDefinition = definition;
+        this.beanName = beanName;
+    }
 
 
     public BeanDefinition getBeanDefinition() {
