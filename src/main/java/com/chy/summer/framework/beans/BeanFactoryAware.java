@@ -1,7 +1,4 @@
-package com.chy.summer.framework.aop.aspectj;
-
-import com.chy.summer.framework.beans.Aware;
-import com.chy.summer.framework.beans.BeanFactory;
+package com.chy.summer.framework.beans;
 
 /**
  * bean实现这个借口可以获取到自己的beanfactory

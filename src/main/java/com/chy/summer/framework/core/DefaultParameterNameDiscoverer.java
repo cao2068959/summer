@@ -1,4 +1,4 @@
-package com.chy.summer.framework.aop.aspectj;
+package com.chy.summer.framework.core;
 
 import com.chy.summer.framework.core.PrioritizedParameterNameDiscoverer;
 import com.chy.summer.framework.core.StandardReflectionParameterNameDiscoverer;

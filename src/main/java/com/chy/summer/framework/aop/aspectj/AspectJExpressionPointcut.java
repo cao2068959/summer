@@ -7,6 +7,7 @@ import com.chy.summer.framework.aop.ProxyMethodInvocation;
 import com.chy.summer.framework.aop.framework.ProxyCreationContext;
 import com.chy.summer.framework.aop.interceptor.ExposeInvocationInterceptor;
 import com.chy.summer.framework.aop.support.AopUtils;
+import com.chy.summer.framework.beans.BeanFactoryAware;
 import com.chy.summer.framework.util.*;
 import org.aspectj.weaver.reflect.ReflectionWorld.ReflectionWorldException;
 import com.chy.summer.framework.aop.aopalliance.intercept.MethodInvocation;
