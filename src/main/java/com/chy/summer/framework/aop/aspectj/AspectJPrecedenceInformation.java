@@ -19,12 +19,12 @@ public interface AspectJPrecedenceInformation extends Ordered {
 	int getDeclarationOrder();
 
 	/**
-	 * 判断是否为事前通知
+	 * 判断是否为前置通知
 	 */
 	boolean isBeforeAdvice();
 
 	/**
-	 * 判断是否为事后通知
+	 * 判断是否为后置通知
 	 */
 	boolean isAfterAdvice();
 

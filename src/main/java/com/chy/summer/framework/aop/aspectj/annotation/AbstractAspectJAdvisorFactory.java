@@ -57,7 +57,7 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	 * 检测为AOP不应解析的AspectJ切面的代码样式。
 	 */
 	private boolean compiledByAjc(Class<?> clazz) {
-		// AJType在代码样式和注释样式方面尽量提供统一的样式。
+		// AJType在代码样式和注释样式切面尽量提供统一的样式。
         // 我们依靠AspectJ编译器的实现细节，来区分AspectJ的代码
 		for (Field field : clazz.getDeclaredFields()) {
 			if (field.getName().startsWith(AJC_MAGIC)) {
