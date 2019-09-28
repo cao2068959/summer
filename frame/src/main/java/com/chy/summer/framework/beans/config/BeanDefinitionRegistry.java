@@ -34,4 +34,11 @@ public interface BeanDefinitionRegistry {
      */
     void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
             throws BeanDefinitionStoreException;
+
+    /**
+     * 把别名和真实的beanName 给关联起来
+     * @param beanName
+     * @param alias
+     */
+    void registerAlias(String beanName, String alias);
 }

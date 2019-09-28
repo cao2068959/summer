@@ -103,7 +103,7 @@ public class ClassPathBeanDefinitionScanner {
                             annotatedBeanDefinition.getMetadata());
                 }
                 //这里检查beanName 是否重名等其他的规则
-                if(checkCandidate(beanName,definition)){
+                if(!checkCandidate(beanName,definition)){
                     continue;
                 }
                 BeanDefinitionHolder beanDefinitionHolder = new BeanDefinitionHolder(definition,beanName);

@@ -9,6 +9,8 @@ import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
 import com.chy.summer.framework.context.ApplicationContext;
 import com.chy.summer.framework.context.support.AbstractApplicationContext;
 
+import java.io.IOException;
+
 public class GenericWebApplicationContext extends AbstractApplicationContext implements BeanDefinitionRegistry {
 
 
@@ -29,7 +31,7 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     }
 
     @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws IOException {
 
     }
 
@@ -57,5 +59,10 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     @Override
     public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) throws BeanDefinitionStoreException {
         beanFactory.registerBeanDefinition(beanName,beanDefinition);
+    }
+
+    @Override
+    public void registerAlias(String beanName, String alias) {
+        beanFactory.registerAlias(beanName,alias);
     }
 }

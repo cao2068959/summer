@@ -15,13 +15,12 @@ public class BeanDefinitionReaderUtils {
                                               BeanDefinitionRegistry registry) {
         String beanName = definitionHolder.getBeanName();
         registry.registerBeanDefinition(beanName, definitionHolder.getBeanDefinition());
+        //如果设置了别名,也要设置进去
         String[] aliases = definitionHolder.getAliases();
         if (aliases != null) {
             for (String alias : aliases) {
                 registry.registerAlias(beanName, alias);
             }
         }
-
-
     }
 }
