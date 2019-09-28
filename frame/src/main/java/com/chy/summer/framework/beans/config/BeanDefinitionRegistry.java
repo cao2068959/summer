@@ -1,7 +1,7 @@
 package com.chy.summer.framework.beans.config;
 
-import com.chy.summer.framework.Exception.BeanDefinitionStoreException;
-import com.chy.summer.framework.Exception.NoSuchBeanDefinitionException;
+import com.chy.summer.framework.exception.BeanDefinitionStoreException;
+import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
 
 /**
  * 用于保存bean定义的注册表的接口

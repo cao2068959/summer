@@ -1,4 +1,4 @@
-package com.chy.summer.framework.Exception;
+package com.chy.summer.framework.exception;
 
 
 public class BeanDefinitionCommonException extends BaseRuntimeException {

@@ -63,7 +63,7 @@ public class ReflectionUtils {
     private static final Map<Class<?>, Field[]> declaredFieldsCache = new ConcurrentHashMap<>(256);
 
 
-    // Exception handling
+    // exception handling
 
     /**
      * Handle the given reflection exception. Should only be called if no

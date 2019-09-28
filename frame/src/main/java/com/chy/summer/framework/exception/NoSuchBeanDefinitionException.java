@@ -1,4 +1,4 @@
-package com.chy.summer.framework.Exception;
+package com.chy.summer.framework.exception;
 
 /**
  * 没有对应 BeanDefinition 异常
