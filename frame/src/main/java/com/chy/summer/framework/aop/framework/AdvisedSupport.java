@@ -2,8 +2,10 @@ package com.chy.summer.framework.aop.framework;
 
 import com.chy.summer.framework.aop.*;
 import com.chy.summer.framework.aop.aopalliance.Advice;
+import com.chy.summer.framework.aop.support.DefaultIntroductionAdvisor;
 import com.chy.summer.framework.aop.support.DefaultPointcutAdvisor;
 import com.chy.summer.framework.aop.target.EmptyTargetSource;
+import com.chy.summer.framework.aop.target.SingletonTargetSource;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.CollectionUtils;

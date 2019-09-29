@@ -106,8 +106,10 @@ public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanC
 	 * 如果找不到给定bean的合理代理接口，则将其完整的目标类作为代理
 	 */
 	protected boolean isConfigurationCallbackInterface(Class<?> ifc) {
-		return (InitializingBean.class == ifc || DisposableBean.class == ifc || Closeable.class == ifc ||
-				AutoCloseable.class == ifc || ObjectUtils.containsElement(ifc.getInterfaces(), Aware.class));
+		//TODO GYX 这里缺少类型
+//		return (InitializingBean.class == ifc || DisposableBean.class == ifc || Closeable.class == ifc ||
+//				AutoCloseable.class == ifc || ObjectUtils.containsElement(ifc.getInterfaces(), Aware.class));
+		return false;
 	}
 
 	/**

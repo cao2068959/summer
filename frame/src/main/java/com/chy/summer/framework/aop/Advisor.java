@@ -5,6 +5,8 @@ import com.chy.summer.framework.aop.aopalliance.Advice;
 /**
  * aop顾问的根接口
  * 将通知以更为复杂的方式织入到目标对象中，将通知包装为更复杂切面的装配器
+ * 用来管理Advice和Pointcut
+ * 其中PointcutAdvisor和切点有关，但IntroductionAdvisor和切点无关
  */
 public interface Advisor {
 

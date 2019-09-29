@@ -1,25 +1,8 @@
-/*
- * Copyright 2002-2016 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.chy.summer.framework.aop.framework;
 
-import org.springframework.util.Assert;
+import com.chy.summer.framework.util.Assert;
 
 import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Base class for proxy factories.
@@ -29,12 +12,13 @@ import java.util.List;
  * @since 2.0.3
  * @see #createAopProxy()
  */
-@SuppressWarnings("serial")
 public class ProxyCreatorSupport extends AdvisedSupport {
-
+	/**
+	 * aop代理工厂
+	 */
 	private AopProxyFactory aopProxyFactory;
 
-	private List<AdvisedSupportListener> listeners = new LinkedList<>();
+//	private List<AdvisedSupportListener> listeners = new LinkedList<>();
 
 	/** Set to true when the first AOP proxy has been created */
 	private boolean active = false;
@@ -44,7 +28,7 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 	 * Create a new ProxyCreatorSupport instance.
 	 */
 	public ProxyCreatorSupport() {
-		this.aopProxyFactory = new DefaultAopProxyFactory();
+//		this.aopProxyFactory = new DefaultAopProxyFactory();
 	}
 
 	/**
@@ -64,8 +48,8 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 	 * proxies or CGLIB proxies based on the requirements.
 	 */
 	public void setAopProxyFactory(AopProxyFactory aopProxyFactory) {
-		Assert.notNull(aopProxyFactory, "AopProxyFactory must not be null");
-		this.aopProxyFactory = aopProxyFactory;
+//		Assert.notNull(aopProxyFactory, "AopProxyFactory must not be null");
+//		this.aopProxyFactory = aopProxyFactory;
 	}
 
 	/**
@@ -79,19 +63,19 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 	 * Add the given AdvisedSupportListener to this proxy configuration.
 	 * @param listener the listener to register
 	 */
-	public void addListener(AdvisedSupportListener listener) {
-		Assert.notNull(listener, "AdvisedSupportListener must not be null");
-		this.listeners.add(listener);
-	}
+//	public void addListener(AdvisedSupportListener listener) {
+//		Assert.notNull(listener, "AdvisedSupportListener must not be null");
+//		this.listeners.add(listener);
+//	}
 
-	/**
-	 * Remove the given AdvisedSupportListener from this proxy configuration.
-	 * @param listener the listener to deregister
-	 */
-	public void removeListener(AdvisedSupportListener listener) {
-		Assert.notNull(listener, "AdvisedSupportListener must not be null");
-		this.listeners.remove(listener);
-	}
+//	/**
+//	 * Remove the given AdvisedSupportListener from this proxy configuration.
+//	 * @param listener the listener to deregister
+//	 */
+//	public void removeListener(AdvisedSupportListener listener) {
+//		Assert.notNull(listener, "AdvisedSupportListener must not be null");
+//		this.listeners.remove(listener);
+//	}
 
 
 	/**
@@ -110,10 +94,10 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 	 * @see AdvisedSupportListener#activated
 	 */
 	private void activate() {
-		this.active = true;
-		for (AdvisedSupportListener listener : this.listeners) {
-			listener.activated(this);
-		}
+//		this.active = true;
+//		for (AdvisedSupportListener listener : this.listeners) {
+//			listener.activated(this);
+//		}
 	}
 
 	/**
@@ -122,14 +106,14 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 	 */
 	@Override
 	protected void adviceChanged() {
-		super.adviceChanged();
-		synchronized (this) {
-			if (this.active) {
-				for (AdvisedSupportListener listener : this.listeners) {
-					listener.adviceChanged(this);
-				}
-			}
-		}
+//		super.adviceChanged();
+//		synchronized (this) {
+//			if (this.active) {
+//				for (AdvisedSupportListener listener : this.listeners) {
+//					listener.adviceChanged(this);
+//				}
+//			}
+//		}
 	}
 
 	/**
