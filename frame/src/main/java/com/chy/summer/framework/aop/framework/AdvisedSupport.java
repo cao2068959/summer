@@ -20,6 +20,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * AOP代理配置管理器的基类
  * 这些类本身不是AOP代理，此类的子类通常是工厂类，可以直接从中获取AOP代理实例
+ *
+ * 主要功能有：
+ * 1.配置当前代理的Adivsiors
+ * 2.配置当前代理的目标对象
+ * 3.配置当前代理的接口
+ * 4.提供getInterceptorsAndDynamicInterceptionAdvice方法用来获取对应代理方法对应有效的拦截器链
  */
 public class AdvisedSupport extends ProxyConfig implements Advised {
 
