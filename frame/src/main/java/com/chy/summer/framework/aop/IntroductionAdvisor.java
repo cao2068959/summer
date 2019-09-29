@@ -2,6 +2,7 @@ package com.chy.summer.framework.aop;
 
 /**
  * IntroductionAdvisors的根接口
+ * 只能应用于类级别的拦截，只能使用Introduction型的Advice。
  */
 public interface IntroductionAdvisor extends Advisor, IntroductionInfo {
 

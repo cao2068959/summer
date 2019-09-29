@@ -1,125 +1,105 @@
-//package com.chy.summer.framework.aop.framework;
-//
-//public class ProxyFactory extends ProxyCreatorSupport {
-//
-//	/**
-//	 * Create a new ProxyFactory.
-//	 */
-//	public ProxyFactory() {
-//	}
-//
-//	/**
-//	 * Create a new ProxyFactory.
-//	 * <p>Will proxy all interfaces that the given target implements.
-//	 * @param target the target object to be proxied
-//	 */
-//	public ProxyFactory(Object target) {
-//		setTarget(target);
-//		setInterfaces(ClassUtils.getAllInterfaces(target));
-//	}
-//
-//	/**
-//	 * Create a new ProxyFactory.
-//	 * <p>No target, only interfaces. Must add interceptors.
-//	 * @param proxyInterfaces the interfaces that the proxy should implement
-//	 */
-//	public ProxyFactory(Class<?>... proxyInterfaces) {
-//		setInterfaces(proxyInterfaces);
-//	}
-//
-//	/**
-//	 * Create a new ProxyFactory for the given interface and interceptor.
-//	 * <p>Convenience method for creating a proxy for a single interceptor,
-//	 * assuming that the interceptor handles all calls itself rather than
-//	 * delegating to a target, like in the case of remoting proxies.
-//	 * @param proxyInterface the interface that the proxy should implement
-//	 * @param interceptor the interceptor that the proxy should invoke
-//	 */
-//	public ProxyFactory(Class<?> proxyInterface, Interceptor interceptor) {
-//		addInterface(proxyInterface);
-//		addAdvice(interceptor);
-//	}
-//
-//	/**
-//	 * Create a ProxyFactory for the specified {@code TargetSource},
-//	 * making the proxy implement the specified interface.
-//	 * @param proxyInterface the interface that the proxy should implement
-//	 * @param targetSource the TargetSource that the proxy should invoke
-//	 */
-//	public ProxyFactory(Class<?> proxyInterface, TargetSource targetSource) {
-//		addInterface(proxyInterface);
-//		setTargetSource(targetSource);
-//	}
-//
-//
-//	/**
-//	 * Create a new proxy according to the settings in this factory.
-//	 * <p>Can be called repeatedly. Effect will vary if we've added
-//	 * or removed interfaces. Can add and remove interceptors.
-//	 * <p>Uses a default class loader: Usually, the thread context class loader
-//	 * (if necessary for proxy creation).
-//	 * @return the proxy object
-//	 */
-//	public Object getProxy() {
-//		return createAopProxy().getProxy();
-//	}
-//
-//	/**
-//	 * Create a new proxy according to the settings in this factory.
-//	 * <p>Can be called repeatedly. Effect will vary if we've added
-//	 * or removed interfaces. Can add and remove interceptors.
-//	 * <p>Uses the given class loader (if necessary for proxy creation).
-//	 * @param classLoader the class loader to create the proxy with
-//	 * (or {@code null} for the low-level proxy facility's default)
-//	 * @return the proxy object
-//	 */
-//	public Object getProxy(@Nullable ClassLoader classLoader) {
-//		return createAopProxy().getProxy(classLoader);
-//	}
-//
-//
-//	/**
-//	 * Create a new proxy for the given interface and interceptor.
-//	 * <p>Convenience method for creating a proxy for a single interceptor,
-//	 * assuming that the interceptor handles all calls itself rather than
-//	 * delegating to a target, like in the case of remoting proxies.
-//	 * @param proxyInterface the interface that the proxy should implement
-//	 * @param interceptor the interceptor that the proxy should invoke
-//	 * @return the proxy object
-//	 * @see #ProxyFactory(Class, org.aopalliance.intercept.Interceptor)
-//	 */
-//	@SuppressWarnings("unchecked")
-//	public static <T> T getProxy(Class<T> proxyInterface, Interceptor interceptor) {
-//		return (T) new ProxyFactory(proxyInterface, interceptor).getProxy();
-//	}
-//
-//	/**
-//	 * Create a proxy for the specified {@code TargetSource},
-//	 * implementing the specified interface.
-//	 * @param proxyInterface the interface that the proxy should implement
-//	 * @param targetSource the TargetSource that the proxy should invoke
-//	 * @return the proxy object
-//	 * @see #ProxyFactory(Class, org.springframework.aop.TargetSource)
-//	 */
-//	@SuppressWarnings("unchecked")
-//	public static <T> T getProxy(Class<T> proxyInterface, TargetSource targetSource) {
-//		return (T) new ProxyFactory(proxyInterface, targetSource).getProxy();
-//	}
-//
-//	/**
-//	 * Create a proxy for the specified {@code TargetSource} that extends
-//	 * the target class of the {@code TargetSource}.
-//	 * @param targetSource the TargetSource that the proxy should invoke
-//	 * @return the proxy object
-//	 */
-//	public static Object getProxy(TargetSource targetSource) {
-//		if (targetSource.getTargetClass() == null) {
-//			throw new IllegalArgumentException("Cannot create class proxy for TargetSource with null target class");
-//		}
-//		ProxyFactory proxyFactory = new ProxyFactory();
-//		proxyFactory.setTargetSource(targetSource);
-//		proxyFactory.setProxyTargetClass(true);
-//		return proxyFactory.getProxy();
-//	}
-//
-//}
+package com.chy.summer.framework.aop.framework;
+
+import com.chy.summer.framework.aop.TargetSource;
+import com.chy.summer.framework.aop.aopalliance.intercept.Interceptor;
+import com.chy.summer.framework.util.ClassUtils;
+import com.sun.istack.internal.Nullable;
+
+/**
+ * 用于AOP代理的工厂，以编程的方式使用，而不是通过bean工厂中的声明设置
+ * 此类提供了一种在自定义用户代码中获取和配置AOP代理实例的简单方式
+ */
+public class ProxyFactory extends ProxyCreatorSupport {
+
+	/**
+	 * 创建一个代理工厂
+	 */
+	public ProxyFactory() {
+	}
+
+	/**
+	 * 创建一个新的代理工厂
+	 * 将代理给定目标实现的所有接口
+	 */
+	public ProxyFactory(Object target) {
+		//设置目标，用目标创建目标源
+		setTarget(target);
+		//设置这个对象所有实现的接口
+		setInterfaces(ClassUtils.getAllInterfaces(target));
+	}
+
+	/**
+	 * 创建一个新的代理工厂
+	 * 没有目标，只有接口。 必须添加拦截器
+	 */
+	public ProxyFactory(Class<?>... proxyInterfaces) {
+		//设置需要实现的接口
+		setInterfaces(proxyInterfaces);
+	}
+
+	/**
+	 * 为给定的接口和拦截器创建一个新的ProxyFactory。
+	 * 用于为单个拦截器创建代理
+	 * @param proxyInterface 代理应实现的接口
+	 * @param interceptor 代理应调用的拦截器
+	 */
+	public ProxyFactory(Class<?> proxyInterface, Interceptor interceptor) {
+		addInterface(proxyInterface);
+		addAdvice(interceptor);
+	}
+
+	/**
+	 * 为指定的TargetSource创建一个ProxyFactory，使代理实现指定的接口。
+	 */
+	public ProxyFactory(Class<?> proxyInterface, TargetSource targetSource) {
+		addInterface(proxyInterface);
+		setTargetSource(targetSource);
+	}
+
+
+	/**
+	 * 根据此工厂中的设置创建一个新的代理
+	 * 可以反复调用。如果我们添加或删除了接口，每次返回的结果会不同。可以添加和删除拦截器
+	 *
+	 * 使用默认的类加载器
+	 */
+	public Object getProxy() {
+		return createAopProxy().getProxy();
+	}
+
+	/**
+	 * 根据给定的类加载器创建一个新的代理
+	 */
+	public Object getProxy(@Nullable ClassLoader classLoader) {
+		return createAopProxy().getProxy(classLoader);
+	}
+
+
+	/**
+	 * 为给定的接口和拦截器创建一个新的代理
+	 */
+	public static <T> T getProxy(Class<T> proxyInterface, Interceptor interceptor) {
+		return (T) new ProxyFactory(proxyInterface, interceptor).getProxy();
+	}
+
+	/**
+	 * 为指定的TargetSource创建代理，实现指定的接口。
+	 */
+	public static <T> T getProxy(Class<T> proxyInterface, TargetSource targetSource) {
+		return (T) new ProxyFactory(proxyInterface, targetSource).getProxy();
+	}
+
+	/**
+	 * 为指定的TargetSource创建代理，同于扩展的目标类
+	 */
+	public static Object getProxy(TargetSource targetSource) {
+		if (targetSource.getTargetClass() == null) {
+			throw new IllegalArgumentException("无法使用空类型的TargetSource创建类代理");
+		}
+		ProxyFactory proxyFactory = new ProxyFactory();
+		proxyFactory.setTargetSource(targetSource);
+		proxyFactory.setProxyTargetClass(true);
+		return proxyFactory.getProxy();
+	}
+
+}
