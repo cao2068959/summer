@@ -113,7 +113,7 @@ public class ClassPathBeanDefinitionScanner {
                         beanDefinitionHolder, this.registry);
                 beanDefinitions.add(beanDefinitionHolder);
                 BeanDefinitionReaderUtils.registerBeanDefinition(beanDefinitionHolder,this.registry);
-
+                registry.getBeanDefinition("");
 
             }
         }
@@ -203,10 +203,8 @@ public class ClassPathBeanDefinitionScanner {
             return true;
         }
         //在原版spring中 BeanDefinition 会有包装类的形式要做对应的处理，而这里没有先忽略
-
-        throw new BeanDefinitionCommonException("Annotation-specified bean name '" + beanName +
-                "' for bean class [" + beanDefinition.getBeanClassName() + "] conflicts with existing, " +
-                "non-compatible bean definition of same name and class [" + existingDef.getBeanClassName() + "]");
+        throw new BeanDefinitionCommonException("beanName：[%s] 已经存在 [%s] 和 [%s] 拥有了相同的beanName",
+                beanName,beanDefinition,existingDef);
     }
 
 

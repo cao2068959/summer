@@ -58,7 +58,7 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
 
     @Override
     public BeanDefinition getBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
-        return null;
+        return beanDefinitionMap.get(beanName);
     }
 
     /**

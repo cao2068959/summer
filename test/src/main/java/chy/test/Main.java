@@ -7,8 +7,6 @@ public class Main {
     public static void main(String[] args) {
         AnnotationConfigServletWebServerApplicationContext annotationConfigServletWebServerApplicationContext =
                 new AnnotationConfigServletWebServerApplicationContext("classpath*:chy/test");
-
-
     }
 
 

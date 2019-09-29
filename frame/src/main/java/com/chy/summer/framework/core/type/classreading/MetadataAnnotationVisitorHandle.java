@@ -56,6 +56,10 @@ public class MetadataAnnotationVisitorHandle extends AnnotationVisitor  {
         annotationAttributes.put(key,value);
     }
 
+    @Override
+    public void visitEnum(String s, String s1, String s2) {
+        System.out.println("11");
+    }
 
     /**
      * 当注解全部的钩子全部触发后才会调用
