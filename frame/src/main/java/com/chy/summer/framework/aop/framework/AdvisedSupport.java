@@ -496,7 +496,7 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 
 
 	/**
-	 * MethodInterceptor根据此配置，获取给定方法的对象列表。
+	 * MethodInterceptor根据此配置，获取给定方法的MethodInterceptor对象列表。
 	 */
 	public List<Object> getInterceptorsAndDynamicInterceptionAdvice(Method method, @Nullable Class<?> targetClass) {
 		MethodCacheKey cacheKey = new MethodCacheKey(method);

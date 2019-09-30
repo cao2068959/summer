@@ -1,7 +1,6 @@
 package com.chy.summer.framework.aop.aspectj.annotation;
 
 import com.chy.summer.framework.aop.framework.AopConfigException;
-import com.chy.summer.framework.aop.framework.NotAnAtAspectException;
 import com.chy.summer.framework.core.ParameterNameDiscoverer;
 import com.chy.summer.framework.core.annotation.AnnotationUtils;
 import com.chy.summer.framework.util.StringUtils;

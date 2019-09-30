@@ -17,6 +17,23 @@ import java.lang.reflect.Proxy;
  */
 public abstract class AopUtils {
 	/**
+	 * 检查给定的对象是JDK动态代理或是CGLIB代理。
+	 * 此方法还检查给定对象是否为SummerProxy的实例。
+	 */
+	public static boolean isAopProxy(@Nullable Object object) {
+		return (object instanceof SummerProxy &&
+				(Proxy.isProxyClass(object.getClass()) || ClassUtils.isCglibProxyClass(object.getClass())));
+	}
+
+	/**
+	 * 检查给定的对象是不是CGLIB代理。
+	 * 此方法还检查给定对象是否为SummerProxy的实例。
+	 */
+	public static boolean isCglibProxy(@Nullable Object object) {
+		return (object instanceof SummerProxy && ClassUtils.isCglibProxy(object));
+	}
+
+	/**
 	 * 根据给定的方法，在指定的目标类中找到相应的方法，这个方法可能来自一个接口。
 	 * 在AOP调用的时候也可以找到相应的目标方法
 	 */
@@ -28,7 +45,29 @@ public abstract class AopUtils {
 	}
 
 	/**
-	 * 通过反射调用给定目标，作为AOP方法调用的一部分
+	 * 判断给定方法是否为“equals”方法
+	 */
+	public static boolean isEqualsMethod(@Nullable Method method) {
+		return ReflectionUtils.isEqualsMethod(method);
+	}
+
+	/**
+	 * 判断给定方法是否为“hashCode”方法
+	 */
+	public static boolean isHashCodeMethod(@Nullable Method method) {
+		return ReflectionUtils.isHashCodeMethod(method);
+	}
+
+	/**
+	 * 确定给定的方法是否是Object.finalize()方法
+	 */
+	public static boolean isFinalizeMethod(@Nullable Method method) {
+		return (method != null && method.getName().equals("finalize") &&
+				method.getParameterCount() == 0);
+	}
+
+	/**
+	 * 通过反射调用给定目标，AOP调用方法的一部分代码
 	 * @param target 目标对象
 	 * @param method 调用的方法
 	 * @param args 方法的参数

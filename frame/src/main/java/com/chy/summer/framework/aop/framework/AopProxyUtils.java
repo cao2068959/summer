@@ -5,6 +5,7 @@ import com.chy.summer.framework.aop.TargetClassAware;
 import com.chy.summer.framework.aop.TargetSource;
 import com.chy.summer.framework.aop.support.AopUtils;
 import com.chy.summer.framework.aop.target.SingletonTargetSource;
+import com.chy.summer.framework.core.DecoratingProxy;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ObjectUtils;
 import com.sun.istack.internal.Nullable;

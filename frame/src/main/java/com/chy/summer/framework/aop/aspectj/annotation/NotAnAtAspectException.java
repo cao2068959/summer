@@ -1,4 +1,6 @@
-package com.chy.summer.framework.aop.framework;
+package com.chy.summer.framework.aop.aspectj.annotation;
+
+import com.chy.summer.framework.aop.framework.AopConfigException;
 
 /**
  * AopConfigException的扩展

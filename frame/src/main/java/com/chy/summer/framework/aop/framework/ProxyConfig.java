@@ -24,8 +24,14 @@ public class ProxyConfig implements Serializable {
 	 */
 	boolean opaque = false;
 
+	/**
+	 * 是否由AOP框架公开为ThreadLocal以便通过AopContext类进行检索。
+	 */
 	boolean exposeProxy = false;
 
+	/**
+	 * 是否冻结
+	 */
 	private boolean frozen = false;
 
 
