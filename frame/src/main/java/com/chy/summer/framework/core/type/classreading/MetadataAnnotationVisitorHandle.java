@@ -4,12 +4,15 @@ import com.chy.summer.framework.annotation.constant.AnnotationConstant;
 import com.chy.summer.framework.core.annotation.AliasForTask;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.annotation.AnnotationUtils;
+import com.chy.summer.framework.exception.AsmException;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.StringUtils;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 
@@ -57,8 +60,22 @@ public class MetadataAnnotationVisitorHandle extends AnnotationVisitor  {
     }
 
     @Override
-    public void visitEnum(String s, String s1, String s2) {
-        System.out.println("11");
+    public void visitEnum(String key, String typeResource, String value) {
+        String typeClassName = ClassUtils.convertResourcePathToClassName(typeResource);
+        Class<? extends Enum> typeClass = null;
+        Object currentValue = null;
+        try {
+            typeClass = (Class<? extends Enum>) ClassUtils.forNameCache(typeClassName);
+            Method valueOf = typeClass.getMethod("valueOf", String.class);
+            currentValue = valueOf.invoke(null,value);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new AsmException("类型 [%s] 没有找到",typeResource);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+            throw new AsmException("反射生成类型 [%s] 失败",typeClass);
+        }
+        visit(key,currentValue);
     }
 
     /**

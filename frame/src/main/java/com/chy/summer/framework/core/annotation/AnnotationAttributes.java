@@ -55,7 +55,6 @@ public class AnnotationAttributes {
      * @param expectedType 要获取的类型
      */
     public <T> T getRequiredAttribute(String attributeName, Class<T> expectedType) {
-        //TODO 电脑没电了留坑
         Object value = getAttributeValue(attributeName);
         if (!expectedType.isInstance(value) && expectedType.isArray() &&
                 expectedType.getComponentType().isInstance(value)) {

@@ -60,9 +60,5 @@ public class AnnotationConfigServletWebServerApplicationContext extends ServletW
         if (this.basePackages != null && this.basePackages.length > 0) {
              this.scanner.scan(this.basePackages);
         }
-
-//        if (!this.annotatedClasses.isEmpty()) {
-//            this.reader.register(ClassUtils.toClassArray(this.annotatedClasses));
-//        }
     }
 }

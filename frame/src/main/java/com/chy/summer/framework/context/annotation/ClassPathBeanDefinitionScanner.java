@@ -84,7 +84,7 @@ public class ClassPathBeanDefinitionScanner {
      * @param basePackages
      * @throws IOException
      */
-    public void scan(String... basePackages) throws IOException {
+    public Set<BeanDefinitionHolder> scan(String... basePackages) throws IOException {
         Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<BeanDefinitionHolder>();
         for (String basePackage : basePackages) {
             Set<BeanDefinition> candidates = scanCandidateComponents(basePackage);
@@ -113,10 +113,9 @@ public class ClassPathBeanDefinitionScanner {
                         beanDefinitionHolder, this.registry);
                 beanDefinitions.add(beanDefinitionHolder);
                 BeanDefinitionReaderUtils.registerBeanDefinition(beanDefinitionHolder,this.registry);
-                registry.getBeanDefinition("");
-
             }
         }
+        return beanDefinitions;
     }
 
 

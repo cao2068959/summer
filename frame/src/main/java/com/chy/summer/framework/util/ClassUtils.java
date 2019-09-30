@@ -9,10 +9,14 @@ import java.io.Externalizable;
 import java.io.Serializable;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClassUtils {
     /** Suffix for array class names: {@code "[]"}. */
     public static final String ARRAY_SUFFIX = "[]";
+
+    /**结束标志后缀*/
+    public static final String END_SUFFIX = ";";
 
     /** Prefix for internal array class names: {@code "["}. */
     private static final String INTERNAL_ARRAY_PREFIX = "[";
@@ -29,11 +33,15 @@ public class ClassUtils {
     /** The inner class separator character: {@code '$'}. */
     private static final char INNER_CLASS_SEPARATOR = '$';
 
+    /** 包前面有个L代表是个 对象*/
+    private static final String INSTAND_PREFIX = "L";
+
     /** The CGLIB class separator: {@code "$$"}. */
     public static final String CGLIB_CLASS_SEPARATOR = "$$";
 
     /** The ".class" file suffix. */
     public static final String CLASS_FILE_SUFFIX = ".class";
+
 
 
     /**
@@ -59,6 +67,8 @@ public class ClassUtils {
      * Primarily for efficient deserialization of remote invocations.
      */
     private static final Map<String, Class<?>> commonClassCache = new HashMap<>(64);
+
+    private static Map<String,Class<?>> roureceClassCache = new ConcurrentHashMap<>(128);
 
     /**
      * Common Java language interfaces which are supposed to be ignored
@@ -225,6 +235,10 @@ public class ClassUtils {
         if (clToUse == null) {
             clToUse = getDefaultClassLoader();
         }
+        if(name.startsWith(INSTAND_PREFIX) && name.endsWith(";")){
+            name = name.substring(INTERNAL_ARRAY_PREFIX.length(),name.length() - 1);
+        }
+
         try {
             return Class.forName(name, false, clToUse);
         }
@@ -243,6 +257,21 @@ public class ClassUtils {
             throw ex;
         }
     }
+
+    /**
+     * 和 forName 类似多了一层缓存,而且类加载器用的默认的
+     */
+    public static Class<?> forNameCache(String name)
+            throws ClassNotFoundException, LinkageError{
+        Class<?> result = roureceClassCache.get(name);
+        if(result !=null){
+            return result;
+        }
+        result = forName(name, getDefaultClassLoader());
+        roureceClassCache.put(name,result);
+        return result;
+    }
+
 
     /**
      * Resolve the given class name into a Class instance. Supports

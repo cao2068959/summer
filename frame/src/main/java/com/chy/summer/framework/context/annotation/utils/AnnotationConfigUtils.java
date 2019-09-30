@@ -25,7 +25,7 @@ public class AnnotationConfigUtils {
         //如果存在 @Lazy 注解就做对应的操作
         AnnotationAttributes lazyAttributes = metadata.getAnnotationAttributes(Lazy.class);
         if(lazyAttributes != null){
-            Boolean isLazy = lazyAttributes.getRequiredAttribute("value", boolean.class);
+            Boolean isLazy = lazyAttributes.getRequiredAttribute("value", Boolean.class);
             definition.setLazyInit(isLazy);
         }
     }

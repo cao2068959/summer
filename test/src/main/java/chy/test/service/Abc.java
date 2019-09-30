@@ -6,7 +6,7 @@ import com.chy.summer.framework.context.annotation.Scope;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 
 @ChyService("啦啦啦啦")
-@Scope(value = ScopeType.PROTOTYPE,a="222")
+@Scope(value = ScopeType.PROTOTYPE)
 public class Abc {
 
 }

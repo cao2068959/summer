@@ -18,7 +18,7 @@ public enum ScopeType {
     /**
      * 对象的生存周期就是一次请求的周期
      */
-    REQUEST,
+    REQUEST;
 
 
 

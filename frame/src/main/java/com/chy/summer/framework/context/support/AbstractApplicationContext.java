@@ -1,9 +1,12 @@
 package com.chy.summer.framework.context.support;
 
+import com.chy.summer.framework.beans.config.BeanFactoryPostProcessor;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -32,6 +35,8 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
      */
     private final AtomicBoolean closed = new AtomicBoolean();
 
+    private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
+
     /**
      * 开启summer的生命周期
      */
@@ -49,9 +54,11 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
             try {
                 //beanFactory 初始化结束后做一些事情，在spring里面这是个扩展点。
                 //这里开始扫描包路径下的类，把标记了注解的玩意生成 beanDefintion
+                //这里要传了包路径才会真正的扫描，如果是spring boot这样的启动则不会在这里去扫描
                 postProcessBeanFactory(beanFactory);
 
-//            invokeBeanFactoryPostProcessors(beanFactory);
+                //执行了bean工厂的后置处理器
+                invokeBeanFactoryPostProcessors(beanFactory);
 //
 //            // Register bean processors that intercept bean creation.
 //            registerBeanPostProcessors(beanFactory);
@@ -83,6 +90,16 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
 
 
         }
+    }
+
+    private void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+        //开始执行后置处理器
+        PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
+
+    }
+
+    private List<BeanFactoryPostProcessor> getBeanFactoryPostProcessors() {
+        return this.beanFactoryPostProcessors;
     }
 
 
