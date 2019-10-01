@@ -4,7 +4,6 @@ import com.chy.summer.framework.aop.Advisor;
 import com.chy.summer.framework.aop.aopalliance.Advice;
 import com.chy.summer.framework.aop.aspectj.AspectJExpressionPointcut;
 import com.chy.summer.framework.aop.framework.AopConfigException;
-import com.chy.summer.framework.aop.framework.NotAnAtAspectException;
 import com.sun.istack.internal.Nullable;
 
 import java.lang.reflect.Method;
