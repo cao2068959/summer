@@ -2,7 +2,7 @@ package com.chy.summer.framework.aop.support;
 
 import com.chy.summer.framework.aop.PointcutAdvisor;
 import com.chy.summer.framework.aop.aopalliance.Advice;
-import com.chy.summer.framework.core.Ordered;
+import com.chy.summer.framework.core.ordered.Ordered;
 import com.chy.summer.framework.util.ObjectUtils;
 import com.sun.istack.internal.Nullable;
 

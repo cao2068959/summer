@@ -16,6 +16,7 @@
 
 package com.chy.summer.framework.util;
 
+import com.chy.summer.framework.beans.BeanFactory;
 import com.sun.istack.internal.Nullable;
 
 public abstract class BeanFactoryUtils {
@@ -26,18 +27,27 @@ public abstract class BeanFactoryUtils {
 	 */
 	public static final String GENERATED_BEAN_NAME_SEPARATOR = "#";
 
-//
-//	/**
-//	 * Return whether the given name is a factory dereference
-//	 * (beginning with the factory dereference prefix).
-//	 * @param name the name of the bean
-//	 * @return whether the given name is a factory dereference
-//	 * @see BeanFactory#FACTORY_BEAN_PREFIX
-//	 */
-//	public static boolean isFactoryDereference(@Nullable String name) {
-//		return (name != null && name.startsWith(BeanFactory.FACTORY_BEAN_PREFIX));
-//	}
-//
+
+	/**
+	 * 转换 beanName 的名字,把前面的 & 全给删了
+	 * @param name
+	 * @return
+	 */
+	public static String transformedBeanName(String name) {
+		Assert.notNull(name, "name 不能为空");
+		String beanName = name;
+		while (beanName.startsWith(BeanFactory.FACTORY_BEAN_PREFIX)) {
+			beanName = beanName.substring(BeanFactory.FACTORY_BEAN_PREFIX.length());
+		}
+		return beanName;
+	}
+
+
+	public static boolean isFactoryDereference(String name) {
+		return (name != null && name.startsWith(BeanFactory.FACTORY_BEAN_PREFIX));
+	}
+
+
 //	/**
 //	 * Return the actual bean name, stripping out the factory dereference
 //	 * prefix (if any, also stripping repeated factory prefixes if found).
@@ -61,6 +71,8 @@ public abstract class BeanFactoryUtils {
 	public static boolean isGeneratedBeanName(@Nullable String name) {
 		return (name != null && name.contains(GENERATED_BEAN_NAME_SEPARATOR));
 	}
+
+
 
 //	/**
 //	 * Extract the "raw" bean name from the given (potentially generated) bean name,

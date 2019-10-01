@@ -5,7 +5,7 @@ import com.chy.summer.framework.aop.DynamicIntroductionAdvice;
 import com.chy.summer.framework.aop.IntroductionAdvisor;
 import com.chy.summer.framework.aop.IntroductionInfo;
 import com.chy.summer.framework.aop.aopalliance.Advice;
-import com.chy.summer.framework.core.Ordered;
+import com.chy.summer.framework.core.ordered.Ordered;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.sun.istack.internal.Nullable;

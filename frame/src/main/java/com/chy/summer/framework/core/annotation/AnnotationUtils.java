@@ -4,15 +4,20 @@ package com.chy.summer.framework.core.annotation;
 import com.chy.summer.framework.annotation.core.AliasFor;
 import com.chy.summer.framework.util.Assert;
 import com.sun.istack.internal.Nullable;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 public  abstract class AnnotationUtils {
 
     private static Map<String,List<Method>>  annotationMethodCache = new ConcurrentHashMap<>();
+
+    private static final Map<AnnotationCacheKey, Annotation> findAnnotationCache =
+            new ConcurrentHashMap<>(256);
 
     /**
      * 把注解里的属性给抽出来放入 AnnotationAttributes
@@ -115,9 +120,72 @@ public  abstract class AnnotationUtils {
      */
     @Nullable
     public static <A extends Annotation> A findAnnotation(Class<?> clazz, Class<A> annotationType) {
-        //TODO GYX 尚未实现
-        return null;
+        Assert.notNull(clazz, "Class must not be null");
+        if (annotationType == null) {
+            return null;
+        }
+
+        /**
+         * 缓存的key 类+注解 确定一个key
+         */
+        AnnotationCacheKey cacheKey = new AnnotationCacheKey(clazz, annotationType);
+        A result = (A) findAnnotationCache.get(cacheKey);
+        if (result == null) {
+            result = findAnnotation(clazz, annotationType, new HashSet<>());
+            if (result != null) {
+                findAnnotationCache.put(cacheKey, result);
+            }
+        }
+        return result;
     }
+
+    private static <A extends Annotation> A findAnnotation(Class<?> clazz, Class<A> annotationType, Set<Annotation> visited) {
+        try {
+            //直接去拿类上的注解,拿到了就直接返回
+            A annotation = clazz.getDeclaredAnnotation(annotationType);
+            if (annotation != null) {
+                return annotation;
+            }
+            //这里没直接拿到,递归判断,注解上的注解.
+            for (Annotation declaredAnn : clazz.getDeclaredAnnotations()) {
+                Class<? extends Annotation> declaredType = declaredAnn.annotationType();
+                if (!isInJavaLangAnnotationPackage(declaredType) && visited.add(declaredAnn)) {
+                    annotation = findAnnotation(declaredType, annotationType, visited);
+                    if (annotation != null) {
+                        return annotation;
+                    }
+                }
+            }
+        }
+        catch (Throwable ex) {
+            log.warn("获取类 [%s] 上的注解 [%s] 失败",clazz,annotationType);
+            return null;
+        }
+
+        for (Class<?> ifc : clazz.getInterfaces()) {
+            A annotation = findAnnotation(ifc, annotationType, visited);
+            if (annotation != null) {
+                return annotation;
+            }
+        }
+
+        Class<?> superclass = clazz.getSuperclass();
+        if (superclass == null || superclass == Object.class) {
+            return null;
+        }
+        return findAnnotation(superclass, annotationType, visited);
+    }
+
+
+    /**
+     * 判断这个注解是不是 jdk 里面定义注解的那几个注解,比如 @Documented @Target
+     * @param annotationType
+     * @return
+     */
+    static boolean isInJavaLangAnnotationPackage(@Nullable Class<? extends Annotation> annotationType) {
+        return (annotationType != null && annotationType.getName().startsWith("java.lang.annotation"));
+    }
+
 
     /**
      * 在给定的方法上找到相应的注解，如果注解没有直接出现在给定方法上将遍历它的父方法或者父接口。
@@ -129,6 +197,49 @@ public  abstract class AnnotationUtils {
     }
 
 
+
+    private static final class AnnotationCacheKey implements Comparable<AnnotationCacheKey> {
+
+        private final AnnotatedElement element;
+
+        private final Class<? extends Annotation> annotationType;
+
+        public AnnotationCacheKey(AnnotatedElement element, Class<? extends Annotation> annotationType) {
+            this.element = element;
+            this.annotationType = annotationType;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+            if (!(other instanceof AnnotationCacheKey)) {
+                return false;
+            }
+            AnnotationCacheKey otherKey = (AnnotationCacheKey) other;
+            return (this.element.equals(otherKey.element) && this.annotationType.equals(otherKey.annotationType));
+        }
+
+        @Override
+        public int hashCode() {
+            return (this.element.hashCode() * 29 + this.annotationType.hashCode());
+        }
+
+        @Override
+        public String toString() {
+            return "@" + this.annotationType + " on " + this.element;
+        }
+
+        @Override
+        public int compareTo(AnnotationCacheKey other) {
+            int result = this.element.toString().compareTo(other.element.toString());
+            if (result == 0) {
+                result = this.annotationType.getName().compareTo(other.annotationType.getName());
+            }
+            return result;
+        }
+    }
 
 }
 

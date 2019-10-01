@@ -1,6 +1,6 @@
 package com.chy.summer.framework.aop.aspectj;
 
-import com.chy.summer.framework.core.Ordered;
+import com.chy.summer.framework.core.ordered.Ordered;
 import com.sun.istack.internal.Nullable;
 
 /**

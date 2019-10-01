@@ -30,13 +30,31 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
     private final Map<String, String> aliasMap = new ConcurrentHashMap<>(16);
 
     /**
+     * 单例对象的容器
+     */
+    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
+
+
+    /**
      * 是否允许注册 bean描述的时候覆盖同名的
      */
     private boolean allowBeanDefinitionOverriding = true;
 
+    private Comparator<Object> dependencyComparator;
+
     @Override
     public Object getBean(String name) {
         return null;
+    }
+
+    @Override
+    public <T> T getBean(String name, Class<T> type) {
+        return null;
+    }
+
+    @Override
+    public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
+        return new String[0];
     }
 
     @Override
@@ -49,11 +67,42 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
 
     }
 
+    /**
+     * 使用对应的 beanName 注册beanDefinition
+     * @param beanName
+     * @param beanDefinition
+     */
+    private void registerBeanDefinitionHandle(String beanName, BeanDefinition beanDefinition) {
+        //判断 beanFactroy  是否已经开始创建bean对象,如果已经开始了,那么现在这里还在注册 bean 就可能会有线程安全问题
+        if (hasBeanCreationStarted()) {
+            synchronized (this.beanDefinitionMap) {
+                this.beanDefinitionMap.put(beanName, beanDefinition);
+                List<String> updatedDefinitions = new ArrayList<>(this.beanDefinitionNames.size() + 1);
+                updatedDefinitions.addAll(this.beanDefinitionNames);
+                updatedDefinitions.add(beanName);
+                this.beanDefinitionNames = updatedDefinitions;
+            }
+        }
+        else {
+            // 没有现成安全问题,直接创建
+            this.beanDefinitionMap.put(beanName, beanDefinition);
+            this.beanDefinitionNames.add(beanName);
+        }
+    }
+
+
+
+
     //======================BeanDefinitionRegistry 的实现方法=================================
 
     @Override
     public boolean containsBeanDefinition(String beanName) {
-        return false;
+        return this.beanDefinitionMap.containsKey(beanName);
+    }
+
+    @Override
+    protected boolean containsSingleton(String beanName) {
+        return this.singletonObjects.containsKey(beanName);
     }
 
     @Override
@@ -121,29 +170,6 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
 
 
     /**
-     * 使用对应的 beanName 注册beanDefinition
-     * @param beanName
-     * @param beanDefinition
-     */
-    private void registerBeanDefinitionHandle(String beanName, BeanDefinition beanDefinition) {
-        //判断 beanFactroy  是否已经开始创建bean对象,如果已经开始了,那么现在这里还在注册 bean 就可能会有线程安全问题
-        if (hasBeanCreationStarted()) {
-            synchronized (this.beanDefinitionMap) {
-                this.beanDefinitionMap.put(beanName, beanDefinition);
-                List<String> updatedDefinitions = new ArrayList<>(this.beanDefinitionNames.size() + 1);
-                updatedDefinitions.addAll(this.beanDefinitionNames);
-                updatedDefinitions.add(beanName);
-                this.beanDefinitionNames = updatedDefinitions;
-            }
-        }
-        else {
-            // 没有现成安全问题,直接创建
-            this.beanDefinitionMap.put(beanName, beanDefinition);
-            this.beanDefinitionNames.add(beanName);
-        }
-    }
-
-    /**
      * 如果已经存在了对应name的 beanDefinition 存在容器中，那么这个方法登场
      */
     private void beanDefinitionOverridingHandle(BeanDefinition oldBeanDefinition, String beanName,
@@ -163,5 +189,24 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
         }
         //覆盖注册了
         this.beanDefinitionMap.put(beanName, beanDefinition);
+    }
+
+
+
+    //======================AbstractBeanFactory 的实现方法=================================
+
+    @Override
+    public Comparator<Object> getDependencyComparator() {
+        return this.dependencyComparator;
+    }
+
+    @Override
+    protected Object getSingleton(String beanName, boolean b) {
+        //TODO 获取单例
+        return null;
+    }
+
+    public void setDependencyComparator(Comparator<Object> dependencyComparator) {
+        this.dependencyComparator = dependencyComparator;
     }
 }

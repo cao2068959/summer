@@ -1,5 +1,6 @@
 package com.chy.summer.framework.web.servlet.context.support;
 
+import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
 import com.chy.summer.framework.beans.config.BeanDefinition;
@@ -18,6 +19,8 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
 
     public GenericWebApplicationContext() {
         this.beanFactory = new DefaultListableBeanFactory();
+        beanFactory.setDependencyComparator(AnnotationAwareOrderComparator.INSTANCE);
+
     }
 
     @Override
@@ -45,6 +48,12 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
         return null;
     }
 
+    @Override
+    public <T> T getBean(String name, Class<T> type) {
+        return null;
+    }
+
+
     //===============BeanDefinitionRegistry 的实现实际上都是调用DefaultListableBeanFactory真正的实现===================
     @Override
     public boolean containsBeanDefinition(String beanName) {
@@ -64,5 +73,15 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     @Override
     public void registerAlias(String beanName, String alias) {
         beanFactory.registerAlias(beanName,alias);
+    }
+
+    @Override
+    public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
+        return new String[0];
+    }
+
+    @Override
+    public boolean isTypeMatch(String name, Class<?> typeToMatch) throws NoSuchBeanDefinitionException {
+        return false;
     }
 }

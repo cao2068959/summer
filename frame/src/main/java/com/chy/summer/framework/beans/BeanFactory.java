@@ -1,5 +1,10 @@
 package com.chy.summer.framework.beans;
 
+import com.chy.summer.framework.beans.config.BeanDefinitionRegistryPostProcessor;
+import com.chy.summer.framework.core.PriorityOrdered;
+import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
+import com.sun.istack.internal.Nullable;
+
 public interface BeanFactory {
 
     /**
@@ -10,4 +15,24 @@ public interface BeanFactory {
     String FACTORY_BEAN_PREFIX = "&";
 
     Object getBean(String name);
+
+    <T> T getBean(String name,Class<T> type);
+
+    /**
+     * 根据类型去获取在Ioc 容器里对应所有对象的名字
+     * @param type
+     * @param includeNonSingletons
+     * @param allowEagerInit
+     * @return
+     */
+    String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit);
+
+    /**
+     * 判断 对应 name的对象是不是对应指定的类型,有继承关系也行
+     * @param name
+     * @param typeToMatch
+     * @return
+     * @throws NoSuchBeanDefinitionException
+     */
+    boolean isTypeMatch(String name, @Nullable Class<?> typeToMatch) throws NoSuchBeanDefinitionException;
 }

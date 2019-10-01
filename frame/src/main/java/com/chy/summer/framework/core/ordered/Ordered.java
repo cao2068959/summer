@@ -1,4 +1,4 @@
-package com.chy.summer.framework.core;
+package com.chy.summer.framework.core.ordered;
 
 /**
  * Ordered是一个接口，可以由应该是可排序的对象来实现。

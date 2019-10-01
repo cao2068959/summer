@@ -3,7 +3,7 @@ package com.chy.summer.framework.aop.aspectj;
 import com.chy.summer.framework.aop.Pointcut;
 import com.chy.summer.framework.aop.PointcutAdvisor;
 import com.chy.summer.framework.aop.aopalliance.Advice;
-import com.chy.summer.framework.core.Ordered;
+import com.chy.summer.framework.core.ordered.Ordered;
 import com.chy.summer.framework.util.Assert;
 import com.sun.istack.internal.Nullable;
 

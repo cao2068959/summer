@@ -1,10 +1,8 @@
 package com.chy.summer.framework.aop.framework;
 
-import com.chy.summer.framework.beans.Aware;
 import com.chy.summer.framework.beans.BeanClassLoaderAware;
-import com.chy.summer.framework.core.Ordered;
+import com.chy.summer.framework.core.ordered.Ordered;
 import com.chy.summer.framework.util.ClassUtils;
-import com.chy.summer.framework.util.ObjectUtils;
 import com.sun.istack.internal.Nullable;
 
 import java.io.Closeable;

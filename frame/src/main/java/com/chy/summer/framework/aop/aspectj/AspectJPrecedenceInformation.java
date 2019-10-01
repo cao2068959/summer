@@ -1,6 +1,7 @@
 package com.chy.summer.framework.aop.aspectj;
 
-import com.chy.summer.framework.core.Ordered;
+
+import com.chy.summer.framework.core.ordered.Ordered;
 
 /**
  * 该类型可以提供按AspectJ的优先规则对advice/advisors进行排序所需的信息。
