@@ -3,6 +3,7 @@ package com.chy.summer.framework.core.ordered;
 import com.chy.summer.framework.core.annotation.AnnotationUtils;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 public class AnnotationAwareOrderComparator extends OrderComparator {
 
@@ -41,6 +42,11 @@ public class AnnotationAwareOrderComparator extends OrderComparator {
         return order;
     }
 
+    public static void sort(List<?> list) {
+        if (list.size() > 1) {
+            list.sort(INSTANCE);
+        }
+    }
 
 
 }

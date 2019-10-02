@@ -30,15 +30,16 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
     private final Map<String, String> aliasMap = new ConcurrentHashMap<>(16);
 
     /**
-     * 单例对象的容器
-     */
-    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
-
-
-    /**
      * 是否允许注册 bean描述的时候覆盖同名的
      */
     private boolean allowBeanDefinitionOverriding = true;
+
+
+    /**
+     * 手动设置的单例 的name 的容器
+     */
+    private volatile Set<String> manualSingletonNames = new LinkedHashSet<>(16);
+
 
     private Comparator<Object> dependencyComparator;
 
@@ -57,15 +58,7 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
         return new String[0];
     }
 
-    @Override
-    public void ignoreDependencyType(Class<?> type) {
 
-    }
-
-    @Override
-    public void ignoreDependencyInterface(Class<?> ifc) {
-
-    }
 
     /**
      * 使用对应的 beanName 注册beanDefinition
@@ -98,11 +91,6 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
     @Override
     public boolean containsBeanDefinition(String beanName) {
         return this.beanDefinitionMap.containsKey(beanName);
-    }
-
-    @Override
-    protected boolean containsSingleton(String beanName) {
-        return this.singletonObjects.containsKey(beanName);
     }
 
     @Override
@@ -208,5 +196,40 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
 
     public void setDependencyComparator(Comparator<Object> dependencyComparator) {
         this.dependencyComparator = dependencyComparator;
+    }
+
+
+    //======================ConfigurableListableBeanFactory 的实现方法=================================
+
+    @Override
+    public void ignoreDependencyType(Class<?> type) {
+
+    }
+
+    @Override
+    public void ignoreDependencyInterface(Class<?> ifc) {
+
+    }
+
+    @Override
+    public void registerSingleton(String beanName, Object singletonObject) throws IllegalStateException {
+
+        super.registerSingleton(beanName, singletonObject);
+        //如果已经开始创建bean了,说明有别的线程也在创建bean 要做对应线程安全的处理
+        if (hasBeanCreationStarted()) {
+            synchronized (this.beanDefinitionMap) {
+                if (!this.beanDefinitionMap.containsKey(beanName)) {
+                    Set<String> updatedSingletons = new LinkedHashSet<>(this.manualSingletonNames.size() + 1);
+                    updatedSingletons.addAll(this.manualSingletonNames);
+                    updatedSingletons.add(beanName);
+                    this.manualSingletonNames = updatedSingletons;
+                }
+            }
+        } else {
+            if (!this.beanDefinitionMap.containsKey(beanName)) {
+                this.manualSingletonNames.add(beanName);
+            }
+        }
+
     }
 }

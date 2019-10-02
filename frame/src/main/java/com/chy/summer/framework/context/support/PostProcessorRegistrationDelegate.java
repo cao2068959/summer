@@ -1,10 +1,7 @@
 package com.chy.summer.framework.context.support;
 
 
-import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
-import com.chy.summer.framework.beans.config.BeanDefinitionRegistryPostProcessor;
-import com.chy.summer.framework.beans.config.BeanFactoryPostProcessor;
-import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
+import com.chy.summer.framework.beans.config.*;
 import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
 import com.chy.summer.framework.core.PriorityOrdered;
 import com.chy.summer.framework.core.ordered.OrderComparator;
@@ -217,6 +214,79 @@ public class PostProcessorRegistrationDelegate {
         }
         postProcessors.sort(comparatorToUse);
     }
+
+
+    /**
+     * 用于注册 bean 的后置处理器
+     * @param beanFactory
+     * @param applicationContext
+     */
+    public static void registerBeanPostProcessors(ConfigurableListableBeanFactory beanFactory,
+                                                  AbstractApplicationContext applicationContext) {
+
+        //找到 所有实现了 BeanPostProcessor 接口的 beanName
+        String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanPostProcessor.class, true, false);
+
+        //实现了 priorityOrdered 接口的
+        List<BeanPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
+        //实现了 ordered 接口的
+        List<String> orderedPostProcessorNames = new ArrayList<>();
+        //什么都没实现的
+        List<String> nonOrderedPostProcessorNames = new ArrayList<>();
+        for (String ppName : postProcessorNames) {
+            if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
+                BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);
+                priorityOrderedPostProcessors.add(pp);
+            }
+            else if (beanFactory.isTypeMatch(ppName, Ordered.class)) {
+                orderedPostProcessorNames.add(ppName);
+            }
+            else {
+                nonOrderedPostProcessorNames.add(ppName);
+            }
+        }
+
+        //  排序priorityOrdered 的然后 注册进去
+        sortPostProcessors(priorityOrderedPostProcessors, beanFactory);
+        registerBeanPostProcessors(beanFactory, priorityOrderedPostProcessors);
+
+
+        List<BeanPostProcessor> orderedPostProcessors = new ArrayList<>();
+        for (String ppName : orderedPostProcessorNames) {
+            BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);
+            orderedPostProcessors.add(pp);
+        }
+
+        //  排序ordered 的然后 注册进去
+        sortPostProcessors(orderedPostProcessors, beanFactory);
+        registerBeanPostProcessors(beanFactory, orderedPostProcessors);
+
+
+        List<BeanPostProcessor> nonOrderedPostProcessors = new ArrayList<>();
+        for (String ppName : nonOrderedPostProcessorNames) {
+            BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);
+            nonOrderedPostProcessors.add(pp);
+        }
+
+        //屌丝什么都没的注册
+        registerBeanPostProcessors(beanFactory, nonOrderedPostProcessors);
+
+    }
+
+
+    /**
+     * 把 BeanPostProcessors 给放入 队列
+     * @param beanFactory
+     * @param postProcessors
+     */
+    private static void registerBeanPostProcessors(
+            ConfigurableListableBeanFactory beanFactory, List<BeanPostProcessor> postProcessors) {
+
+        for (BeanPostProcessor postProcessor : postProcessors) {
+            beanFactory.addBeanPostProcessor(postProcessor);
+        }
+    }
+
 
 
     /**

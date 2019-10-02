@@ -2,18 +2,21 @@ package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
+import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
+import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
 import com.sun.istack.internal.Nullable;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class AbstractBeanFactory implements BeanFactory {
+public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements BeanFactory {
 
     private final Set<String> alreadyCreated = Collections.newSetFromMap(new ConcurrentHashMap<>(256));
+
+    private final List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
+
 
     /**
      * 判断是否已经开始创建 bean 对象了
@@ -62,12 +65,22 @@ public abstract class AbstractBeanFactory implements BeanFactory {
 
     protected abstract boolean containsBeanDefinition(String beanName);
 
-    protected abstract boolean containsSingleton(String beanName);
-
 
     protected Class<?> getTypeForFactoryBean(final FactoryBean<?> factoryBean) {
         return factoryBean.getObjectType();
     }
 
-    protected abstract Object getSingleton(String beanName, boolean b);
+
+    public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
+        Assert.notNull(beanPostProcessor, "BeanPostProcessor 必须不能为 null");
+        this.beanPostProcessors.remove(beanPostProcessor);
+        this.beanPostProcessors.add(beanPostProcessor);
+    }
+
+    public boolean containsLocalBean(String name) {
+        String beanName = BeanFactoryUtils.transformedBeanName(name);
+        return ((containsSingleton(beanName) || containsBeanDefinition(beanName)) &&
+                (!BeanFactoryUtils.isFactoryDereference(name)));
+    }
+
 }
