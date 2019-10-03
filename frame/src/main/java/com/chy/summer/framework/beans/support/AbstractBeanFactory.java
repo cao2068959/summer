@@ -2,6 +2,7 @@ package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
+import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
 import com.chy.summer.framework.util.Assert;
@@ -16,6 +17,8 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     private final Set<String> alreadyCreated = Collections.newSetFromMap(new ConcurrentHashMap<>(256));
 
     private final List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
+
+    private BeanFactory parentBeanFactory;
 
 
     /**
@@ -81,6 +84,34 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         String beanName = BeanFactoryUtils.transformedBeanName(name);
         return ((containsSingleton(beanName) || containsBeanDefinition(beanName)) &&
                 (!BeanFactoryUtils.isFactoryDereference(name)));
+    }
+
+    @Override
+    @Nullable
+    public Class<?> getType(String name) throws NoSuchBeanDefinitionException {
+        String beanName = BeanFactoryUtils.transformedBeanName(name);
+
+        // 尝试拿一下单列对象
+        Object beanInstance = getSingleton(beanName, false);
+        if (beanInstance != null) {
+            //如果拿到了,那么看看是不是 FactoryBean 是的话走 FactoryBean 的专用方法,不是就直接给类型
+            if (beanInstance instanceof FactoryBean && !BeanFactoryUtils.isFactoryDereference(name)) {
+                return getTypeForFactoryBean((FactoryBean<?>) beanInstance);
+            }
+            else {
+                return beanInstance.getClass();
+            }
+        }
+
+        // 如果不是单例对象,那么从BeanDefinition 上入手,这里
+        //TODO 先留坑
+        return null;
+    }
+
+
+    @Nullable
+    public BeanFactory getParentBeanFactory() {
+        return this.parentBeanFactory;
     }
 
 }

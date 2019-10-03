@@ -1,7 +1,5 @@
 package com.chy.summer.framework.beans;
 
-import com.chy.summer.framework.beans.config.BeanDefinitionRegistryPostProcessor;
-import com.chy.summer.framework.core.PriorityOrdered;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
 import com.sun.istack.internal.Nullable;
 
@@ -35,4 +33,7 @@ public interface BeanFactory {
      * @throws NoSuchBeanDefinitionException
      */
     boolean isTypeMatch(String name, @Nullable Class<?> typeToMatch) throws NoSuchBeanDefinitionException;
+
+    public Class<?> getType(String name) throws NoSuchBeanDefinitionException;
+
 }

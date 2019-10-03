@@ -84,4 +84,9 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     public boolean isTypeMatch(String name, Class<?> typeToMatch) throws NoSuchBeanDefinitionException {
         return false;
     }
+
+    @Override
+    public Class<?> getType(String name) throws NoSuchBeanDefinitionException {
+        return null;
+    }
 }

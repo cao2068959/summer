@@ -1,6 +1,5 @@
 package com.chy.summer.framework.context.event;
 
-import com.chy.summer.framework.aop.support.AopUtils;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.util.Assert;
 
@@ -30,22 +29,33 @@ public class GenericApplicationListenerAdapter implements GenericApplicationList
     }
 
 
+    /**
+     * 获取 ApplicationListener<T> 这个接口里 的泛型的类型
+     * @param listenerType
+     * @return
+     */
     static ResolvableType resolveDeclaredEventType(Class<?> listenerType) {
         //把 监听器的类型包装一下,并且拿到 ApplicationListener 接口的包装实例
         ResolvableType resolvableType = ResolvableType.forClass(listenerType).as(ApplicationListener.class);
-        //去获取 ApplicationListener 接口下面的泛型的类型
-        return (resolvableType.hasGenerics() ? resolvableType.getGeneric() : null);
+        //去获取 ApplicationListener 接口下面有没泛型
+        if(resolvableType.hasGenerics() ){
+            //有的话获取第一个位置的泛型类型
+            return resolvableType.getGeneric();
+        }
+        //没有就是null 走人
+        return null;
     }
 
 
     @Override
     public boolean supportsEventType(ResolvableType eventType) {
-        return false;
+        return this.declaredEventType.isAssignableFrom(eventType);
     }
 
     @Override
     public boolean supportsSourceType(Class<?> sourceType) {
-        return false;
+        //TODO 这里用 SmartApplicationListener 类型比较的 先留坑
+        return true;
     }
 
     @Override

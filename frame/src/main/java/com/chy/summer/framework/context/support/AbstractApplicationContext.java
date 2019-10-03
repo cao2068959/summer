@@ -134,7 +134,8 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
             getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
         }
 
-        // 把前提设置的事件 也放入事件广播器,同时清空所有的 前提事件¡
+        //既然监听器设置好了,就要把之前已经积压的事件给全部执行了
+        // 这里触发一些已经 发生的事件¡
         Set<ApplicationEvent> earlyEventsToProcess = this.earlyApplicationEvents;
         this.earlyApplicationEvents = null;
         if (earlyEventsToProcess != null) {
