@@ -50,6 +50,13 @@
             <version>3.2.10</version>
         </dependency>
 
+        <!-- objenesis -->
+        <dependency>
+            <groupId>org.objenesis</groupId>
+            <artifactId>objenesis</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+
     </dependencies>
 
 </project>

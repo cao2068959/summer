@@ -1,5 +1,7 @@
 //package com.chy.summer.framework.aop.aspectj.autoproxy;
 //
+//import com.chy.summer.framework.aop.Advisor;
+//
 //public class AspectJAwareAdvisorAutoProxyCreator extends AbstractAdvisorAutoProxyCreator {
 //
 //	private static final Comparator<Advisor> DEFAULT_PRECEDENCE_COMPARATOR = new AspectJPrecedenceComparator();
