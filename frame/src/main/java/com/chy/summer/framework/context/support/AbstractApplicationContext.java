@@ -3,6 +3,7 @@ package com.chy.summer.framework.context.support;
 import com.chy.summer.framework.beans.config.BeanFactoryPostProcessor;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.context.ApplicationContext;
+import com.chy.summer.framework.context.ConfigurableApplicationContext;
 import com.chy.summer.framework.context.event.ApplicationEvent;
 import com.chy.summer.framework.context.event.ApplicationEventMulticaster;
 import com.chy.summer.framework.context.event.ApplicationListener;
@@ -18,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 实现了通用的方法，总管bean的生命周期和bean对象的资源获取，但不实现资源获取和方法的细节
  */
 @Slf4j
-public abstract class AbstractApplicationContext implements ApplicationContext {
+public abstract class AbstractApplicationContext implements ConfigurableApplicationContext {
 
     /**
      * 用来refresh 的时候上锁
@@ -104,11 +105,13 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
                 //检查监听bean 然后注册监听器
                 registerListeners();
 
-//            // Instantiate all remaining (non-lazy-init) singletons.
-//            finishBeanFactoryInitialization(beanFactory);
-//
-//            // Last step: publish corresponding event.
-//            finishRefresh();
+                // 创建所有非懒加载的单例类
+                //执行bean的 SmartFactoryBean 接口
+                finishBeanFactoryInitialization(beanFactory);
+
+                //最后的一些完成工作
+                //清除缓存,发布事件,注册application
+                finishRefresh();
 
 
             }catch (Exception e){
@@ -119,6 +122,19 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
 
 
         }
+    }
+
+    protected abstract void finishRefresh();
+
+    private void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
+        //TODO 这里会有个转换器类的初始化,留坑
+
+        // 冻结配置
+        beanFactory.freezeConfiguration();
+
+        // 开始实例化非懒加载的实例对象
+        beanFactory.preInstantiateSingletons();
+
     }
 
     private void registerListeners() {

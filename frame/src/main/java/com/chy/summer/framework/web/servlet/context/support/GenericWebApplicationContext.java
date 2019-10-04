@@ -24,6 +24,11 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     }
 
     @Override
+    protected void finishRefresh() {
+
+    }
+
+    @Override
     public final ConfigurableListableBeanFactory getBeanFactory() {
         return this.beanFactory;
     }

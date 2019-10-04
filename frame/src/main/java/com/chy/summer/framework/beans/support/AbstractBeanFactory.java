@@ -1,12 +1,15 @@
 package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.BeanFactory;
+import com.chy.summer.framework.beans.ConfigurableBeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
-import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
+import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
+import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
+import com.chy.summer.framework.util.ClassUtils;
 import com.sun.istack.internal.Nullable;
 
 import java.util.*;
@@ -20,6 +23,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     private BeanFactory parentBeanFactory;
 
+    protected final Map<String, RootBeanDefinition> mergedBeanDefinitions = new ConcurrentHashMap<>(256);
 
     /**
      * 判断是否已经开始创建 bean 对象了
@@ -30,6 +34,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     }
 
     public abstract Comparator<Object> getDependencyComparator();
+
 
 
     @Override
@@ -113,5 +118,49 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     public BeanFactory getParentBeanFactory() {
         return this.parentBeanFactory;
     }
+
+
+    /**
+     * 返回一个合并后的 BeanDefinition,如果对应的 Bean 存在父子关系的话
+     * 因为这个项目主要是 已经注解的方式为主导,这边beanDefinition 的父子继承并不是使用太多,这边就先不填这个坑
+     * @param beanName
+     * @param bd
+     * @param containingBd
+     * @return
+     * @throws BeanDefinitionStoreException
+     */
+    protected RootBeanDefinition getMergedBeanDefinition(
+            String beanName, BeanDefinition bd, @Nullable BeanDefinition containingBd)
+            throws BeanDefinitionStoreException {
+
+        synchronized (this.mergedBeanDefinitions) {
+            RootBeanDefinition mbd = null;
+
+            //这里再检查一次,防止上锁之前
+            if (containingBd == null) {
+                mbd = this.mergedBeanDefinitions.get(beanName);
+            }
+
+            if (mbd == null) {
+                //先看要合并的 BeanDefinition 有没有父 bd ,如果没有就是直接封装进去 RootBeanDefinition
+                if (bd.getParentName() == null) {
+                    // 如果已经是 RootBeanDefinition 对象,那么深度拷贝出来
+                    if (bd instanceof RootBeanDefinition) {
+                        mbd = ((RootBeanDefinition) bd).cloneBeanDefinition();
+                    }
+                    else {
+                        mbd = new RootBeanDefinition(bd);
+                    }
+                } else {
+                    //TODO 下面开始是 如果是有父 BeanDefinition 的情况下
+                }
+            }
+
+            return mbd;
+        }
+    }
+
+
+
 
 }

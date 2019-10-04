@@ -1,18 +1,77 @@
 package com.chy.summer.framework.beans.config;
 
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
+import com.sun.istack.internal.Nullable;
 
 public interface BeanDefinition {
 
+     void setParentName(@Nullable String parentName);
+
+
+     @Nullable
+     String getParentName();
+
+
+     void setBeanClassName(@Nullable String beanClassName);
+
+
+     @Nullable
      String getBeanClassName();
 
-     void setBeanClassName(String beanClassName);
 
-     ScopeType getScope();
+     void setScope(@Nullable ScopeType scope);
 
-     void setScope(ScopeType scope);
+
+     public ScopeType getScope();
+
+
+     void setLazyInit(boolean lazyInit);
+
 
      boolean isLazyInit();
 
-     void setLazyInit(boolean lazyInit);
+
+     void setDependsOn(@Nullable String... dependsOn);
+
+
+     @Nullable
+     String[] getDependsOn();
+
+
+     void setAutowireCandidate(boolean autowireCandidate);
+
+
+     boolean isAutowireCandidate();
+
+
+     void setPrimary(boolean primary);
+
+
+     boolean isPrimary();
+
+
+     void setFactoryBeanName(@Nullable String factoryBeanName);
+
+
+     String getFactoryBeanName();
+
+
+     void setFactoryMethodName(@Nullable String factoryMethodName);
+
+
+     String getFactoryMethodName();
+
+
+     boolean isSingleton();
+
+
+     boolean isPrototype();
+
+
+     boolean isAbstract();
+
+     @Nullable
+     String getResourceDescription();
+
+
 }

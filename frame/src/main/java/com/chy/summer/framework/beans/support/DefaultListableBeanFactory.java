@@ -1,13 +1,19 @@
 package com.chy.summer.framework.beans.support;
 
+import com.chy.summer.framework.beans.ConfigurableBeanFactory;
+import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
+import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.util.Assert;
+import com.chy.summer.framework.util.BeanFactoryUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -39,6 +45,9 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
      * 手动设置的单例 的name 的容器
      */
     private volatile Set<String> manualSingletonNames = new LinkedHashSet<>(16);
+
+    private volatile boolean configurationFrozen = false;
+
 
 
     private Comparator<Object> dependencyComparator;
@@ -232,4 +241,77 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
         }
 
     }
+
+    @Override
+    public void freezeConfiguration() {
+        this.configurationFrozen = true;
+    }
+
+    @Override
+    public void preInstantiateSingletons() {
+        log.debug("==============预先初始化单列对象 开始========== ;");
+
+        List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
+
+        //迭代所有的 beanDefinitionNames
+        for (String beanName : beanNames) {
+            RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
+            //如果不是抽象类,不是懒加载,并且是单例,才走下面
+            if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
+                if (isFactoryBean(beanName)) {
+                   //TODO FactoryBean 的初始化流程,这里只会先初始化 SmartFactoryBean 接口的
+                }
+                else {
+                    //这里就直接初始化 单例对象了.
+                    getBean(beanName);
+                }
+            }
+        }
+
+        //TODO 在 bean 生成单列对象后 , 如果实现了 SmartInitializingSingleton 接口,还会调用 这个接口去做一些后置处理的事情
+    }
+
+
+    /**
+     * 获取合并后的  BeanDefinition
+     * 这里有一层缓存
+     * @param beanName
+     * @return
+     * @throws BeansException
+     */
+    protected RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
+
+        RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);
+        if (mbd != null) {
+            return mbd;
+        }
+        return getMergedBeanDefinition(beanName, getBeanDefinition(beanName));
+    }
+
+    private RootBeanDefinition getMergedBeanDefinition(String beanName, BeanDefinition beanDefinition) {
+        return getMergedBeanDefinition(beanName,beanDefinition,null);
+    }
+
+
+    /**
+     * 用对应的 name 来判断一下 是不是  BeanFactory
+     * 1 . 去直接拿他实例化后的对象 instanceof FactoryBean 来判断
+     * 2 . 如果是非单列对象,这里要去拿 BeanDefinition 去判断
+     * @param name
+     * @return
+     * @throws NoSuchBeanDefinitionException
+     */
+    public boolean isFactoryBean(String name) throws NoSuchBeanDefinitionException {
+        String beanName = BeanFactoryUtils.transformedBeanName(name);
+
+        Object beanInstance = getSingleton(beanName, false);
+        if (beanInstance != null) {
+            return (beanInstance instanceof FactoryBean);
+        }
+
+        //TODO 如果不是单列对象 要去判断 BD,这里先只考虑单例
+
+        return false;
+    }
+
 }

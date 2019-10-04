@@ -7,11 +7,10 @@ import com.chy.summer.framework.core.io.support.Resource;
 public abstract class AbstractBeanDefinition implements BeanDefinition {
 
     private String beanClassName;
-
     private ScopeType scope;
-
     private boolean lazyInit = false;
     private Resource resource;
+    private boolean abstractFlag = false;
 
     @Override
     public String getBeanClassName() {
@@ -47,6 +46,47 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
         this.resource = resource;
     }
 
+    public boolean isAbstract() {
+        return this.abstractFlag;
+    }
+
+    @Override
+    public boolean isSingleton() {
+        return ScopeType.SINGLETON == this.scope;
+    }
+
+    public Resource getResource() {
+        return resource;
+    }
+
+    public boolean isAbstractFlag() {
+        return abstractFlag;
+    }
+
+    public void setAbstractFlag(boolean abstractFlag) {
+        this.abstractFlag = abstractFlag;
+    }
+
+    protected AbstractBeanDefinition(BeanDefinition original) {
+        setParentName(original.getParentName());
+        setBeanClassName(original.getBeanClassName());
+        setScope(original.getScope());
+        //setAbstract(original.isAbstract());
+        setLazyInit(original.isLazyInit());
+        setFactoryBeanName(original.getFactoryBeanName());
+        setFactoryMethodName(original.getFactoryMethodName());
+        //setSource(original.getSource());
+        //copyAttributesFrom(original);
+
+        if (original instanceof AbstractBeanDefinition) {
+            AbstractBeanDefinition originalAbd = (AbstractBeanDefinition) original;
+            setDependsOn(originalAbd.getDependsOn());
+            setAutowireCandidate(originalAbd.isAutowireCandidate());
+            setPrimary(originalAbd.isPrimary());
+            setResource(originalAbd.getResource());
+        }
+
+    }
 
     @Override
     public String toString() {
@@ -60,5 +100,6 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
         return sb.toString();
     }
 
-
+    public AbstractBeanDefinition() {
+    }
 }

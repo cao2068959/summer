@@ -29,4 +29,8 @@ public interface ConfigurableListableBeanFactory extends BeanFactory {
      * @param singletonObject
      */
     void registerSingleton(String beanName, Object singletonObject);
+
+    void freezeConfiguration();
+
+    void preInstantiateSingletons();
 }
