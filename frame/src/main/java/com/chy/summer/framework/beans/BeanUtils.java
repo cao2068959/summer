@@ -23,4 +23,16 @@ public class BeanUtils {
         }
         return null;
     }
+
+    public static <T> T instantiateClass(Class<T> clazz) throws BeanInstantiationException {
+
+        try {
+            Constructor<T> ctor = clazz.getDeclaredConstructor();
+            return instantiateClass(ctor);
+        }
+        catch (NoSuchMethodException | LinkageError ex) {
+            throw new BeanInstantiationException("class: [%s],实例化异常: [%s]",ex.getMessage());
+        }
+
+    }
 }

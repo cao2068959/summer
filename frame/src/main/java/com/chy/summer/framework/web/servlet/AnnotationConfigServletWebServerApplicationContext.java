@@ -3,6 +3,7 @@ package com.chy.summer.framework.web.servlet;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.context.annotation.AnnotatedBeanDefinitionReader;
 import com.chy.summer.framework.context.annotation.ClassPathBeanDefinitionScanner;
+import com.chy.summer.framework.core.evn.ConfigurableEnvironment;
 import com.chy.summer.framework.web.servlet.context.ServletWebServerApplicationContext;
 
 import java.io.IOException;
@@ -60,5 +61,13 @@ public class AnnotationConfigServletWebServerApplicationContext extends ServletW
         if (this.basePackages != null && this.basePackages.length > 0) {
              this.scanner.scan(this.basePackages);
         }
+    }
+
+
+    @Override
+    public void setEnvironment(ConfigurableEnvironment environment) {
+        super.setEnvironment(environment);
+//        this.reader.setEnvironment(environment);
+//        this.scanner.setEnvironment(environment);
     }
 }

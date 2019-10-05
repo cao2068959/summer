@@ -2,12 +2,12 @@ package com.chy.summer.framework.context.support;
 
 import com.chy.summer.framework.beans.config.BeanFactoryPostProcessor;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
-import com.chy.summer.framework.context.ApplicationContext;
 import com.chy.summer.framework.context.ConfigurableApplicationContext;
 import com.chy.summer.framework.context.event.ApplicationEvent;
 import com.chy.summer.framework.context.event.ApplicationEventMulticaster;
 import com.chy.summer.framework.context.event.ApplicationListener;
 import com.chy.summer.framework.context.event.SimpleApplicationEventMulticaster;
+import com.chy.summer.framework.core.evn.ConfigurableEnvironment;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -236,4 +236,13 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     //==========================AnnotationConfigServletWebServerApplicationContext 来实现的模板方法==========================
     public abstract void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws IOException;
 
+
+
+    //==========================ConfigurableApplicationContext 来实现的模板方法==========================
+
+
+    @Override
+    public void setEnvironment(ConfigurableEnvironment environment) {
+
+    }
 }

@@ -1,19 +1,31 @@
 package com.chy.summer.framework.boot;
 
 import com.chy.summer.framework.beans.BeanUtils;
+import com.chy.summer.framework.boot.listeners.SummerApplicationRunListener;
+import com.chy.summer.framework.boot.listeners.SummerApplicationRunListeners;
 import com.chy.summer.framework.context.ApplicationContext;
 import com.chy.summer.framework.context.ApplicationContextInitializer;
+import com.chy.summer.framework.context.ConfigurableApplicationContext;
 import com.chy.summer.framework.context.event.ApplicationListener;
+import com.chy.summer.framework.core.GenericTypeResolver;
+import com.chy.summer.framework.core.evn.ConfigurableEnvironment;
+import com.chy.summer.framework.core.io.DefaultResourceLoader;
 import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.io.support.SummerFactoriesLoader;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
+import com.chy.summer.framework.web.servlet.context.support.StandardServletEnvironment;
+import com.google.common.base.Stopwatch;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
 
+import static jdk.nashorn.internal.objects.Global.load;
+import static org.apache.logging.log4j.core.util.Loader.getClassLoader;
+
 public class SummerApplication {
+
 
 
     private final ResourceLoader resourceLoader;
@@ -24,10 +36,21 @@ public class SummerApplication {
 
     private List<ApplicationListener<?>> listeners;
 
-    private ArrayList<Object> initializers;
+    private ArrayList<ApplicationContextInitializer> initializers;
 
     //main函数所在的class
     private Class<?> mainApplicationClass;
+
+    private ConfigurableEnvironment environment;
+
+    private Banner.Mode bannerMode = Banner.Mode.CONSOLE;
+
+    //applicationContext 的class,根据webApplicationType 选择而来,这里默认是用 AnnotationConfigServletWebServerApplicationContext
+    private Class<? extends ConfigurableApplicationContext> applicationContextClass;
+
+    //默认的web 容器
+    private static final String DEFAULT_WEB_CONTEXT_CLASS = "com.chy.summer.framework.web.servlet.AnnotationConfigServletWebServerApplicationContext";
+
 
 
     public SummerApplication(Class<?>... primarySources) {
@@ -148,16 +171,189 @@ public class SummerApplication {
      * @param primarySources
      * @return
      */
-    private static ApplicationContext run(Class<?>[] primarySources, String[] args) {
+    private static ConfigurableApplicationContext run(Class<?>[] primarySources, String[] args) {
         return new SummerApplication(primarySources).run(args);
     }
 
 
 
-    private ApplicationContext run(String[] args) {
+    public ConfigurableApplicationContext run(String... args) {
+        //开一个秒表,这里用guava的
+        Stopwatch stopWatch = Stopwatch.createStarted();
+        stopWatch.start();
+        ConfigurableApplicationContext context = null;
+        //Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
+
+        SummerApplicationRunListeners listeners = getRunListeners(args);
+        //所有的监听器开始执行
+        //这里执行的监听器 实际上是 EventPublishingRunListener
+        //然后在EventPublishingRunListener 触发了事件 -> ApplicationStartingEvent
+        listeners.starting();
+        try {
+            ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+
+            ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
+            //打印 Banner
+            printBanner(environment);
+            //把 applicationContext 给实例化完成了
+            context = createApplicationContext();
+            prepareContext(context, environment, listeners, applicationArguments);
+            refreshContext(context);
+            afterRefresh(context, applicationArguments);
+            stopWatch.stop();
+            if (this.logStartupInfo) {
+                new StartupInfoLogger(this.mainApplicationClass)
+                        .logStarted(getApplicationLog(), stopWatch);
+            }
+            listeners.started(context);
+            callRunners(context, applicationArguments);
+        }
+        catch (Throwable ex) {
+            handleRunFailure(context, ex, exceptionReporters, listeners);
+            throw new IllegalStateException(ex);
+        }
+
+        try {
+            listeners.running(context);
+        }
+        catch (Throwable ex) {
+            handleRunFailure(context, ex, exceptionReporters, null);
+            throw new IllegalStateException(ex);
+        }
+        return context;
+    }
+
+    /**
+     * applicationContext 生成完成 后做一些配置
+     * @param context
+     * @param environment
+     * @param listeners
+     * @param applicationArguments
+     * @param printedBanner
+     */
+    private void prepareContext(ConfigurableApplicationContext context,
+                                ConfigurableEnvironment environment, SummerApplicationRunListeners listeners,
+                                ApplicationArguments applicationArguments) {
+        context.setEnvironment(environment);
+        postProcessApplicationContext(context);
+        //在这里会调用 ApplicationContextInitializer 接口的 initializer 方法
+        applyInitializers(context);
+        listeners.contextPrepared(context);
+        if (this.logStartupInfo) {
+            logStartupInfo(context.getParent() == null);
+            logStartupProfileInfo(context);
+        }
+
+        // Add boot specific singleton beans
+        context.getBeanFactory().registerSingleton("springApplicationArguments",
+                applicationArguments);
+        if (printedBanner != null) {
+            context.getBeanFactory().registerSingleton("springBootBanner", printedBanner);
+        }
+
+        // Load the sources
+        Set<Object> sources = getAllSources();
+        Assert.notEmpty(sources, "Sources must not be empty");
+        load(context, sources.toArray(new Object[0]));
+        listeners.contextLoaded(context);
+    }
+
+    protected void postProcessApplicationContext(ConfigurableApplicationContext context) {
+        //TODO applicationContext 的前置处理器,设置一些自定义的东西
+    }
+
+    /**
+     * 找到所有的 ApplicationContextInitializer 接口,然后调用他的 initialize 方法来初始化容器
+     * @param context
+     */
+    protected void applyInitializers(ConfigurableApplicationContext context) {
+        for (ApplicationContextInitializer initializer : getInitializers()) {
+            Class<?> requiredType = GenericTypeResolver.resolveTypeArgument(
+                    initializer.getClass(), ApplicationContextInitializer.class);
+            Assert.isInstanceOf(requiredType, context, requiredType+" initializer 的类型不对.");
+            initializer.initialize(context);
+        }
+    }
 
 
-        return null;
+
+    protected ConfigurableApplicationContext createApplicationContext() {
+        Class<?> contextClass = this.applicationContextClass;
+        if (contextClass == null) {
+            try {
+                switch (this.webApplicationType) {
+                    case SERVLET:
+                        contextClass = Class.forName(DEFAULT_WEB_CONTEXT_CLASS);
+                        break;
+                    default:
+                        contextClass = Class.forName(DEFAULT_WEB_CONTEXT_CLASS);
+                }
+            }
+            catch (ClassNotFoundException ex) {
+                throw new IllegalStateException(
+                        "Unable create a default ApplicationContext, "
+                                + "please specify an ApplicationContextClass",
+                        ex);
+            }
+        }
+        return (ConfigurableApplicationContext) BeanUtils.instantiateClass(contextClass);
+    }
+
+
+    private void printBanner(ConfigurableEnvironment environment) {
+        SummerBootBanner summerBootBanner = new SummerBootBanner();
+        summerBootBanner.printBanner(environment, this.mainApplicationClass, System.out);
+    }
+
+
+    private ConfigurableEnvironment prepareEnvironment(SummerApplicationRunListeners listeners,
+                                                ApplicationArguments applicationArguments) {
+
+        //通过 webApplicationType 的类型去创建不同的环境
+        ConfigurableEnvironment environment = getOrCreateEnvironment();
+        //对刚创建的 环境对象做一些参数的配置
+        configureEnvironment(environment, applicationArguments.getSourceArgs());
+        //其实就是给所有的监听器拿到环境对象
+        listeners.environmentPrepared(environment);
+        //绑定环境对象
+        //bindToSpringApplication(environment);
+
+        //下面还有自定义的环境处理这里先忽略
+        return environment;
+    }
+
+    protected void configureEnvironment(ConfigurableEnvironment environment,
+                                        String[] args) {
+        //TODO 这边会把外部传入的命令给放入 环境对象里,这里先留坑
+    }
+
+
+
+
+    private ConfigurableEnvironment getOrCreateEnvironment() {
+        if (this.environment != null) {
+            return this.environment;
+        }
+        //这里根据 webApplicationType 的类型去创建不同的环境
+        switch (this.webApplicationType) {
+            case SERVLET:
+                return new StandardServletEnvironment();
+            default:
+                return new StandardServletEnvironment();
+        }
+    }
+
+
+    private SummerApplicationRunListeners getRunListeners(String[] args) {
+        Class<?>[] types = new Class<?>[] { SummerApplication.class, String[].class };
+        //这里去 summer.factories 文件里拿到所有类型为 SummerApplicationRunListener 的类,然后实例化
+        Collection<SummerApplicationRunListener> summerFactoriesInstances =
+                getSummerFactoriesInstances(SummerApplicationRunListener.class, types, this, args);
+        return new SummerApplicationRunListeners(summerFactoriesInstances);
+    }
+
+    public ArrayList<ApplicationContextInitializer> getInitializers() {
+        return initializers;
     }
 
 
