@@ -1,12 +1,14 @@
 package com.chy.summer.framework.boot;
 
 import com.chy.summer.framework.beans.BeanUtils;
+import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.boot.listeners.SummerApplicationRunListener;
 import com.chy.summer.framework.boot.listeners.SummerApplicationRunListeners;
 import com.chy.summer.framework.context.ApplicationContext;
 import com.chy.summer.framework.context.ApplicationContextInitializer;
 import com.chy.summer.framework.context.ConfigurableApplicationContext;
 import com.chy.summer.framework.context.event.ApplicationListener;
+import com.chy.summer.framework.context.support.AbstractApplicationContext;
 import com.chy.summer.framework.core.GenericTypeResolver;
 import com.chy.summer.framework.core.evn.ConfigurableEnvironment;
 import com.chy.summer.framework.core.io.DefaultResourceLoader;
@@ -15,15 +17,15 @@ import com.chy.summer.framework.core.io.support.SummerFactoriesLoader;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
+import com.chy.summer.framework.util.CollectionUtils;
 import com.chy.summer.framework.web.servlet.context.support.StandardServletEnvironment;
 import com.google.common.base.Stopwatch;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-import static jdk.nashorn.internal.objects.Global.load;
-import static org.apache.logging.log4j.core.util.Loader.getClassLoader;
-
+@Slf4j
 public class SummerApplication {
 
 
@@ -195,8 +197,9 @@ public class SummerApplication {
             ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
             //打印 Banner
             printBanner(environment);
-            //把 applicationContext 给实例化完成了
+            //把 applicationContext 给实例化完成了,这里默认用 AnnotationConfigServletWebServerApplicationContext
             context = createApplicationContext();
+            //对context 做一些前期的配置工作
             prepareContext(context, environment, listeners, applicationArguments);
             refreshContext(context);
             afterRefresh(context, applicationArguments);
@@ -229,7 +232,6 @@ public class SummerApplication {
      * @param environment
      * @param listeners
      * @param applicationArguments
-     * @param printedBanner
      */
     private void prepareContext(ConfigurableApplicationContext context,
                                 ConfigurableEnvironment environment, SummerApplicationRunListeners listeners,
@@ -238,24 +240,49 @@ public class SummerApplication {
         postProcessApplicationContext(context);
         //在这里会调用 ApplicationContextInitializer 接口的 initializer 方法
         applyInitializers(context);
+        //这里会调用 SummerApplicationRunListener 接口的 contextPrepared 方法来初始化 监听器
         listeners.contextPrepared(context);
-        if (this.logStartupInfo) {
-            logStartupInfo(context.getParent() == null);
-            logStartupProfileInfo(context);
-        }
-
-        // Add boot specific singleton beans
-        context.getBeanFactory().registerSingleton("springApplicationArguments",
-                applicationArguments);
-        if (printedBanner != null) {
-            context.getBeanFactory().registerSingleton("springBootBanner", printedBanner);
-        }
-
-        // Load the sources
+        // 把applicationArguments 当做单例对象给放入ioc 容器中
+        context.getBeanFactory().registerSingleton("springApplicationArguments", applicationArguments);
         Set<Object> sources = getAllSources();
-        Assert.notEmpty(sources, "Sources must not be empty");
-        load(context, sources.toArray(new Object[0]));
+        Assert.notEmpty(sources, "Sources 不能为空");
+        load(context, sources);
         listeners.contextLoaded(context);
+    }
+
+
+    protected void load(ApplicationContext context, Set<Object> sources) {
+        log.debug("开始加载 source : [%s]",sources);
+
+        //这里就是去 applicationContext 里拿 DefaultListableBeanFactory
+        BeanDefinitionRegistry beanDefinitionRegistry = getBeanDefinitionRegistry(context);
+
+        BeanDefinitionLoader loader = new BeanDefinitionLoader(beanDefinitionRegistry, sources);
+
+        if (this.resourceLoader != null) {
+            loader.setResourceLoader(this.resourceLoader);
+        }
+        loader.load();
+    }
+
+    private BeanDefinitionRegistry getBeanDefinitionRegistry(ApplicationContext context) {
+        if (context instanceof BeanDefinitionRegistry) {
+            return (BeanDefinitionRegistry) context;
+        }
+        if (context instanceof AbstractApplicationContext) {
+            return (BeanDefinitionRegistry) ((AbstractApplicationContext) context)
+                    .getBeanFactory();
+        }
+        throw new IllegalStateException("Could not locate BeanDefinitionRegistry");
+    }
+
+
+    public Set<Object> getAllSources() {
+        Set<Object> allSources = new LinkedHashSet<>();
+        if (!CollectionUtils.isEmpty(this.primarySources)) {
+            allSources.addAll(this.primarySources);
+        }
+        return allSources;
     }
 
     protected void postProcessApplicationContext(ConfigurableApplicationContext context) {
@@ -263,7 +290,7 @@ public class SummerApplication {
     }
 
     /**
-     * 找到所有的 ApplicationContextInitializer 接口,然后调用他的 initialize 方法来初始化容器
+     * 找到所有的 ApplicationContextInitializer 接口,然后调用他的 initialize 方法来初始化容器1
      * @param context
      */
     protected void applyInitializers(ConfigurableApplicationContext context) {

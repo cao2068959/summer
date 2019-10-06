@@ -4,6 +4,8 @@ import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.chy.summer.framework.core.io.support.Resource;
 
+import java.util.function.Supplier;
+
 public abstract class AbstractBeanDefinition implements BeanDefinition {
 
     private String beanClassName;
@@ -11,6 +13,12 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
     private boolean lazyInit = false;
     private Resource resource;
     private boolean abstractFlag = false;
+
+    private volatile Object beanClass;
+
+    private Supplier<?> instanceSupplier;
+
+
 
     @Override
     public String getBeanClassName() {
@@ -100,6 +108,14 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
         return sb.toString();
     }
 
+    public void setBeanClass( Class<?> beanClass) {
+        this.beanClass = beanClass;
+    }
+
     public AbstractBeanDefinition() {
+    }
+
+    public void setInstanceSupplier( Supplier<?> instanceSupplier) {
+        this.instanceSupplier = instanceSupplier;
     }
 }
