@@ -54,6 +54,7 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
         this.resource = resource;
     }
 
+    @Override
     public boolean isAbstract() {
         return this.abstractFlag;
     }

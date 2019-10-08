@@ -11,9 +11,11 @@ import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.util.Assert;
 
+import java.util.Set;
+
 public class BeanDefinitionLoader {
 
-    private  Object[] sources;
+    private Set<Object> sources;
 
     private AnnotatedBeanDefinitionReader annotatedReader;
 
@@ -24,7 +26,7 @@ public class BeanDefinitionLoader {
     private ResourceLoader resourceLoader;
 
 
-    BeanDefinitionLoader(BeanDefinitionRegistry registry, Object... sources) {
+    BeanDefinitionLoader(BeanDefinitionRegistry registry, Set<Object> sources) {
         Assert.notNull(registry, "Registry must not be null");
         Assert.notEmpty(sources, "Sources must not be empty");
         this.sources = sources;
@@ -34,11 +36,11 @@ public class BeanDefinitionLoader {
         //this.scanner.addExcludeFilter(new ClassExcludeFilter(sources));
     }
 
-    public Object[] getSources() {
+    public Set<Object> getSources() {
         return sources;
     }
 
-    public void setSources(Object[] sources) {
+    public void setSources(Set<Object> sources) {
         this.sources = sources;
     }
 

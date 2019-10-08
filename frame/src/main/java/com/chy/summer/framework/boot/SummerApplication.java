@@ -2,6 +2,9 @@ package com.chy.summer.framework.boot;
 
 import com.chy.summer.framework.beans.BeanUtils;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
+import com.chy.summer.framework.boot.ansi.AnsiColor;
+import com.chy.summer.framework.boot.ansi.AnsiOutput;
+import com.chy.summer.framework.boot.ansi.AnsiStyle;
 import com.chy.summer.framework.boot.listeners.SummerApplicationRunListener;
 import com.chy.summer.framework.boot.listeners.SummerApplicationRunListeners;
 import com.chy.summer.framework.context.ApplicationContext;
@@ -20,10 +23,16 @@ import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.CollectionUtils;
 import com.chy.summer.framework.web.servlet.context.support.StandardServletEnvironment;
 import com.google.common.base.Stopwatch;
+import javafx.print.Printer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tools.ant.util.StringUtils;
+import org.slf4j.Marker;
+import org.slf4j.helpers.BasicMarker;
 
 import java.lang.reflect.Constructor;
+import java.security.AccessControlException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class SummerApplication {
@@ -182,7 +191,6 @@ public class SummerApplication {
     public ConfigurableApplicationContext run(String... args) {
         //开一个秒表,这里用guava的
         Stopwatch stopWatch = Stopwatch.createStarted();
-        stopWatch.start();
         ConfigurableApplicationContext context = null;
         //Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
 
@@ -201,18 +209,20 @@ public class SummerApplication {
             context = createApplicationContext();
             //对context 做一些前期的配置工作
             prepareContext(context, environment, listeners, applicationArguments);
+            //调用 context的refresh 方法真正开始初始化容器生命周期
             refreshContext(context);
+            //扩展点 在刷新容器后做一些其他的事情，暂时没有任何动作
             afterRefresh(context, applicationArguments);
             stopWatch.stop();
-            if (this.logStartupInfo) {
-                new StartupInfoLogger(this.mainApplicationClass)
-                        .logStarted(getApplicationLog(), stopWatch);
-            }
+            //打印启动时间
+            startupInfoLogger(stopWatch);
+            //监听器开始
             listeners.started(context);
+            //在整个boot项目初始化完成之后干一些事情 一个扩展点
+            // 这里会在ioc里找所有的ApplicationRunner CommandLineRunner接口然后执行
             callRunners(context, applicationArguments);
         }
         catch (Throwable ex) {
-            handleRunFailure(context, ex, exceptionReporters, listeners);
             throw new IllegalStateException(ex);
         }
 
@@ -220,10 +230,30 @@ public class SummerApplication {
             listeners.running(context);
         }
         catch (Throwable ex) {
-            handleRunFailure(context, ex, exceptionReporters, null);
             throw new IllegalStateException(ex);
         }
         return context;
+    }
+
+    private void startupInfoLogger(Stopwatch stopWatch) {
+        String text = String.format("================= summer 启动完成 启动耗时为 [%s s] ================="
+                ,stopWatch.elapsed(TimeUnit.SECONDS));
+        System.out.println(AnsiOutput.toString(AnsiColor.GREEN,text, AnsiStyle.BOLD));
+    }
+
+    private void callRunners(ConfigurableApplicationContext context, ApplicationArguments applicationArguments) {
+    }
+
+    private void afterRefresh(ConfigurableApplicationContext context, ApplicationArguments applicationArguments) {
+    }
+
+    private void refreshContext(ConfigurableApplicationContext context) {
+        refresh(context);
+    }
+
+    protected void refresh(ApplicationContext applicationContext) {
+        Assert.isInstanceOf(AbstractApplicationContext.class, applicationContext);
+        ((AbstractApplicationContext) applicationContext).refresh();
     }
 
     /**
@@ -246,7 +276,9 @@ public class SummerApplication {
         context.getBeanFactory().registerSingleton("springApplicationArguments", applicationArguments);
         Set<Object> sources = getAllSources();
         Assert.notEmpty(sources, "Sources 不能为空");
+        //这里会把 sources 注册进ioc容器，sources 一般只是main函数所在那个类
         load(context, sources);
+        //向所有监听器注入 context对象
         listeners.contextLoaded(context);
     }
 

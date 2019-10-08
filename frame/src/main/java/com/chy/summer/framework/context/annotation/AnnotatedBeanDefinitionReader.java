@@ -1,8 +1,12 @@
 package com.chy.summer.framework.context.annotation;
 
 
+import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
+import com.chy.summer.framework.beans.support.BeanDefinitionReaderUtils;
+import com.chy.summer.framework.beans.support.BeanNameGenerator;
+import com.chy.summer.framework.context.annotation.utils.AnnotationConfigUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.function.Supplier;
@@ -14,6 +18,10 @@ public class AnnotatedBeanDefinitionReader {
 
     ScopeMetadataResolver scopeMetadataResolver = null;
 
+    private BeanNameGenerator beanNameGenerator = null;
+
+    BeanDefinitionRegistry registry;
+
 
     /**
      * 为给定注册表创建新的AnnotatedBeanDefinitionReader。
@@ -21,6 +29,8 @@ public class AnnotatedBeanDefinitionReader {
      */
     public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
         scopeMetadataResolver = new AnnotationScopeMetadataResolver();
+        beanNameGenerator = new AnnotationBeanNameGenerator();
+        registry = registry;
     }
 
     public void register(Class<?>... annotatedClasses) {
@@ -34,36 +44,30 @@ public class AnnotatedBeanDefinitionReader {
     }
 
     <T> void doRegisterBean(Class<T> annotatedClass,  Supplier<T> instanceSupplier,  String name,
-                             Class<? extends Annotation>[] qualifiers, BeanDefinitionCustomizer... definitionCustomizers) {
+                             Class<? extends Annotation>[] qualifiers) {
 
         AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(annotatedClass);
 
         abd.setInstanceSupplier(instanceSupplier);
-        //去解析这个class 上面的
+        //去解析这个class 上面的 @scope 注解
         ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
         abd.setScope(scopeMetadata.getScopeName());
-        String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
-
-        AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);
+        //生成对应的 beanName
+        String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, null));
+        //解析一些通用注解然后设置对应值 比如@Lazy 注解
+        AnnotationConfigUtils.processCommonDefinitionAnnotations(abd,abd.getMetadata());
+        //通过显示的指定注解的形式来给 对应的 beanDefinition 来设置 值
         if (qualifiers != null) {
             for (Class<? extends Annotation> qualifier : qualifiers) {
-                if (Primary.class == qualifier) {
-                    abd.setPrimary(true);
-                }
-                else if (Lazy.class == qualifier) {
+                if (Lazy.class == qualifier) {
                     abd.setLazyInit(true);
-                }
-                else {
-                    abd.addQualifier(new AutowireCandidateQualifier(qualifier));
                 }
             }
         }
-        for (BeanDefinitionCustomizer customizer : definitionCustomizers) {
-            customizer.customize(abd);
-        }
-
         BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
+        //如果@scope 注解 设置了代理模式 这里会生成代理
         definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+        //把 BeanDefinition 放入 Ioc 容器
         BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
     }
 }
