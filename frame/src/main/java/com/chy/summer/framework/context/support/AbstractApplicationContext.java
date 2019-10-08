@@ -69,7 +69,7 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     /**
      * 开启summer的生命周期
      */
-    protected void refresh() {
+    public void refresh() {
         synchronized (startupShutdownMonitor) {
             //容器刷新之前的准备，记录一下活动状态，以及容器开始刷新的时间
             prepareRefresh();

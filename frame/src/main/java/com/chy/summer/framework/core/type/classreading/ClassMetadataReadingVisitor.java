@@ -143,6 +143,16 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     }
 
     @Override
+    public boolean isInterface() {
+        return false;
+    }
+
+    @Override
+    public boolean isAnnotation() {
+        return false;
+    }
+
+    @Override
     public boolean hasMetaAnnotation(String metaAnnotationName) {
         return metaAnnotationMap.values().stream()
                 .anyMatch(metaAnnotationSet -> metaAnnotationSet.contains(metaAnnotationName));
@@ -151,6 +161,36 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     @Override
     public boolean isIndependent() {
         return (this.enclosingClassName == null || this.independentInnerClass);
+    }
+
+    @Override
+    public boolean hasEnclosingClass() {
+        return false;
+    }
+
+    @Override
+    public String getEnclosingClassName() {
+        return null;
+    }
+
+    @Override
+    public boolean hasSuperClass() {
+        return false;
+    }
+
+    @Override
+    public String getSuperClassName() {
+        return null;
+    }
+
+    @Override
+    public String[] getInterfaceNames() {
+        return new String[0];
+    }
+
+    @Override
+    public String[] getMemberClassNames() {
+        return new String[0];
     }
 
     @Override
@@ -166,6 +206,11 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     @Override
     public boolean isConcrete() {
         return !(this.isInterface || this.isAbstract);
+    }
+
+    @Override
+    public boolean isFinal() {
+        return false;
     }
 
     //================================下面是暂时不需要的属性,都是空实现,需要的时候再去重写======================================

@@ -15,13 +15,12 @@ public class BeanUtils {
     public static <T> T instantiateClass(Constructor<T> ctor, Object... args) throws BeanInstantiationException {
         Assert.notNull(ctor, "Constructor must not be null");
         try {
-            ctor.newInstance(args);
+           return ctor.newInstance(args);
         }
         catch (InstantiationException | InvocationTargetException | IllegalArgumentException | IllegalAccessException ex) {
             ex.printStackTrace();
             throw new BeanInstantiationException("创建bean异常: [%s]",ex.getMessage());
         }
-        return null;
     }
 
     public static <T> T instantiateClass(Class<T> clazz) throws BeanInstantiationException {
@@ -30,7 +29,7 @@ public class BeanUtils {
             Constructor<T> ctor = clazz.getDeclaredConstructor();
             return instantiateClass(ctor);
         }
-        catch (NoSuchMethodException | LinkageError ex) {
+        catch (Exception | LinkageError ex) {
             throw new BeanInstantiationException("class: [%s],实例化异常: [%s]",ex.getMessage());
         }
 
