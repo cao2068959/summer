@@ -9,7 +9,6 @@ public class SharedMetadataReaderFactoryContextInitializer implements Applicatio
 
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext) {
-
     }
 
     @Override

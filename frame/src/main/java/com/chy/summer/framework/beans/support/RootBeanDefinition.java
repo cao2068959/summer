@@ -2,6 +2,7 @@ package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
+import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
 import com.chy.summer.framework.core.ResolvableType;
 
 import java.lang.reflect.AnnotatedElement;
@@ -50,6 +51,11 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
         this.allowCaching = original.allowCaching;
         this.isFactoryMethodUnique = original.isFactoryMethodUnique;
         this.targetType = original.targetType;
+    }
+
+    public RootBeanDefinition(Class<?> beanClass) {
+        super();
+        setBeanClass(beanClass);
     }
 
     @Override

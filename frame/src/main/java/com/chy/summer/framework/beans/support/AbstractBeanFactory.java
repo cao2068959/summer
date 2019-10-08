@@ -161,6 +161,8 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     }
 
 
-
-
+    @Override
+    public boolean containsBean(String beanName) {
+        return false;
+    }
 }

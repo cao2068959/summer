@@ -1,7 +1,9 @@
 package com.chy.summer.framework.beans.support;
 
+import com.chy.summer.framework.beans.BeanFactoryAware;
 import com.chy.summer.framework.beans.ConfigurableBeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
+import com.chy.summer.framework.beans.factory.AutowireCandidateResolver;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
@@ -47,6 +49,9 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
     private volatile Set<String> manualSingletonNames = new LinkedHashSet<>(16);
 
     private volatile boolean configurationFrozen = false;
+
+    private AutowireCandidateResolver autowireCandidateResolver = null;
+
 
 
 
@@ -189,6 +194,18 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
     }
 
 
+    public Object getAutowireCandidateResolver() {
+        return this.autowireCandidateResolver;
+    }
+
+    public void setAutowireCandidateResolver(final AutowireCandidateResolver autowireCandidateResolver) {
+        Assert.notNull(autowireCandidateResolver, "AutowireCandidateResolver must not be null");
+        if (autowireCandidateResolver instanceof BeanFactoryAware) {
+            ((BeanFactoryAware) autowireCandidateResolver).setBeanFactory(this);
+        }
+        this.autowireCandidateResolver = autowireCandidateResolver;
+    }
+
 
     //======================AbstractBeanFactory 的实现方法=================================
 
@@ -313,5 +330,6 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
 
         return false;
     }
+
 
 }

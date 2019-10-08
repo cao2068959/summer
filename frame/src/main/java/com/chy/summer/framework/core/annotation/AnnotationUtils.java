@@ -2,6 +2,14 @@ package com.chy.summer.framework.core.annotation;
 
 
 import com.chy.summer.framework.annotation.core.AliasFor;
+import com.chy.summer.framework.beans.config.BeanDefinition;
+import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
+import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
+import com.chy.summer.framework.beans.factory.ContextAnnotationAutowireCandidateResolver;
+import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
+import com.chy.summer.framework.beans.support.RootBeanDefinition;
+import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
+import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.util.Assert;
 import com.sun.istack.internal.Nullable;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +26,9 @@ public  abstract class AnnotationUtils {
 
     private static final Map<AnnotationCacheKey, Annotation> findAnnotationCache =
             new ConcurrentHashMap<>(256);
+
+    public static final String CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME =
+            "chy.summer.internalConfigurationAnnotationProcessor";
 
     /**
      * 把注解里的属性给抽出来放入 AnnotationAttributes
@@ -197,6 +208,59 @@ public  abstract class AnnotationUtils {
     }
 
 
+    /**
+     * 注册一些 通用的 beanFactroyPostProcessor 前置处理器 进入ioc容器
+     * @param registry
+     * @param source
+     */
+    public static void registerAnnotationConfigProcessors(BeanDefinitionRegistry registry, Object source) {
+        //把BeanDefinitionRegistry 根据类型 强转到DefaultListableBeanFactory
+        DefaultListableBeanFactory beanFactory = unwrapDefaultListableBeanFactory(registry);
+        //先给 DefaultListableBeanFactory 设置一些 属性
+        if (beanFactory != null) {
+            if (!(beanFactory.getDependencyComparator() instanceof AnnotationAwareOrderComparator)) {
+                beanFactory.setDependencyComparator(AnnotationAwareOrderComparator.INSTANCE);
+            }
+            if (!(beanFactory.getAutowireCandidateResolver() instanceof ContextAnnotationAutowireCandidateResolver)) {
+                beanFactory.setAutowireCandidateResolver(new ContextAnnotationAutowireCandidateResolver());
+            }
+        }
+
+        Set<BeanDefinitionHolder> beanDefs = new LinkedHashSet<>(8);
+
+        //把 ConfigurationClassPostProcessor 给注册进入 ioc 容器
+        //这个类是一个 BeanDefinitionRegistryPostProcessor , 他会去扫描对应的 路径下的所有类生成 BeanDefinition
+        if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+            RootBeanDefinition def = new RootBeanDefinition(ConfigurationClassPostProcessor.class);
+            beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));
+        }
+
+
+    }
+
+    /**
+     *  把对应的 BeanDefinition 给注册进入 IOC 容器
+     * @param registry
+     * @param definition
+     * @param beanName
+     * @return
+     */
+    private static BeanDefinitionHolder registerPostProcessor(
+            BeanDefinitionRegistry registry, RootBeanDefinition definition, String beanName) {
+        //注册
+        registry.registerBeanDefinition(beanName, definition);
+        return new BeanDefinitionHolder(definition, beanName);
+    }
+
+    private static DefaultListableBeanFactory unwrapDefaultListableBeanFactory(BeanDefinitionRegistry registry) {
+        if (registry instanceof DefaultListableBeanFactory) {
+            return (DefaultListableBeanFactory) registry;
+        }
+        else {
+            return null;
+        }
+    }
+
 
     private static final class AnnotationCacheKey implements Comparable<AnnotationCacheKey> {
 
@@ -240,6 +304,9 @@ public  abstract class AnnotationUtils {
             return result;
         }
     }
+
+
+
 
 }
 

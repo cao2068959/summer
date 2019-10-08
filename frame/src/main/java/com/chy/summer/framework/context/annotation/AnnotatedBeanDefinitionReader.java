@@ -7,6 +7,7 @@ import com.chy.summer.framework.beans.factory.annotation.AnnotatedGenericBeanDef
 import com.chy.summer.framework.beans.support.BeanDefinitionReaderUtils;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.context.annotation.utils.AnnotationConfigUtils;
+import com.chy.summer.framework.core.annotation.AnnotationUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.function.Supplier;
@@ -30,6 +31,8 @@ public class AnnotatedBeanDefinitionReader {
     public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
         scopeMetadataResolver = new AnnotationScopeMetadataResolver();
         beanNameGenerator = new AnnotationBeanNameGenerator();
+        //把一些公用的 beanFactroyPostProcessor 给注册进去
+        AnnotationUtils.registerAnnotationConfigProcessors(registry,null);
         registry = registry;
     }
 

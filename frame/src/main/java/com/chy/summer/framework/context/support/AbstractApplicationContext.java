@@ -173,6 +173,11 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     private void onRefresh() {
     }
 
+    @Override
+    public boolean containsBean(String beanName) {
+        return false;
+    }
+
     private void initApplicationEventMulticaster() {
         ConfigurableListableBeanFactory beanFactory = getBeanFactory();
 
