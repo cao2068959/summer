@@ -36,4 +36,6 @@ public interface BeanFactory {
 
     public Class<?> getType(String name) throws NoSuchBeanDefinitionException;
 
+    boolean containsBean(String beanName);
+
 }

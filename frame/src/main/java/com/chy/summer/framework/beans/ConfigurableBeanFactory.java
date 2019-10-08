@@ -8,5 +8,7 @@ public interface ConfigurableBeanFactory {
      */
     @Nullable
     ClassLoader getBeanClassLoader();
+
+    boolean isCurrentlyInCreation(String beanName);
     //TODO 尚未完成
 }
