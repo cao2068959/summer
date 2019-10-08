@@ -4,6 +4,9 @@ package com.chy.summer.framework.beans.config;
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.context.event.ApplicationEventMulticaster;
 
+/**
+ * ConfigurableListableBeanFactory 提供bean definition的解析,注册功能,再对单例来个预加载(解决循环依赖问题).
+ */
 public interface ConfigurableListableBeanFactory extends BeanFactory {
 
     /**

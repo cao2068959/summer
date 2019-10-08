@@ -80,7 +80,7 @@ public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanC
 		//具有合理的代理接口
 		boolean hasReasonableProxyInterface = false;
 		for (Class<?> ifc : targetInterfaces) {
-			//判断目标类上是否有合理的接口
+			//判断目标类上是否有合理的接口（不是系统内部的类型）
 			if (!isConfigurationCallbackInterface(ifc) && !isInternalLanguageInterface(ifc) &&
 					ifc.getMethods().length > 0) {
 				hasReasonableProxyInterface = true;
@@ -88,13 +88,13 @@ public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanC
 			}
 		}
 		if (hasReasonableProxyInterface) {
-			//设置Interface,不能仅将接口设置为目标的接口。
+			//设置Interface,代理所有的接口
 			for (Class<?> ifc : targetInterfaces) {
 				proxyFactory.addInterface(ifc);
 			}
 		}
 		else {
-			//将接口设置为目标的接口
+			//设置直接代理目标类
 			proxyFactory.setProxyTargetClass(true);
 		}
 	}
