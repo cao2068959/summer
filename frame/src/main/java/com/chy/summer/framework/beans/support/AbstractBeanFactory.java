@@ -3,9 +3,11 @@ package com.chy.summer.framework.beans.support;
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.ConfigurableBeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
+import com.chy.summer.framework.beans.HierarchicalBeanFactory;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
+import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
@@ -15,7 +17,9 @@ import com.sun.istack.internal.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements BeanFactory {
+import static com.chy.summer.framework.util.BeanFactoryUtils.transformedBeanName;
+
+public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements HierarchicalBeanFactory {
 
     private final Set<String> alreadyCreated = Collections.newSetFromMap(new ConcurrentHashMap<>(256));
 
@@ -39,7 +43,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     @Override
     public boolean isTypeMatch(String name, @Nullable Class<?> typeToMatch) throws NoSuchBeanDefinitionException {
-        String beanName = BeanFactoryUtils.transformedBeanName(name);
+        String beanName = transformedBeanName(name);
         //获取单列对象
         Object beanInstance = getSingleton(beanName, false);
         if (beanInstance != null) {
@@ -85,8 +89,9 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         this.beanPostProcessors.add(beanPostProcessor);
     }
 
+    @Override
     public boolean containsLocalBean(String name) {
-        String beanName = BeanFactoryUtils.transformedBeanName(name);
+        String beanName = transformedBeanName(name);
         return ((containsSingleton(beanName) || containsBeanDefinition(beanName)) &&
                 (!BeanFactoryUtils.isFactoryDereference(name)));
     }
@@ -94,7 +99,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     @Override
     @Nullable
     public Class<?> getType(String name) throws NoSuchBeanDefinitionException {
-        String beanName = BeanFactoryUtils.transformedBeanName(name);
+        String beanName = transformedBeanName(name);
 
         // 尝试拿一下单列对象
         Object beanInstance = getSingleton(beanName, false);

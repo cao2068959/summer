@@ -20,6 +20,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.chy.summer.framework.util.BeanFactoryUtils.transformedBeanName;
+
 @Slf4j
 public class DefaultListableBeanFactory extends AbstractBeanFactory implements ConfigurableListableBeanFactory, BeanDefinitionRegistry {
 
@@ -71,7 +73,6 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
     public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
         return new String[0];
     }
-
 
 
     /**
@@ -296,7 +297,7 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
      * @return
      * @throws BeansException
      */
-    protected RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
+    public RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
 
         RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);
         if (mbd != null) {
@@ -331,5 +332,27 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
         return false;
     }
 
+    @Override
+    public BeanDefinition getMergedBeanDefinition(String name) throws BeansException {
+        String beanName = transformedBeanName(name);
 
+        // Efficiently check whether bean definition exists in this factory.
+        if (!containsBeanDefinition(beanName) && getParentBeanFactory() instanceof ConfigurableListableBeanFactory) {
+            return ((ConfigurableListableBeanFactory) getParentBeanFactory()).getMergedBeanDefinition(beanName);
+        }
+        // Resolve merged bean definition locally.
+        return getMergedLocalBeanDefinition(beanName);
+    }
+
+    @Override
+    public ClassLoader getBeanClassLoader() {
+        //TODO 没有完成
+        return null;
+    }
+
+    @Override
+    public boolean isCurrentlyInCreation(String beanName) {
+        //TODO 没有完成
+        return false;
+    }
 }

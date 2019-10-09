@@ -17,7 +17,13 @@
 package com.chy.summer.framework.util;
 
 import com.chy.summer.framework.beans.BeanFactory;
+import com.chy.summer.framework.beans.HierarchicalBeanFactory;
+import com.chy.summer.framework.beans.config.ListableBeanFactory;
 import com.sun.istack.internal.Nullable;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class BeanFactoryUtils {
 
@@ -177,48 +183,44 @@ public abstract class BeanFactoryUtils {
 //		return result;
 //	}
 //
-//	/**
-//	 * Get all bean names for the given type, including those defined in ancestor
-//	 * factories. Will return unique names in case of overridden bean definitions.
-//	 * <p>Does consider objects created by FactoryBeans if the "allowEagerInit"
-//	 * flag is set, which means that FactoryBeans will get initialized. If the
-//	 * object created by the FactoryBean doesn't match, the raw FactoryBean itself
-//	 * will be matched against the type. If "allowEagerInit" is not set,
-//	 * only raw FactoryBeans will be checked (which doesn't require initialization
-//	 * of each FactoryBean).
-//	 * @param lbf the bean factory
-//	 * @param includeNonSingletons whether to include prototype or scoped beans too
-//	 * or just singletons (also applies to FactoryBeans)
-//	 * @param allowEagerInit whether to initialize <i>lazy-init singletons</i> and
-//	 * <i>objects created by FactoryBeans</i> (or by factory methods with a
-//	 * "factory-bean" reference) for the type check. Note that FactoryBeans need to be
-//	 * eagerly initialized to determine their type: So be aware that passing in "true"
-//	 * for this flag will initialize FactoryBeans and "factory-bean" references.
-//	 * @param type the type that beans must match
-//	 * @return the array of matching bean names, or an empty array if none
-//	 */
-//	public static String[] beanNamesForTypeIncludingAncestors(
-//			ListableBeanFactory lbf, Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
-//
-//		Assert.notNull(lbf, "ListableBeanFactory must not be null");
-//		String[] result = lbf.getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
-//		if (lbf instanceof HierarchicalBeanFactory) {
-//			HierarchicalBeanFactory hbf = (HierarchicalBeanFactory) lbf;
-//			if (hbf.getParentBeanFactory() instanceof ListableBeanFactory) {
-//				String[] parentResult = beanNamesForTypeIncludingAncestors(
-//						(ListableBeanFactory) hbf.getParentBeanFactory(), type, includeNonSingletons, allowEagerInit);
-//				List<String> resultList = new ArrayList<>();
-//				resultList.addAll(Arrays.asList(result));
-//				for (String beanName : parentResult) {
-//					if (!resultList.contains(beanName) && !hbf.containsLocalBean(beanName)) {
-//						resultList.add(beanName);
-//					}
-//				}
-//				result = StringUtils.toStringArray(resultList);
-//			}
-//		}
-//		return result;
-//	}
+	/**
+	 * 获取给定类型的所有bean名称，包括所有父类工厂中定义的名称，如果bean定义被覆盖，将返回唯一的名称。
+	 * 如果“ allowEagerInit”标志为true，是否考虑由factorybean创建的对象，这意味着将初始化FactoryBeans。
+	 * 如果由FactoryBean创建的对象不匹配，则原始FactoryBean本身将与该类型匹配。
+	 * 如果“ allowEagerInit”为false，则仅检查原始FactoryBean（不需要初始化每个FactoryBean）。
+	 * @param lbf bean工厂
+	 * @param includeNonSingletons 是否包含非单例对象
+	 * @param allowEagerInit 是否为类型检查初始化由factorybean(或由具有“factory-bean”引用的工厂方法)创建的延迟初始化单例对象和对象。
+	 *                       注意，必须立即初始化factorybean以确定它们的类型:因此要注意，为这个标志传递“true”将初始化factorybean和“factory-bean”引用
+	 * @param type bean匹配的类型
+	 */
+	public static String[] beanNamesForTypeIncludingAncestors(
+			ListableBeanFactory lbf, Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
+
+		Assert.notNull(lbf, "ListableBeanFactory不可为空");
+		String[] result = lbf.getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
+		//判断这个类是否可以访问父容器
+		if (lbf instanceof HierarchicalBeanFactory) {
+			HierarchicalBeanFactory hbf = (HierarchicalBeanFactory) lbf;
+			//获取父类工厂
+			if (hbf.getParentBeanFactory() instanceof ListableBeanFactory) {
+				//逐级往上层检查
+				String[] parentResult = beanNamesForTypeIncludingAncestors(
+						(ListableBeanFactory) hbf.getParentBeanFactory(), type, includeNonSingletons, allowEagerInit);
+				List<String> resultList = new ArrayList<>();
+				//将所有的获取到的bean保存下来
+				resultList.addAll(Arrays.asList(result));
+				//查询父类的返回值，进行去重
+				for (String beanName : parentResult) {
+					if (!resultList.contains(beanName) && !hbf.containsLocalBean(beanName)) {
+						resultList.add(beanName);
+					}
+				}
+				result = StringUtils.toStringArray(resultList);
+			}
+		}
+		return result;
+	}
 //
 //	/**
 //	 * Return all beans of the given type or subtypes, also picking up beans defined in

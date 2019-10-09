@@ -1,5 +1,6 @@
 package com.chy.summer.framework.beans;
 
+import com.chy.summer.framework.beans.support.RootBeanDefinition;
 import com.sun.istack.internal.Nullable;
 
 public interface ConfigurableBeanFactory {

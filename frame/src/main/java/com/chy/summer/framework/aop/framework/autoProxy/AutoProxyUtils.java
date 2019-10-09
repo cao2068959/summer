@@ -11,25 +11,15 @@ import com.sun.istack.internal.Nullable;
 public abstract class AutoProxyUtils {
 
 	/**
-	 * Bean definition attribute that may indicate whether a given bean is supposed
-	 * to be proxied with its target class (in case of it getting proxied in the first
-	 * place). The value is {@code Boolean.TRUE} or {@code Boolean.FALSE}.
-	 * <p>Proxy factories can set this attribute if they built a target class proxy
-	 * for a specific bean, and want to enforce that bean can always be cast
-	 * to its target class (even if AOP advices get applied through auto-proxying).
-	 * @see #shouldProxyTargetClass
+	 * Bean定义属性，该属性可以指示是否应使用给定的目标类代理给定的Bean
 	 */
 	public static final String PRESERVE_TARGET_CLASS_ATTRIBUTE =
 //			Conventions.getQualifiedAttributeName(AutoProxyUtils.class, "preserveTargetClass");
-			//TODO GYX 零时使用  写到这里
+			//TODO GYX 零时使用
 			getQualifiedAttributeName(AutoProxyUtils.class, "preserveTargetClass");
 
 	/**
-	 * Bean definition attribute that indicates the original target class of an
-	 * auto-proxied bean, e.g. to be used for the introspection of annotations
-	 * on the target class behind an interface-based proxy.
-	 * @since 4.2.3
-	 * @see #determineTargetClass
+	 * Bean定义属性，指示自动代理Bean的原始目标类
 	 */
 	public static final String ORIGINAL_TARGET_CLASS_ATTRIBUTE =
 //			Conventions.getQualifiedAttributeName(AutoProxyUtils.class, "originalTargetClass");
@@ -43,29 +33,24 @@ public abstract class AutoProxyUtils {
 	}
 
 	/**
-	 * Determine whether the given bean should be proxied with its target
-	 * class rather than its interfaces. Checks the
-	 * {@link #PRESERVE_TARGET_CLASS_ATTRIBUTE "preserveTargetClass" attribute}
-	 * of the corresponding bean definition.
-	 * @param beanFactory the containing ConfigurableListableBeanFactory
-	 * @param beanName the name of the bean
-	 * @return whether the given bean should be proxied with its target class
+	 * 判断是否应使用给定的bean替代其目标类而不是其接口
+	 * @param beanFactory 包含的ConfigurableListableBeanFactory
+	 * @param beanName bean的名称
 	 */
 	public static boolean shouldProxyTargetClass(ConfigurableListableBeanFactory beanFactory, @Nullable String beanName) {
 //		if (beanName != null && beanFactory.containsBeanDefinition(beanName)) {
 //			BeanDefinition bd = beanFactory.getBeanDefinition(beanName);
+//			//TODO GTX 差一个容器 getAttribute 下面也是的
 //			return Boolean.TRUE.equals(bd.getAttribute(PRESERVE_TARGET_CLASS_ATTRIBUTE));
 //		}
 		return false;
 	}
 
 	/**
-	 * Determine the original target class for the specified bean, if possible,
-	 * otherwise falling back to a regular {@code getType} lookup.
-	 * @param beanFactory the containing ConfigurableListableBeanFactory
-	 * @param beanName the name of the bean
-	 * @return the original target class as stored in the bean definition, if any
-	 * @since 4.2.3
+	 * 确定指定bean的原始目标类，如果找不到则返回常规getType
+	 *
+	 * @param beanFactory 包含的ConfigurableListableBeanFactory
+	 * @param beanName bean名称
 	 */
 	@Nullable
 	public static Class<?> determineTargetClass(ConfigurableListableBeanFactory beanFactory, @Nullable String beanName) {
@@ -83,10 +68,10 @@ public abstract class AutoProxyUtils {
 	}
 
 	/**
-	 * Expose the given target class for the specified bean, if possible.
-	 * @param beanFactory the containing ConfigurableListableBeanFactory
-	 * @param beanName the name of the bean
-	 * @param targetClass the corresponding target class
+	 * 暴露给定目标类的bean。
+	 * @param beanFactory 包含的ConfigurableListableBeanFactory
+	 * @param beanName bean名称
+	 * @param targetClass 对应的目标类别
 	 * @since 4.2.3
 	 */
 	static void exposeTargetClass(ConfigurableListableBeanFactory beanFactory, @Nullable String beanName,
