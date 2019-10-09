@@ -1,9 +1,12 @@
 package com.chy.summer.framework.beans.support;
 
+import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.BeanFactoryAware;
 import com.chy.summer.framework.beans.ConfigurableBeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
+import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.factory.AutowireCandidateResolver;
+import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
@@ -12,6 +15,8 @@ import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
+import com.chy.summer.framework.util.ClassUtils;
+import com.chy.summer.framework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.security.AccessController;
@@ -50,6 +55,15 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
      */
     private volatile Set<String> manualSingletonNames = new LinkedHashSet<>(16);
 
+    /**
+     * 根据类型查找beanName的缓存
+     */
+    private final Map<Class<?>, String[]> allBeanNamesByType = new ConcurrentHashMap<>(64);
+    /**
+     * 根据类型查找beanName的缓存,这里是单例对象的
+     */
+    private final Map<Class<?>, String[]> singletonBeanNamesByType = new ConcurrentHashMap<>(64);
+
     private volatile boolean configurationFrozen = false;
 
     private AutowireCandidateResolver autowireCandidateResolver = null;
@@ -69,11 +83,150 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
         return null;
     }
 
+    /**
+     * 根据类型获取 bean的name
+     * @param type
+     * @param includeNonSingletons
+     * @param allowEagerInit
+     * @return
+     */
     @Override
     public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
-        return new String[0];
+
+        //根据是不是单列选择不同的缓存对象
+        Map<Class<?>, String[]> cache = (includeNonSingletons ? this.allBeanNamesByType : this.singletonBeanNamesByType);
+        String[] resolvedBeanNames = cache.get(type);
+        //有缓存直接返回
+        if (resolvedBeanNames != null) {
+            return resolvedBeanNames;
+        }
+        //真正去判断ioc容器里 有没对应类型的bean
+        resolvedBeanNames = doGetBeanNamesForType(ResolvableType.forClass(type), includeNonSingletons, true);
+        //写入缓存
+        cache.put(type, resolvedBeanNames);
+        return resolvedBeanNames;
     }
 
+    /**
+     * 根据类型获取所有满足条件的bean的name
+     * @param type
+     * @param includeNonSingletons
+     * @param allowEagerInit
+     * @return
+     */
+    private String[] doGetBeanNamesForType(ResolvableType type, boolean includeNonSingletons, boolean allowEagerInit) {
+        List<String> result = new ArrayList<>();
+
+        for (String beanName : this.beanDefinitionNames) {
+            //如果是别名,直接跳过
+            if (!isAlias(beanName)) {
+                continue;
+            }
+
+            try {
+                //通过beanName名字拿到 RootBeanDefinition
+                RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+                if (!mbd.isAbstract() && (allowEagerInit || !mbd.isLazyInit())) {
+                    //判断是不是 FactoryBean
+                    boolean isFactoryBean = isFactoryBean(beanName);
+                    BeanDefinitionHolder dbd = mbd.getDecoratedDefinition();
+                    boolean matchFound =
+                            (allowEagerInit || !isFactoryBean || (dbd != null && !mbd.isLazyInit()) || containsSingleton(beanName))
+                                    &&
+                            (includeNonSingletons || (dbd != null ? mbd.isSingleton() : false))
+                                    &&
+                             //这里是直接用beanName获取单例对象 然后用 instanceof 去对比类型
+                            isTypeMatch(beanName, type.resolve());
+                    //如果比较失败,并且还是一个 FactoryBean 那么就加上& 再比较一次
+                    if (!matchFound && isFactoryBean) {
+                        beanName = FACTORY_BEAN_PREFIX + beanName;
+                        matchFound = (includeNonSingletons || mbd.isSingleton()) && isTypeMatch(beanName, type.resolve());
+                    }
+                    if (matchFound) {
+                        result.add(beanName);
+                    }
+                }
+            }
+            catch (Exception ex) {
+                if (allowEagerInit) {
+                    throw ex;
+                }
+                log.info("根据类型 [{}] 获取所有满足条件的beanName 失败 原因: [{}]",type,ex.getMessage());
+            }
+
+        }
+
+        // 同样手动注册进去的单列也要检查
+        for (String beanName : this.manualSingletonNames) {
+            try {
+                // In case of FactoryBean, match object created by FactoryBean.
+                if (isFactoryBean(beanName)) {
+                    if ((includeNonSingletons || isSingleton(beanName)) && isTypeMatch(beanName, type.resolve())) {
+                        result.add(beanName);
+                        continue;
+                    }
+                    // In case of FactoryBean, try to match FactoryBean itself next.
+                    beanName = FACTORY_BEAN_PREFIX + beanName;
+                }
+                if (isTypeMatch(beanName, type.resolve())) {
+                    result.add(beanName);
+                }
+            }
+            catch (NoSuchBeanDefinitionException ex) {
+                log.info("检查手动注册的单列失败 对应 名称为 [{}] 失败原因为: {}" ,beanName,ex.getMessage());
+            }
+        }
+
+        return StringUtils.toStringArray(result);
+    }
+
+    /**
+     * 检查对应的beanName 是不是单例
+     * @param name
+     * @return
+     * @throws NoSuchBeanDefinitionException
+     */
+    public boolean isSingleton(String name) throws NoSuchBeanDefinitionException {
+        String beanName = transformedBeanName(name);
+
+        Object beanInstance = getSingleton(beanName, false);
+        if (beanInstance != null) {
+            if (beanInstance instanceof FactoryBean) {
+                return (BeanFactoryUtils.isFactoryDereference(name) || ((FactoryBean<?>) beanInstance).isSingleton());
+            }
+            else {
+                return !BeanFactoryUtils.isFactoryDereference(name);
+            }
+        }
+
+        RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+
+        if (mbd.isSingleton()) {
+            if (isFactoryBean(beanName)) {
+                if (BeanFactoryUtils.isFactoryDereference(name)) {
+                    return true;
+                }
+                FactoryBean<?> factoryBean = (FactoryBean<?>) getBean(FACTORY_BEAN_PREFIX + beanName);
+                return factoryBean.isSingleton();
+            }
+            else {
+                return !BeanFactoryUtils.isFactoryDereference(name);
+            }
+        }
+        else {
+            return false;
+        }
+    }
+
+
+    /**
+     * 判断是否是别名
+     * @param name
+     * @return
+     */
+    public boolean isAlias(String name) {
+        return this.aliasMap.containsKey(name);
+    }
 
     /**
      * 使用对应的 beanName 注册beanDefinition

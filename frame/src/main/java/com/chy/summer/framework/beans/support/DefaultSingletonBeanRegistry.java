@@ -4,10 +4,7 @@ import com.chy.summer.framework.beans.factory.ObjectFactory;
 import com.chy.summer.framework.exception.IllegalStateException;
 import com.chy.summer.framework.util.Assert;
 
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,11 +29,36 @@ public class DefaultSingletonBeanRegistry {
     protected boolean containsSingleton(String beanName) {
         return this.singletonObjects.containsKey(beanName);
     }
+    /** 正在创建的单例对象*/
+    private final Set<String> singletonsCurrentlyInCreation = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
-    protected  Object getSingleton(String beanName, boolean b){
-        return null;
+    /**
+     * 获取单例对象
+     * @param beanName
+     * @param allowEarlyReference
+     * @return
+     */
+    protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+        Object singletonObject = this.singletonObjects.get(beanName);
+        if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+            synchronized (this.singletonObjects) {
+                singletonObject = this.earlySingletonObjects.get(beanName);
+                if (singletonObject == null && allowEarlyReference) {
+                    ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+                    if (singletonFactory != null) {
+                        singletonObject = singletonFactory.getObject();
+                        this.earlySingletonObjects.put(beanName, singletonObject);
+                        this.singletonFactories.remove(beanName);
+                    }
+                }
+            }
+        }
+        return singletonObject;
     }
 
+    public boolean isSingletonCurrentlyInCreation(String beanName) {
+        return this.singletonsCurrentlyInCreation.contains(beanName);
+    }
 
     /**
      * 注册一个单例对象到Ioc 容器里

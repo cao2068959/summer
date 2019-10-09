@@ -160,7 +160,8 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                     //TODO 下面开始是 如果是有父 BeanDefinition 的情况下
                 }
             }
-
+            //写入缓存
+            this.mergedBeanDefinitions.put(beanName,mbd);
             return mbd;
         }
     }

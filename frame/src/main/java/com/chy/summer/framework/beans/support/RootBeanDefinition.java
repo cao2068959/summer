@@ -135,4 +135,8 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     public RootBeanDefinition cloneBeanDefinition() {
         return new RootBeanDefinition(this);
     }
+
+    public BeanDefinitionHolder getDecoratedDefinition() {
+        return this.decoratedDefinition;
+    }
 }
