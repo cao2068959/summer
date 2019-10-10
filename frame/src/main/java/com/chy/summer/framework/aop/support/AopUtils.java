@@ -11,6 +11,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * aop工具类
@@ -90,6 +94,108 @@ public abstract class AopUtils {
 		}
 		catch (IllegalAccessException ex) {
 			throw new AopInvocationException("无法访问 [" + method + "]方法", ex);
+		}
+	}
+
+	/**
+	 * 确定在指定的Advisor列表中适用于给定类的Advisor
+	 * @param candidateAdvisors 需要评估的advisor
+	 * @param clazz 目标类型
+	 */
+	public static List<Advisor> findAdvisorsThatCanApply(List<Advisor> candidateAdvisors, Class<?> clazz) {
+		if (candidateAdvisors.isEmpty()) {
+			return candidateAdvisors;
+		}
+		//用来存放适合的advisor
+		List<Advisor> eligibleAdvisors = new LinkedList<>();
+		for (Advisor candidate : candidateAdvisors) {
+			//找到
+			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
+				eligibleAdvisors.add(candidate);
+			}
+		}
+		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
+		for (Advisor candidate : candidateAdvisors) {
+			if (candidate instanceof IntroductionAdvisor) {
+				// already processed
+				continue;
+			}
+			if (canApply(candidate, clazz, hasIntroductions)) {
+				eligibleAdvisors.add(candidate);
+			}
+		}
+		return eligibleAdvisors;
+	}
+
+	/**
+	 * 给定的advisor能否应用于给定的类?
+	 * 可以用来优化一个类的advisor
+	 * @param advisor 需要检查的advisor
+	 * @param targetClass 指定的测试类
+	 * @return 切入点是否可以应用于任何方法
+	 */
+	public static boolean canApply(Advisor advisor, Class<?> targetClass) {
+		return canApply(advisor, targetClass, false);
+	}
+
+	/**
+	 * 给定的切入点可以完全应用于给定的类吗？
+	 * @param pc 要检查的静态或动态切入点
+	 * @param targetClass 指定的测试类
+	 * @param hasIntroductions 这个bean的advisor链是否包含introductionAdvisor
+	 */
+	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
+		Assert.notNull(pc, "Pointcut不可为空");
+		if (!pc.getClassFilter().matches(targetClass)) {
+			return false;
+		}
+		//获取切入点的方法匹配器
+		MethodMatcher methodMatcher = pc.getMethodMatcher();
+		if (methodMatcher == MethodMatcher.TRUE) {
+			// 默认的方法匹配器可以匹配所有方法
+			return true;
+		}
+		//TODO GYX 写到这里
+		IntroductionAwareMethodMatcher introductionAwareMethodMatcher = null;
+		if (methodMatcher instanceof IntroductionAwareMethodMatcher) {
+			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
+		}
+
+		Set<Class<?>> classes = new LinkedHashSet<>(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
+		classes.add(targetClass);
+		for (Class<?> clazz : classes) {
+			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
+			for (Method method : methods) {
+				if ((introductionAwareMethodMatcher != null &&
+						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions)) ||
+						methodMatcher.matches(method, targetClass)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * 给定的advisor能否应用于给定的类?
+	 * @param advisor 需要检查的advisor
+	 * @param targetClass 指定的测试类
+	 * @param hasIntroductions 这个bean的advisor链是否包含introductionAdvisor
+	 */
+	public static boolean canApply(Advisor advisor, Class<?> targetClass, boolean hasIntroductions) {
+		//IntroductionAdvisor直接使用类匹配器进行匹配就行了
+		if (advisor instanceof IntroductionAdvisor) {
+			return ((IntroductionAdvisor) advisor).getClassFilter().matches(targetClass);
+		}
+		//PointcutAdvisor类型的需要更复杂的判断
+		else if (advisor instanceof PointcutAdvisor) {
+			PointcutAdvisor pca = (PointcutAdvisor) advisor;
+			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
+		}
+		else {
+			// 如果没有切入点，就当做它适用
+			return true;
 		}
 	}
 }

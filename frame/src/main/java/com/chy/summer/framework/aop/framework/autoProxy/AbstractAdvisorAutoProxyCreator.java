@@ -48,73 +48,62 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 		return advisors.toArray();
 	}
 
-	//TODO GYX 搞到这里
 	/**
-	 * Find all eligible Advisors for auto-proxying this class.
-	 * @param beanClass the clazz to find advisors for
-	 * @param beanName the name of the currently proxied bean
-	 * @return the empty List, not {@code null},
-	 * if there are no pointcuts or interceptors
-	 * @see #findCandidateAdvisors
-	 * @see #sortAdvisors
-	 * @see #extendAdvisors
+	 * 找到所有合适的advisor自动代理这个类。
+	 * @param beanClass bean的类型
+	 * @param beanName 当前代理的bean的名称
 	 */
 	protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
+		//找到所有的可以用于自动代理的advisor
 		List<Advisor> candidateAdvisors = findCandidateAdvisors();
+		//找到可以应用于指定bean的所有advisor
 		List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
+		//子类进行扩展
 		extendAdvisors(eligibleAdvisors);
 		if (!eligibleAdvisors.isEmpty()) {
+			//对advisor进行排序
 			eligibleAdvisors = sortAdvisors(eligibleAdvisors);
 		}
 		return eligibleAdvisors;
 	}
 
 	/**
-	 * Find all candidate Advisors to use in auto-proxying.
-	 * @return the List of candidate Advisors
+	 * 找到所有可以在自动代理中使用的候选Advisor
 	 */
 	protected List<Advisor> findCandidateAdvisors() {
-		Assert.state(this.advisorRetrievalHelper != null, "No BeanFactoryAdvisorRetrievalHelper available");
+		Assert.state(this.advisorRetrievalHelper != null, "没有可用的BeanFactoryAdvisorRetrievalHelper");
 		return this.advisorRetrievalHelper.findAdvisorBeans();
 	}
 
 	/**
-	 * Search the given candidate Advisors to find all Advisors that
-	 * can apply to the specified bean.
-	 * @param candidateAdvisors the candidate Advisors
-	 * @param beanClass the target's bean class
-	 * @param beanName the target's bean name
-	 * @return the List of applicable Advisors
-	 * @see ProxyCreationContext#getCurrentProxiedBeanName()
+	 * 搜索给定的候选advisor，以找到可以应用于指定bean的所有advisor
+	 * @param candidateAdvisors 候选Advisor
+	 * @param beanClass 目标的bean类型
+	 * @param beanName 目标的bean名称
 	 */
 	protected List<Advisor> findAdvisorsThatCanApply(
 			List<Advisor> candidateAdvisors, Class<?> beanClass, String beanName) {
 
-//		ProxyCreationContext.setCurrentProxiedBeanName(beanName);
-//		try {
-//			return AopUtils.findAdvisorsThatCanApply(candidateAdvisors, beanClass);
-//		}
-//		finally {
-//			ProxyCreationContext.setCurrentProxiedBeanName(null);
-//		}
-		return null;
+		ProxyCreationContext.setCurrentProxiedBeanName(beanName);
+		try {
+			return AopUtils.findAdvisorsThatCanApply(candidateAdvisors, beanClass);
+		}
+		finally {
+			ProxyCreationContext.setCurrentProxiedBeanName(null);
+		}
 	}
 
 	/**
-	 * Return whether the Advisor bean with the given name is eligible
-	 * for proxying in the first place.
-	 * @param beanName the name of the Advisor bean
-	 * @return whether the bean is eligible
+	 * 返回具有给定名称的Advisor Bean是否首先适合代理
+	 * @param beanName Advisor bean的名称
 	 */
 	protected boolean isEligibleAdvisorBean(String beanName) {
 		return true;
 	}
 
 	/**
-	 * Sort advisors based on ordering. Subclasses may choose to override this
-	 * method to customize the sorting strategy.
-	 * @param advisors the source List of Advisors
-	 * @return the sorted List of Advisors
+	 * 根据顺序对Advisor进行排序，子类可以选择重写此方法以自定义排序策略
+	 * @param advisors Advisor的源列表
 	 */
 	protected List<Advisor> sortAdvisors(List<Advisor> advisors) {
 		AnnotationAwareOrderComparator.sort(advisors);
@@ -122,19 +111,14 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	}
 
 	/**
-	 * Extension hook that subclasses can override to register additional Advisors,
-	 * given the sorted Advisors obtained to date.
-	 * <p>The default implementation is empty.
-	 * <p>Typically used to add Advisors that expose contextual information
-	 * required by some of the later advisors.
-	 * @param candidateAdvisors Advisors that have already been identified as
-	 * applying to a given bean
+	 * 子类通过重新这个方法进行扩展，用于注册额外的advisor
+	 * @param candidateAdvisors 已被标识为应用于给定bean的Advisor
 	 */
 	protected void extendAdvisors(List<Advisor> candidateAdvisors) {
 	}
 
 	/**
-	 * This auto-proxy creator always returns pre-filtered Advisors.
+	 * 此自动代理创建器一直返回预过滤的Advisors.
 	 */
 	@Override
 	protected boolean advisorsPreFiltered() {

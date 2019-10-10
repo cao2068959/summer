@@ -27,7 +27,7 @@ public class ProxyCreationContext {
 	/**
 	 * 设置当前代理的bean实例的名称,传入null则清除ThreadLocal
 	 */
-	static void setCurrentProxiedBeanName(@Nullable String beanName) {
+	public static void setCurrentProxiedBeanName(@Nullable String beanName) {
 		if (beanName != null) {
 			//设置beanName
 			currentProxiedBeanName.set(beanName);
