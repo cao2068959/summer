@@ -479,9 +479,7 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
         if (beanInstance != null) {
             return (beanInstance instanceof FactoryBean);
         }
-
         //TODO 如果不是单列对象 要去判断 BD,这里先只考虑单例
-
         return false;
     }
 
@@ -489,23 +487,19 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
     public BeanDefinition getMergedBeanDefinition(String name) throws BeansException {
         String beanName = transformedBeanName(name);
 
-        // Efficiently check whether bean definition exists in this factory.
         if (!containsBeanDefinition(beanName) && getParentBeanFactory() instanceof ConfigurableListableBeanFactory) {
             return ((ConfigurableListableBeanFactory) getParentBeanFactory()).getMergedBeanDefinition(beanName);
         }
-        // Resolve merged bean definition locally.
         return getMergedLocalBeanDefinition(beanName);
     }
 
     @Override
     public ClassLoader getBeanClassLoader() {
-        //TODO 没有完成
-        return null;
+        return ClassUtils.getDefaultClassLoader();
     }
 
     @Override
     public boolean isCurrentlyInCreation(String beanName) {
-        //TODO 没有完成
-        return false;
+        return super.isSingletonCurrentlyInCreation(beanName);
     }
 }

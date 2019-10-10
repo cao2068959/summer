@@ -119,6 +119,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     }
 
 
+    @Override
     @Nullable
     public BeanFactory getParentBeanFactory() {
         return this.parentBeanFactory;

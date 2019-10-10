@@ -40,9 +40,12 @@ public class DefaultSingletonBeanRegistry {
      */
     protected Object getSingleton(String beanName, boolean allowEarlyReference) {
         Object singletonObject = this.singletonObjects.get(beanName);
+        //缓存里没有，并且并不是正在创建中，那么就继续
         if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
             synchronized (this.singletonObjects) {
+                //在单例对象的容器里没有找到，那么去半成品的容器里 瞅一瞅有没有
                 singletonObject = this.earlySingletonObjects.get(beanName);
+                //半成品也没有，那么如果传入了 allowEarlyReference 允许现场造一个那么就继续
                 if (singletonObject == null && allowEarlyReference) {
                     ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
                     if (singletonFactory != null) {
