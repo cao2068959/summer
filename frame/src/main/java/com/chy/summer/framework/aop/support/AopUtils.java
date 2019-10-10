@@ -117,10 +117,11 @@ public abstract class AopUtils {
 		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
 		for (Advisor candidate : candidateAdvisors) {
 			if (candidate instanceof IntroductionAdvisor) {
-				// already processed
 				continue;
 			}
+			//给定的advisor能否应用于给定的类
 			if (canApply(candidate, clazz, hasIntroductions)) {
+				//添加到适用列表中
 				eligibleAdvisors.add(candidate);
 			}
 		}
@@ -155,17 +156,20 @@ public abstract class AopUtils {
 			// 默认的方法匹配器可以匹配所有方法
 			return true;
 		}
-		//TODO GYX 写到这里
 		IntroductionAwareMethodMatcher introductionAwareMethodMatcher = null;
+		//方法是否是特殊的方法匹配器
 		if (methodMatcher instanceof IntroductionAwareMethodMatcher) {
 			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
 		}
 
+		//获取目标类的接口
 		Set<Class<?>> classes = new LinkedHashSet<>(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 		classes.add(targetClass);
 		for (Class<?> clazz : classes) {
+			//获取这个类上的所有方法
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
 			for (Method method : methods) {
+				//判断这些类中有没有匹配的方法
 				if ((introductionAwareMethodMatcher != null &&
 						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions)) ||
 						methodMatcher.matches(method, targetClass)) {

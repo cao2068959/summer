@@ -5,7 +5,7 @@ import com.sun.istack.internal.Nullable;
 import java.lang.reflect.Method;
 
 /**
- * 特殊类型的MethodMatcher方法在匹配方法
+ * 特殊类型的MethodMatcher方法的匹配方法
  * 在没有目标class的introductions的情况下，方法匹配器可以更有效的匹配
  */
 public interface IntroductionAwareMethodMatcher extends MethodMatcher {

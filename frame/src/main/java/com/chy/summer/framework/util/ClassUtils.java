@@ -697,11 +697,8 @@ public class ClassUtils {
     }
 
     /**
-     * Return all interfaces that the given class implements as a Set,
-     * including ones implemented by superclasses.
-     * <p>If the class itself is an interface, it gets returned as sole interface.
-     * @param clazz the class to analyze for interfaces
-     * @return all interfaces that the given object implements as a Set
+     * 返回一个set，包含给定类的所有接口，包括由父类实现的接口。
+     * 如果类本身是接口，则将其作为唯一接口返回
      */
     public static Set<Class<?>> getAllInterfacesForClassAsSet(Class<?> clazz) {
         return getAllInterfacesForClassAsSet(clazz, null);
