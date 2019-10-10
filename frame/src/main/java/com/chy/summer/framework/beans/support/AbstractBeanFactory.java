@@ -5,15 +5,21 @@ import com.chy.summer.framework.beans.ConfigurableBeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.beans.HierarchicalBeanFactory;
 import com.chy.summer.framework.beans.config.BeanDefinition;
+import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.exception.BeansException;
+import com.chy.summer.framework.exception.CannotLoadBeanClassException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
 import com.chy.summer.framework.util.ClassUtils;
+import com.chy.summer.framework.util.ObjectUtils;
 import com.sun.istack.internal.Nullable;
 
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -65,15 +71,49 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                 //TODO 这里还有泛型的判断,这里先留个坑
             }
             return false;
-        }
-        else if (containsSingleton(beanName) && !containsBeanDefinition(beanName)) {
+
+        } else if (containsSingleton(beanName) && !containsBeanDefinition(beanName)) {
+            //这里如果beanName 是一个单例 但是没有对应的 BeanDefinition 那么 就直接跳过了
             return false;
         }
 
-        //TODO 后面还有用 RootBeanDefinition 去判断类型的,这里先留个坑
-
-        return false;
+        //去拿到对应name的 BeanDefinition
+        RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+        Class<?> beanType = predictBeanType(mbd);
+        if (beanType == null) {
+            return false;
+        }
+        return typeToMatch.isAssignableFrom(beanType);
     }
+
+    protected Class<?> predictBeanType(RootBeanDefinition mbd) {
+        Class<?> targetType = mbd.getTargetType();
+        if (targetType != null) {
+            return targetType;
+        }
+        return resolveBeanClass(mbd);
+    }
+
+    protected Class<?> resolveBeanClass(final RootBeanDefinition mbd){
+        try {
+            if (mbd.hasBeanClass()) {
+                return mbd.getBeanClass();
+            }
+            return doResolveBeanClass(mbd);
+        }
+        catch (ClassNotFoundException | LinkageError e) {
+            e.printStackTrace();
+            throw new CannotLoadBeanClassException("类解析失败 [{}]",mbd);
+        }
+    }
+
+    private Class<?> doResolveBeanClass(RootBeanDefinition mbd)
+            throws ClassNotFoundException {
+        return mbd.resolveBeanClass(ClassUtils.getDefaultClassLoader());
+    }
+
+
+    protected abstract RootBeanDefinition getMergedLocalBeanDefinition(String beanName);
 
     protected abstract boolean containsBeanDefinition(String beanName);
 

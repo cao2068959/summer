@@ -73,5 +73,7 @@ public interface BeanDefinition {
      @Nullable
      String getResourceDescription();
 
+     Class<?> getBeanClass() throws IllegalStateException;
+
 
 }

@@ -4,6 +4,7 @@ import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
 import com.chy.summer.framework.core.ResolvableType;
+import com.chy.summer.framework.util.ClassUtils;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
@@ -39,6 +40,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     final Object postProcessingLock = new Object();
 
     boolean postProcessed = false;
+
 
     protected RootBeanDefinition(BeanDefinition original) {
         super(original);
@@ -139,4 +141,14 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     public BeanDefinitionHolder getDecoratedDefinition() {
         return this.decoratedDefinition;
     }
+
+    public Class<?> getTargetType() {
+        if (this.resolvedTargetType != null) {
+            return this.resolvedTargetType;
+        }
+        ResolvableType targetType = this.targetType;
+        return (targetType != null ? targetType.resolve() : null);
+    }
+
+
 }

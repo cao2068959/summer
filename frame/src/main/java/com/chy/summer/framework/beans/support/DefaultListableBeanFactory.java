@@ -119,7 +119,7 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
 
         for (String beanName : this.beanDefinitionNames) {
             //如果是别名,直接跳过
-            if (!isAlias(beanName)) {
+            if (isAlias(beanName)) {
                 continue;
             }
 
@@ -450,6 +450,7 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
      * @return
      * @throws BeansException
      */
+    @Override
     public RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
 
         RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);

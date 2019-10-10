@@ -3,6 +3,7 @@ package com.chy.summer.framework.beans.support;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.chy.summer.framework.core.io.support.Resource;
+import com.chy.summer.framework.util.ClassUtils;
 
 import java.util.function.Supplier;
 
@@ -76,10 +77,15 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
         this.abstractFlag = abstractFlag;
     }
 
+    public boolean hasBeanClass() {
+        return (this.beanClass instanceof Class);
+    }
+
     protected AbstractBeanDefinition(BeanDefinition original) {
         setParentName(original.getParentName());
         setBeanClassName(original.getBeanClassName());
         setScope(original.getScope());
+        setBeanClass(original.getBeanClass());
         //setAbstract(original.isAbstract());
         setLazyInit(original.isLazyInit());
         setFactoryBeanName(original.getFactoryBeanName());
@@ -113,10 +119,35 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
         this.beanClass = beanClass;
     }
 
+    @Override
+    public Class<?> getBeanClass() throws IllegalStateException {
+        Object beanClassObject = this.beanClass;
+        if (beanClassObject == null) {
+            throw new IllegalStateException("No bean class specified on bean definition");
+        }
+        if (!(beanClassObject instanceof Class)) {
+            throw new IllegalStateException(
+                    "Bean class name [" + beanClassObject + "] has not been resolved into an actual Class");
+        }
+        return (Class<?>) beanClassObject;
+    }
+
     public AbstractBeanDefinition() {
+    }
+
+    public Class<?> resolveBeanClass( ClassLoader classLoader) throws ClassNotFoundException {
+        String className = getBeanClassName();
+        if (className == null) {
+            return null;
+        }
+        Class<?> resolvedClass = ClassUtils.forName(className, classLoader);
+        this.beanClass = resolvedClass;
+        return resolvedClass;
     }
 
     public void setInstanceSupplier( Supplier<?> instanceSupplier) {
         this.instanceSupplier = instanceSupplier;
     }
+
+
 }
