@@ -1,5 +1,6 @@
 package com.chy.summer.framework.beans.support;
 
+import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.beans.factory.ObjectFactory;
 import com.chy.summer.framework.exception.IllegalStateException;
 import com.chy.summer.framework.util.Assert;
@@ -31,6 +32,10 @@ public class DefaultSingletonBeanRegistry {
     }
     /** 正在创建的单例对象*/
     private final Set<String> singletonsCurrentlyInCreation = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
+
+    /** 已经用FactroyBean 生成好的对象的缓存*/
+    private final Map<String, Object> factoryBeanObjectCache = new ConcurrentHashMap<>(16);
+
 
     /**
      * 获取单例对象
@@ -81,6 +86,27 @@ public class DefaultSingletonBeanRegistry {
         }
     }
 
+    /**
+     *  从 FactoryBean 里去获取对象然后放入容器
+     * @param factory
+     * @param beanName
+     * @param shouldPostProcess
+     * @return
+     */
+    protected Object getObjectFromFactoryBean(FactoryBean<?> factory, String beanName, boolean shouldPostProcess){
+        //判断是不是单例
+        if (factory.isSingleton() && containsSingleton(beanName)){
+
+        }else{
+
+        }
+    }
+
+
+    public Object getSingleton(String beanName) {
+        return getSingleton(beanName, true);
+    }
+
     protected void addSingleton(String beanName, Object singletonObject) {
         synchronized (this.singletonObjects) {
             this.singletonObjects.put(beanName, singletonObject);
@@ -88,6 +114,10 @@ public class DefaultSingletonBeanRegistry {
             this.earlySingletonObjects.remove(beanName);
             this.registeredSingletons.add(beanName);
         }
+    }
+
+    protected Object getCachedObjectForFactoryBean(String beanName) {
+        return this.factoryBeanObjectCache.get(beanName);
     }
 
 }

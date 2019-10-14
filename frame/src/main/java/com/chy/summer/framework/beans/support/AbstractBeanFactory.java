@@ -7,10 +7,7 @@ import com.chy.summer.framework.beans.HierarchicalBeanFactory;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
-import com.chy.summer.framework.exception.BeanDefinitionStoreException;
-import com.chy.summer.framework.exception.BeansException;
-import com.chy.summer.framework.exception.CannotLoadBeanClassException;
-import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
+import com.chy.summer.framework.exception.*;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
 import com.chy.summer.framework.util.ClassUtils;
@@ -211,5 +208,56 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     @Override
     public boolean containsBean(String beanName) {
         return false;
+    }
+
+    public <T> T doGetBean(final String name, final Class<T> requiredType, final Object[] args,
+                           boolean typeCheckOnly)throws BeansException{
+
+        Object bean;
+        final String beanName = transformedBeanName(name);
+        //先去单例的缓存里看看有没有对应的对象
+        Object sharedInstance = getSingleton(beanName);
+        if (sharedInstance != null && args == null) {
+            //虽然已经拿到了单列对象，但是这个对象可以能还没初始化完成
+            // 如果是FactoryBean,需要在这个方法里去调用 getObject 方法来获取真正的对象
+            // 如果用户传入的 name 前面带了 & 那么这里会直接 把FactoryBean 对象给返回出去，而去调用 getObject
+            bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
+        }
+    }
+
+
+    /**
+     * 为 FactoryBean 创建对象的方法
+     * @param beanInstance
+     * @param name
+     * @param beanName
+     * @param mbd
+     * @return
+     */
+    protected Object getObjectForBeanInstance(
+            Object beanInstance, String name, String beanName, @Nullable RootBeanDefinition mbd){
+
+        //如果name 传入了 &xxx 的格式，但是实际上并不是 FactoryBean，感觉被欺骗了，生气的抛出异常
+        if (BeanFactoryUtils.isFactoryDereference(name)) {
+            if (!(beanInstance instanceof FactoryBean)) {
+                throw new BeanIsNotAFactoryException(beanName, beanInstance.getClass());
+            }
+        }
+
+        //这里如果他不是 FactoryBean 或者 他就是想要 FactoryBean 本身的对象（&name 的模式），那么就直接返回
+        if (!(beanInstance instanceof FactoryBean) || BeanFactoryUtils.isFactoryDereference(name)) {
+            return beanInstance;
+        }
+
+        //也先去缓存里看看 有没人已经生成了
+        Object result = getCachedObjectForFactoryBean(beanName);
+        if(result !=null){
+            return result;
+        }
+
+        FactoryBean<?> factory = (FactoryBean<?>) beanInstance;
+        //从factroyBean 里去调用 getObjetc 方法了
+        return getObjectFromFactoryBean(factory, beanName, true);
+
     }
 }
