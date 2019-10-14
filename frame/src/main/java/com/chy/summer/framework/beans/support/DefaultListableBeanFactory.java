@@ -1,12 +1,10 @@
 package com.chy.summer.framework.beans.support;
 
-import com.chy.summer.framework.beans.BeanFactory;
-import com.chy.summer.framework.beans.BeanFactoryAware;
-import com.chy.summer.framework.beans.ConfigurableBeanFactory;
-import com.chy.summer.framework.beans.FactoryBean;
+import com.chy.summer.framework.beans.*;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.factory.AutowireCandidateResolver;
 import com.chy.summer.framework.core.ResolvableType;
+import com.chy.summer.framework.exception.BeanCreationException;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
@@ -19,16 +17,20 @@ import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 import static com.chy.summer.framework.util.BeanFactoryUtils.transformedBeanName;
 
 @Slf4j
-public class DefaultListableBeanFactory extends AbstractBeanFactory implements ConfigurableListableBeanFactory, BeanDefinitionRegistry {
+public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory implements ConfigurableListableBeanFactory, BeanDefinitionRegistry {
 
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String, BeanDefinition>(256);
 
@@ -63,6 +65,8 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
      * 根据类型查找beanName的缓存,这里是单例对象的
      */
     private final Map<Class<?>, String[]> singletonBeanNamesByType = new ConcurrentHashMap<>(64);
+
+
 
     private volatile boolean configurationFrozen = false;
 
@@ -261,6 +265,8 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
         return this.beanDefinitionMap.containsKey(beanName);
     }
 
+
+
     @Override
     public BeanDefinition getBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
         return beanDefinitionMap.get(beanName);
@@ -299,7 +305,7 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
             //如果 别名等于真实的名字,那么从别名容器里把别名移除,就算没有也要尝试一下
             if (alias.equals(name)) {
                 this.aliasMap.remove(alias);
-                log.debug("别名 [%s] 和 真实的beanName [%s] 一样",alias,name);
+                log.debug("别名 [{}] 和 真实的beanName [{}] 一样",alias,name);
             } else {
                 String registeredName = this.aliasMap.get(alias);
                 //如果已经存在了相同的别名,那么只会输出一下日志,不会覆盖注册
@@ -308,18 +314,18 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
                         //如果 这个别名已经注册过了,而且注册对象也是相同就直接跳过了.
                         return;
                     }
-                    log.info("别名 [%s] 已经被 beanName [%s] 给注册了. 新注册的 beanName [%s] 讲无权使用该别名",alias,
+                    log.info("别名 [{}] 已经被 beanName [{}] 给注册了. 新注册的 beanName [{}] 讲无权使用该别名",alias,
                             registeredName,name);
                 }
                 //在spring 里这里还检查了 这个别名是否 循环依赖的问题,这边用其他方法解决这个问题.
                 // 别名A --> 真名B(这个真名被当做了别名又被注册了一遍指向了别名A) --> 别名A
                 //这里会直接 去 beanDefinitionNames 判断一遍,真名和别名不允许重名
                 if(beanDefinitionNames.contains(alias)){
-                    String es = String.format("别名 [%s] 不能和beanName 重名 ",alias);
+                    String es = String.format("别名 [{}] 不能和beanName 重名 ",alias);
                     throw new BeanDefinitionStoreException(es);
                 }
                 this.aliasMap.put(alias, name);
-                log.debug("别名 [%s] 已经和 beanName [%s] 关联",alias,name);
+                log.debug("别名 [{}] 已经和 beanName [{}] 关联",alias,name);
             }
         }
     }
@@ -359,7 +365,6 @@ public class DefaultListableBeanFactory extends AbstractBeanFactory implements C
         }
         this.autowireCandidateResolver = autowireCandidateResolver;
     }
-
 
     //======================AbstractBeanFactory 的实现方法=================================
 

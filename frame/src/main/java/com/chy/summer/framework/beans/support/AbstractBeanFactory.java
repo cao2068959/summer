@@ -1,22 +1,17 @@
 package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.BeanFactory;
-import com.chy.summer.framework.beans.ConfigurableBeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.beans.HierarchicalBeanFactory;
 import com.chy.summer.framework.beans.config.BeanDefinition;
-import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.exception.*;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
 import com.chy.summer.framework.util.ClassUtils;
-import com.chy.summer.framework.util.ObjectUtils;
 import com.sun.istack.internal.Nullable;
 
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -212,7 +207,6 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     public <T> T doGetBean(final String name, final Class<T> requiredType, final Object[] args,
                            boolean typeCheckOnly)throws BeansException{
-
         Object bean;
         final String beanName = transformedBeanName(name);
         //先去单例的缓存里看看有没有对应的对象
@@ -222,9 +216,38 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             // 如果是FactoryBean,需要在这个方法里去调用 getObject 方法来获取真正的对象
             // 如果用户传入的 name 前面带了 & 那么这里会直接 把FactoryBean 对象给返回出去，而去调用 getObject
             bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
+        }else{
+            //获取这个beanName 对应的 beanDefintion
+            final RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+            //这里检查 对应的beanDefintion 是不是抽象类,抽象类不能实例化,抛出异常
+            checkMergedBeanDefinition(mbd,beanName);
+            //开始使用 BeanDefinition 去创建对象
+            creatObjectForBeanDefinition(beanName,mbd);
+
         }
     }
 
+
+
+    private Object creatObjectForBeanDefinition(String beanName,RootBeanDefinition mbd,final Object[] args){
+
+        Object result = null;
+        if (mbd.isSingleton()) {
+
+            result = getSingleton(beanName, () -> {
+                try {
+                    return createBean(beanName, mbd, args);
+                }
+                catch (BeansException ex) {
+                    throw ex;
+                }
+            });
+            bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
+        }
+    }
+
+
+    protected abstract Object createBean(String beanName, RootBeanDefinition mbd, Object[] args);
 
     /**
      * 为 FactoryBean 创建对象的方法
@@ -257,7 +280,15 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
         FactoryBean<?> factory = (FactoryBean<?>) beanInstance;
         //从factroyBean 里去调用 getObjetc 方法了
-        return getObjectFromFactoryBean(factory, beanName, true);
+        return getObjectFromFactoryBean(factory, beanName);
 
+    }
+
+    protected void checkMergedBeanDefinition(RootBeanDefinition mbd, String beanName)
+            throws BeanDefinitionStoreException {
+
+        if (mbd.isAbstract()) {
+            throw new BeanIsAbstractException("类 : [%s] 是抽象类,不能实例化",beanName);
+        }
     }
 }

@@ -5,4 +5,6 @@ public interface FactoryBean<T> {
     Class<?> getObjectType();
 
     boolean isSingleton();
+
+    Object getObject();
 }
