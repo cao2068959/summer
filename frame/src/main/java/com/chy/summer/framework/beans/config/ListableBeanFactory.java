@@ -9,4 +9,5 @@ public interface ListableBeanFactory extends BeanFactory {
 	 * 不考虑该工厂参与的任何层次结构，并且忽略通过bean定义以外的其他方式注册的任何单例bean
 	 */
 	boolean containsBeanDefinition(String beanName);
+
 }

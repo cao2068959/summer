@@ -40,4 +40,6 @@ public interface BeanFactory {
 
     boolean containsBean(String beanName);
 
+
+    boolean isSingleton(String beanName);
 }
