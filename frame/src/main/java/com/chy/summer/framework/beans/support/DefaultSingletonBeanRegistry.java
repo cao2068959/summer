@@ -192,4 +192,13 @@ public class DefaultSingletonBeanRegistry {
         return this.factoryBeanObjectCache.remove(beanName);
     }
 
+    //设置单例的创建工厂
+    protected void addSingletonFactory(String beanName, ObjectFactory<?> singletonFactory) {
+        if (!this.singletonObjects.containsKey(beanName)) {
+            this.singletonFactories.put(beanName, singletonFactory);
+            this.earlySingletonObjects.remove(beanName);
+            this.registeredSingletons.add(beanName);
+        }
+    }
+
 }

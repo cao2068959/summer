@@ -1,12 +1,17 @@
 package com.chy.summer.framework.beans.support;
 
+import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.BeanWrapper;
+import com.chy.summer.framework.beans.BeanWrapperImpl;
+import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.exception.BeanCreationException;
 import com.chy.summer.framework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +28,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * 存放没有初始化完成的 factoryBean
      */
     private final ConcurrentMap<String, BeanWrapper> factoryBeanInstanceCache = new ConcurrentHashMap<>(16);
+
+    private InstantiationStrategy instantiationStrategy = new SimpleInstantiationStrategy();
+
+
+    protected InstantiationStrategy getInstantiationStrategy() {
+        return this.instantiationStrategy;
+    }
 
     /**
      * 创建对象
@@ -55,45 +67,42 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         if (mbd.isSingleton()) {
             instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
         }
+
         if (instanceWrapper == null) {
             instanceWrapper = createBeanInstance(beanName, mbd, args);
         }
         final Object bean = instanceWrapper.getWrappedInstance();
         Class<?> beanType = instanceWrapper.getWrappedClass();
-        if (beanType != NullBean.class) {
-            mbd.resolvedTargetType = beanType;
-        }
 
-        // Allow post-processors to modify the merged bean definition.
-        synchronized (mbd.postProcessingLock) {
-            if (!mbd.postProcessed) {
-                try {
-                    applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
-                }
-                catch (Throwable ex) {
-                    throw new BeanCreationException(mbd.getResourceDescription(), beanName,
-                            "Post-processing of merged bean definition failed", ex);
-                }
-                mbd.postProcessed = true;
+        //把实例的类型 直接设入 RootBeanDefinition
+        mbd.resolvedTargetType = beanType;
+
+        if (!mbd.postProcessed) {
+            try {
+                // 执行了bean的前置处理器 也就是 BeanPostProcessor ,这里先只执行 MergedBeanDefinitionPostProcessor 类型
+                applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
             }
+            catch (Throwable ex) {
+                throw new BeanCreationException(mbd.getResourceDescription(), beanName,
+                        "执行 MergedBeanDefinitionPostProcessor 处理器失败", ex);
+            }
+            mbd.postProcessed = true;
         }
 
-        // Eagerly cache singletons to be able to resolve circular references
-        // even when triggered by lifecycle interfaces like BeanFactoryAware.
-        boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
-                isSingletonCurrentlyInCreation(beanName));
+        //是否面临了循环依赖的问题
+        boolean earlySingletonExposure = (mbd.isSingleton()  && isSingletonCurrentlyInCreation(beanName));
         if (earlySingletonExposure) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Eagerly caching bean '" + beanName +
-                        "' to allow for resolving potential circular references");
-            }
+            //这个getEarlyBeanReference 其实也是一个BeanPostProcessor 执行器,这里执行的是接口 SmartInstantiationAwareBeanPostProcessor
+            //这里也是循环依赖的破解关键
             addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
         }
 
-        // Initialize the bean instance.
         Object exposedObject = bean;
         try {
+            //同样的 BeanPostProcessor执行器,这里是  InstantiationAwareBeanPostProcessor
+            //这个执行器的主要功能在于 属性的注入
             populateBean(beanName, mbd, instanceWrapper);
+            //这里也是 BeanPostProcessor执行器 ,但是这次是真的执行了所有 BeanPostProcessor 接口
             exposedObject = initializeBean(beanName, exposedObject, mbd);
         }
         catch (Throwable ex) {
@@ -106,45 +115,44 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             }
         }
 
-        if (earlySingletonExposure) {
-            Object earlySingletonReference = getSingleton(beanName, false);
-            if (earlySingletonReference != null) {
-                if (exposedObject == bean) {
-                    exposedObject = earlySingletonReference;
-                }
-                else if (!this.allowRawInjectionDespiteWrapping && hasDependentBean(beanName)) {
-                    String[] dependentBeans = getDependentBeans(beanName);
-                    Set<String> actualDependentBeans = new LinkedHashSet<>(dependentBeans.length);
-                    for (String dependentBean : dependentBeans) {
-                        if (!removeSingletonIfCreatedForTypeCheckOnly(dependentBean)) {
-                            actualDependentBeans.add(dependentBean);
-                        }
-                    }
-                    if (!actualDependentBeans.isEmpty()) {
-                        throw new BeanCurrentlyInCreationException(beanName,
-                                "Bean with name '" + beanName + "' has been injected into other beans [" +
-                                        StringUtils.collectionToCommaDelimitedString(actualDependentBeans) +
-                                        "] in its raw version as part of a circular reference, but has eventually been " +
-                                        "wrapped. This means that said other beans do not use the final version of the " +
-                                        "bean. This is often the result of over-eager type matching - consider using " +
-                                        "'getBeanNamesOfType' with the 'allowEagerInit' flag turned off, for example.");
-                    }
-                }
-            }
-        }
-
-        // Register bean as disposable.
-        try {
-            registerDisposableBeanIfNecessary(beanName, bean, mbd);
-        }
-        catch (BeanDefinitionValidationException ex) {
-            throw new BeanCreationException(
-                    mbd.getResourceDescription(), beanName, "Invalid destruction signature", ex);
-        }
-
         return exposedObject;
     }
 
+    private Object initializeBean(String beanName, Object exposedObject, RootBeanDefinition mbd) {
+        return null;
+    }
+
+    private void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper instanceWrapper) {
+
+    }
+
+    private void applyMergedBeanDefinitionPostProcessors(RootBeanDefinition mbd, Class<?> beanType, String beanName) {
+        for (BeanPostProcessor bp : getBeanPostProcessors()) {
+            if (bp instanceof MergedBeanDefinitionPostProcessor) {
+                MergedBeanDefinitionPostProcessor bdp = (MergedBeanDefinitionPostProcessor) bp;
+                bdp.postProcessMergedBeanDefinition(mbd, beanType, beanName);
+            }
+        }
+    }
+
+
+    /**
+     * 执行 BeanPostProcessor 不过是 SmartInstantiationAwareBeanPostProcessor 的执行器
+     * @param beanName
+     * @param mbd
+     * @param bean
+     * @return
+     */
+    protected Object getEarlyBeanReference(String beanName, RootBeanDefinition mbd, Object bean) {
+        Object exposedObject = bean;
+        for (BeanPostProcessor bp : getBeanPostProcessors()) {
+            if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
+                SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
+                exposedObject = ibp.getEarlyBeanReference(exposedObject, beanName);
+            }
+        }
+        return exposedObject;
+    }
 
     /**
      * 实例化对象
@@ -165,35 +173,34 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
         //TODO 这里还有使用 jdk8的 Supplier 去创建对象,这里先留坑
 
-        boolean resolved = false;
-        boolean autowireNecessary = false;
-        if (args == null) {
-            synchronized (mbd.constructorArgumentLock) {
-                if (mbd.resolvedConstructorOrFactoryMethod != null) {
-                    resolved = true;
-                    autowireNecessary = mbd.constructorArgumentsResolved;
-                }
-            }
-        }
-        if (resolved) {
-            if (autowireNecessary) {
-                return autowireConstructor(beanName, mbd, null, null);
-            }
-            else {
-                return instantiateBean(beanName, mbd);
-            }
-        }
-
-        // Need to determine the constructor...
-        Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
-        if (ctors != null ||
-                mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE_CONSTRUCTOR ||
-                mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args))  {
-            return autowireConstructor(beanName, mbd, ctors, args);
-        }
-
-        // No special handling: simply use no-arg constructor.
+        //这里直接用无参构造器去初始化 对象,同时用 BeanWrapper 给包装了
         return instantiateBean(beanName, mbd);
+    }
+
+    /**
+     * 无参数的构造器初始化
+     * @param beanName
+     * @param mbd
+     * @return
+     */
+    protected BeanWrapper instantiateBean(final String beanName, final RootBeanDefinition mbd) {
+        try {
+            Object beanInstance;
+            final BeanFactory parent = this;
+            //用无参构造器实例化了
+            beanInstance = getInstantiationStrategy().instantiate(mbd, beanName, parent);
+            BeanWrapper bw = new BeanWrapperImpl(beanInstance);
+            //初始化一些属性编辑器的东西,这里先忽略
+            initBeanWrapper(bw);
+            return bw;
+        }
+        catch (Throwable ex) {
+            throw new BeanCreationException(
+                    mbd.getResourceDescription(), beanName, "实例化bean失败", ex);
+        }
+    }
+
+    private void initBeanWrapper(BeanWrapper bw) {
     }
 
 }
