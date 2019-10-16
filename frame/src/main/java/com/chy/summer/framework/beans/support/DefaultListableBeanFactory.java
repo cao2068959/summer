@@ -77,15 +77,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
     private Comparator<Object> dependencyComparator;
 
-    @Override
-    public Object getBean(String name) {
-        return null;
-    }
 
-    @Override
-    public <T> T getBean(String name, Class<T> type) {
-        return null;
-    }
 
     /**
      * 根据类型获取 bean的name

@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 public abstract class AbstractBeanDefinition implements BeanDefinition {
 
     private String beanClassName;
-    private ScopeType scope;
+    private ScopeType scope = ScopeType.SINGLETON;
     private boolean lazyInit = false;
     private Resource resource;
     private boolean abstractFlag = false;
