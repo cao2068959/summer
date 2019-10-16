@@ -508,4 +508,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public boolean isCurrentlyInCreation(String beanName) {
         return super.isSingletonCurrentlyInCreation(beanName);
     }
+
+    @Override
+    public Object getSingletonMutex() {
+        return getSingletonObjects();
+    }
 }

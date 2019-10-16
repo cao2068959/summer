@@ -2,17 +2,20 @@ package com.chy.summer.framework.core.annotation;
 
 
 import com.chy.summer.framework.annotation.core.AliasFor;
-import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.factory.ContextAnnotationAutowireCandidateResolver;
 import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
 import com.chy.summer.framework.beans.support.RootBeanDefinition;
 import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
+import com.chy.summer.framework.core.BridgeMethodResolver;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.util.Assert;
+import com.chy.summer.framework.util.ConcurrentReferenceHashMap;
+import com.chy.summer.framework.util.ReflectionUtils;
 import com.sun.istack.internal.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.derby.iapi.sql.dictionary.AliasDescriptor;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -26,6 +29,15 @@ public  abstract class AnnotationUtils {
 
     private static final Map<AnnotationCacheKey, Annotation> findAnnotationCache =
             new ConcurrentHashMap<>(256);
+
+    private static final Map<Class<? extends Annotation>, Boolean> synthesizableCache =
+            new ConcurrentReferenceHashMap<>(256);
+
+    /**
+     * 注解与注解类的参数的映射关系
+     */
+    private static final Map<Class<? extends Annotation>, List<Method>> attributeMethodsCache =
+            new ConcurrentReferenceHashMap<>(256);
 
     public static final String CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME =
             "chy.summer.internalConfigurationAnnotationProcessor";
@@ -250,6 +262,145 @@ public  abstract class AnnotationUtils {
         //注册
         registry.registerBeanDefinition(beanName, definition);
         return new BeanDefinitionHolder(definition, beanName);
+    }
+
+    @Nullable
+    public static <A extends Annotation> A getAnnotation(Method method, Class<A> annotationType) {
+        Method resolvedMethod = BridgeMethodResolver.findBridgedMethod(method);
+        return getAnnotation((AnnotatedElement) resolvedMethod, annotationType);
+    }
+
+    /**
+     * 在注解上查找指定类型的注解
+     */
+    @Nullable
+    public static <A extends Annotation> A getAnnotation(AnnotatedElement annotatedElement, Class<A> annotationType) {
+        try {
+            //获取注解类上的所有注解
+            A annotation = annotatedElement.getAnnotation(annotationType);
+            if (annotation == null) {
+                for (Annotation metaAnn : annotatedElement.getAnnotations()) {
+                    //找到需要的注解
+                    annotation = metaAnn.annotationType().getAnnotation(annotationType);
+                    if (annotation != null) {
+                        break;
+                    }
+                }
+            }
+            return (annotation != null ? synthesizeAnnotation(annotation, annotatedElement) : null);
+        }
+        catch (Throwable ex) {
+            //TODO GYX 这里没有完成
+//            handleIntrospectionFailure(annotatedElement, ex);
+            return null;
+        }
+    }
+
+    /**
+     * 合成注解
+     */
+    public static <A extends Annotation> A synthesizeAnnotation(
+            A annotation, @Nullable AnnotatedElement annotatedElement) {
+
+        return synthesizeAnnotation(annotation, (Object) annotatedElement);
+    }
+
+    static <A extends Annotation> A synthesizeAnnotation(A annotation, @Nullable Object annotatedElement) {
+        Assert.notNull(annotation, "Annotation不可为空");
+        if (annotation instanceof SynthesizedAnnotation) {
+            return annotation;
+        }
+
+        Class<? extends Annotation> annotationType = annotation.annotationType();
+        if (!isSynthesizable(annotationType)) {
+            return annotation;
+        }
+
+//        DefaultAnnotationAttributeExtractor attributeExtractor =
+//                new DefaultAnnotationAttributeExtractor(annotation, annotatedElement);
+//        InvocationHandler handler = new SynthesizedAnnotationInvocationHandler(attributeExtractor);
+
+        // Can always expose Spring's SynthesizedAnnotation marker since we explicitly check for a
+        // synthesizable annotation before (which needs to declare @AliasFor from the same package)
+        Class<?>[] exposedInterfaces = new Class<?>[] {annotationType, SynthesizedAnnotation.class};
+//        return (A) Proxy.newProxyInstance(annotation.getClass().getClassLoader(), exposedInterfaces, handler);
+        return null;
+    }
+
+    /**
+     * 判断提供的注释类型的注释是否可合成，即是否需要包装在提供功能高于标准JDK注释的动态代理中
+     * @param annotationType 需要判断的注解类型
+     * @return
+     */
+    private static boolean isSynthesizable(Class<? extends Annotation> annotationType) {
+        //尝试从缓存中获取结果
+        Boolean synthesizable = synthesizableCache.get(annotationType);
+        if (synthesizable != null) {
+            return synthesizable;
+        }
+
+        synthesizable = Boolean.FALSE;
+        //找到注解参数
+        for (Method attribute : getAttributeMethods(annotationType)) {
+            if (!getAttributeAliasNames(attribute).isEmpty()) {
+                synthesizable = Boolean.TRUE;
+                break;
+            }
+            Class<?> returnType = attribute.getReturnType();
+            if (Annotation[].class.isAssignableFrom(returnType)) {
+                Class<? extends Annotation> nestedAnnotationType =
+                        (Class<? extends Annotation>) returnType.getComponentType();
+                if (isSynthesizable(nestedAnnotationType)) {
+                    synthesizable = Boolean.TRUE;
+                    break;
+                }
+            }
+            else if (Annotation.class.isAssignableFrom(returnType)) {
+                Class<? extends Annotation> nestedAnnotationType = (Class<? extends Annotation>) returnType;
+                if (isSynthesizable(nestedAnnotationType)) {
+                    synthesizable = Boolean.TRUE;
+                    break;
+                }
+            }
+        }
+
+        synthesizableCache.put(annotationType, synthesizable);
+        return synthesizable;
+    }
+
+    /**
+     * 获取在提供的annotationType中声明方法（注解的参数）
+     * @param annotationType
+     * @return
+     */
+    static List<Method> getAttributeMethods(Class<? extends Annotation> annotationType) {
+        //尝试从缓存中获取
+        List<Method> methods = attributeMethodsCache.get(annotationType);
+        if (methods != null) {
+            return methods;
+        }
+
+        methods = new ArrayList<>();
+        for (Method method : annotationType.getDeclaredMethods()) {
+            //逐一判断方法是否符合注解要求（没有参数，没有返回值）
+            if (isAttributeMethod(method)) {
+                ReflectionUtils.makeAccessible(method);
+                methods.add(method);
+            }
+        }
+
+        attributeMethodsCache.put(annotationType, methods);
+        return methods;
+    }
+
+    /**
+     * 获取通过@AliasFor为所提供的注释属性 配置的别名属性
+     */
+    static List<String> getAttributeAliasNames(Method attribute) {
+        return null;
+//        Assert.notNull(attribute, "attribute不可为空");
+//        AliasDescriptor descriptor = AliasDescriptor.from(attribute);
+//        return (descriptor != null ? descriptor.getAttributeAliasNames() : Collections.<String> emptyList());
     }
 
     private static DefaultListableBeanFactory unwrapDefaultListableBeanFactory(BeanDefinitionRegistry registry) {

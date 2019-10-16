@@ -87,9 +87,9 @@ public class BeanFactoryAspectInstanceFactory implements MetadataAwareAspectInst
 		if (this.beanFactory.isSingleton(this.name)) {
 			return null;
 		}
-//		else if (this.beanFactory instanceof ConfigurableBeanFactory) {
-//			return ((ConfigurableBeanFactory) this.beanFactory).getSingletonMutex();
-//		}
+		else if (this.beanFactory instanceof ConfigurableBeanFactory) {
+			return ((ConfigurableBeanFactory) this.beanFactory).getSingletonMutex();
+		}
 		else {
 			return this;
 		}

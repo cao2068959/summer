@@ -192,4 +192,7 @@ public class DefaultSingletonBeanRegistry {
         return this.factoryBeanObjectCache.remove(beanName);
     }
 
+    public Map<String, Object> getSingletonObjects() {
+        return singletonObjects;
+    }
 }

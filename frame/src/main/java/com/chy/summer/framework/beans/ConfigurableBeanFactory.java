@@ -11,5 +11,7 @@ public interface ConfigurableBeanFactory {
     ClassLoader getBeanClassLoader();
 
     boolean isCurrentlyInCreation(String beanName);
+
+    Object getSingletonMutex();
     //TODO 尚未完成
 }
