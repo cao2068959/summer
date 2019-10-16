@@ -115,6 +115,10 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     }
 
 
+    public List<BeanPostProcessor> getBeanPostProcessors() {
+        return this.beanPostProcessors;
+    }
+
     public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
         Assert.notNull(beanPostProcessor, "BeanPostProcessor 必须不能为 null");
         this.beanPostProcessors.remove(beanPostProcessor);
@@ -207,7 +211,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     public <T> T doGetBean(final String name, final Class<T> requiredType, final Object[] args,
                            boolean typeCheckOnly)throws BeansException{
-        Object bean;
+        Object bean = null;
         final String beanName = transformedBeanName(name);
         //先去单例的缓存里看看有没有对应的对象
         Object sharedInstance = getSingleton(beanName);
@@ -222,18 +226,32 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             //这里检查 对应的beanDefintion 是不是抽象类,抽象类不能实例化,抛出异常
             checkMergedBeanDefinition(mbd,beanName);
             //开始使用 BeanDefinition 去创建对象
-            creatObjectForBeanDefinition(beanName,mbd);
-
+            creatObjectForBeanDefinition(name,beanName,mbd,args);
         }
+
+        //如果 指定了生成的类型,但是拿到的实例和类型不符合进入这个if
+        if (requiredType != null && !requiredType.isInstance(bean)){
+            //我这里也懒得处理,直接异常
+            throw new BeanNotOfRequiredTypeException("name:[%s] 对应的实例,和指定类 [%s] 类型不匹配",name,requiredType);
+        }
+
+        return (T)bean;
     }
 
 
-
-    private Object creatObjectForBeanDefinition(String beanName,RootBeanDefinition mbd,final Object[] args){
+    /**
+     * 通过 BeanDefinition 去创建对象
+     * @param name
+     * @param beanName
+     * @param mbd
+     * @param args
+     * @return
+     */
+    private Object creatObjectForBeanDefinition(String name ,String beanName,RootBeanDefinition mbd,final Object[] args){
 
         Object result = null;
         if (mbd.isSingleton()) {
-
+            //这里真正开始创建单例哦
             result = getSingleton(beanName, () -> {
                 try {
                     return createBean(beanName, mbd, args);
@@ -242,8 +260,13 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                     throw ex;
                 }
             });
-            bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
+        }else{
+            //非单例创建
+            result = createBean(beanName, mbd, args);
         }
+
+        //同doGetBean 方法,虽然拿到了对象,但是还是要对 FactoryBean 做一下处理
+        return getObjectForBeanInstance(result, name, beanName, mbd);
     }
 
 

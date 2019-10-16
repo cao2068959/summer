@@ -145,6 +145,10 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
         return resolvedClass;
     }
 
+    public boolean hasMethodOverrides() {
+        return false;
+    }
+
     public void setInstanceSupplier( Supplier<?> instanceSupplier) {
         this.instanceSupplier = instanceSupplier;
     }
