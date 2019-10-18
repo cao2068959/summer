@@ -14,7 +14,7 @@ public class AliasForTask {
     private Class<? extends Annotation> targerClass;
     private String targerName;
 
-    public AliasForTask(AliasFor aliasFor,String defaultName,Class<? extends Annotation> annotationClass) {
+    public AliasForTask(AliasFor aliasFor, String defaultName, Class<? extends Annotation> annotationClass) {
         targerClass =aliasFor.annotation();
         targerName = aliasFor.name();
         //如果没显性的设置属性的名称,就默认和方法名称一致

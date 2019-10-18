@@ -10,9 +10,7 @@ import com.chy.summer.framework.beans.support.RootBeanDefinition;
 import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
 import com.chy.summer.framework.core.BridgeMethodResolver;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
-import com.chy.summer.framework.util.Assert;
-import com.chy.summer.framework.util.ConcurrentReferenceHashMap;
-import com.chy.summer.framework.util.ReflectionUtils;
+import com.chy.summer.framework.util.*;
 import com.sun.istack.internal.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.derby.iapi.sql.dictionary.AliasDescriptor;
@@ -32,6 +30,16 @@ public  abstract class AnnotationUtils {
 
     private static final Map<Class<? extends Annotation>, Boolean> synthesizableCache =
             new ConcurrentReferenceHashMap<>(256);
+
+    private static final Map<Method, AliasDescriptor> aliasDescriptorCache =
+            new ConcurrentReferenceHashMap<>(256);
+
+    private static final Map<AnnotationCacheKey, Boolean> metaPresentCache =
+            new ConcurrentReferenceHashMap<>(256);
+
+    private static final Map<Class<? extends Annotation>, Map<String, List<String>>> attributeAliasesCache =
+            new ConcurrentReferenceHashMap<>(256);
+
 
     /**
      * 注解与注解类的参数的映射关系
@@ -290,8 +298,8 @@ public  abstract class AnnotationUtils {
             return (annotation != null ? synthesizeAnnotation(annotation, annotatedElement) : null);
         }
         catch (Throwable ex) {
-            //TODO GYX 这里没有完成
-//            handleIntrospectionFailure(annotatedElement, ex);
+            //额外的异常抛出
+            //handleIntrospectionFailure(annotatedElement, ex);
             return null;
         }
     }
@@ -305,6 +313,9 @@ public  abstract class AnnotationUtils {
         return synthesizeAnnotation(annotation, (Object) annotatedElement);
     }
 
+    /**
+     * 合成注解
+     */
     static <A extends Annotation> A synthesizeAnnotation(A annotation, @Nullable Object annotatedElement) {
         Assert.notNull(annotation, "Annotation不可为空");
         if (annotation instanceof SynthesizedAnnotation) {
@@ -315,16 +326,35 @@ public  abstract class AnnotationUtils {
         if (!isSynthesizable(annotationType)) {
             return annotation;
         }
+        //创建注释属性提取器
+        DefaultAnnotationAttributeExtractor attributeExtractor =
+                new DefaultAnnotationAttributeExtractor(annotation, annotatedElement);
+        InvocationHandler handler = new SynthesizedAnnotationInvocationHandler(attributeExtractor);
 
-//        DefaultAnnotationAttributeExtractor attributeExtractor =
-//                new DefaultAnnotationAttributeExtractor(annotation, annotatedElement);
-//        InvocationHandler handler = new SynthesizedAnnotationInvocationHandler(attributeExtractor);
-
-        // Can always expose Spring's SynthesizedAnnotation marker since we explicitly check for a
-        // synthesizable annotation before (which needs to declare @AliasFor from the same package)
+        //创建合成注解
         Class<?>[] exposedInterfaces = new Class<?>[] {annotationType, SynthesizedAnnotation.class};
-//        return (A) Proxy.newProxyInstance(annotation.getClass().getClassLoader(), exposedInterfaces, handler);
-        return null;
+        return (A) Proxy.newProxyInstance(annotation.getClass().getClassLoader(), exposedInterfaces, handler);
+    }
+
+    /**
+     * 将注解数组合并
+     */
+    static Annotation[] synthesizeAnnotationArray(
+            Annotation[] annotations, @Nullable Object annotatedElement) {
+
+        Annotation[] synthesized = (Annotation[]) Array.newInstance(
+                annotations.getClass().getComponentType(), annotations.length);
+        for (int i = 0; i < annotations.length; i++) {
+            synthesized[i] = synthesizeAnnotation(annotations[i], annotatedElement);
+        }
+        return synthesized;
+    }
+
+    /**
+     * 判断提供的方法是否为“ annotationType”方法
+     */
+    static boolean isAnnotationTypeMethod(@Nullable Method method) {
+        return (method != null && method.getName().equals("annotationType") && method.getParameterCount() == 0);
     }
 
     /**
@@ -369,6 +399,56 @@ public  abstract class AnnotationUtils {
     }
 
     /**
+     * 获取注解的属性别名
+     * @param annotationType
+     * @return
+     */
+    static Map<String, List<String>> getAttributeAliasMap(@Nullable Class<? extends Annotation> annotationType) {
+        if (annotationType == null) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, List<String>> map = attributeAliasesCache.get(annotationType);
+        if (map != null) {
+            return map;
+        }
+
+        map = new LinkedHashMap<>();
+        for (Method attribute : getAttributeMethods(annotationType)) {
+            List<String> aliasNames = getAttributeAliasNames(attribute);
+            if (!aliasNames.isEmpty()) {
+                map.put(attribute.getName(), aliasNames);
+            }
+        }
+
+        attributeAliasesCache.put(annotationType, map);
+        return map;
+    }
+
+    /**
+     * 给定类注释类型，检索指定属性的默认值
+     * @param annotationType 注释类型
+     * @param attributeName 属性名
+     * @return
+     */
+    @Nullable
+    public static Object getDefaultValue(
+            @Nullable Class<? extends Annotation> annotationType, @Nullable String attributeName) {
+
+        if (annotationType == null || !StringUtils.hasText(attributeName)) {
+            return null;
+        }
+        try {
+            return annotationType.getDeclaredMethod(attributeName).getDefaultValue();
+        }
+        catch (Throwable ex) {
+            //抛出额外的错误
+//            handleIntrospectionFailure(annotationType, ex);
+            return null;
+        }
+    }
+
+    /**
      * 获取在提供的annotationType中声明方法（注解的参数）
      * @param annotationType
      * @return
@@ -397,10 +477,9 @@ public  abstract class AnnotationUtils {
      * 获取通过@AliasFor为所提供的注释属性 配置的别名属性
      */
     static List<String> getAttributeAliasNames(Method attribute) {
-        return null;
-//        Assert.notNull(attribute, "attribute不可为空");
-//        AliasDescriptor descriptor = AliasDescriptor.from(attribute);
-//        return (descriptor != null ? descriptor.getAttributeAliasNames() : Collections.<String> emptyList());
+        Assert.notNull(attribute, "attribute不可为空");
+        AliasDescriptor descriptor = AliasDescriptor.from(attribute);
+        return (descriptor != null ? descriptor.getAttributeAliasNames() : Collections.<String> emptyList());
     }
 
     private static DefaultListableBeanFactory unwrapDefaultListableBeanFactory(BeanDefinitionRegistry registry) {
@@ -409,6 +488,337 @@ public  abstract class AnnotationUtils {
         }
         else {
             return null;
+        }
+    }
+
+    /**
+     * 判断metaAnnotationType注释元是否存在
+     * @param annotationType
+     * @param metaAnnotationType
+     * @return
+     */
+    public static boolean isAnnotationMetaPresent(Class<? extends Annotation> annotationType,
+                                                  @Nullable Class<? extends Annotation> metaAnnotationType) {
+        Assert.notNull(annotationType, "AnnotationType不可为空");
+        if (metaAnnotationType == null) {
+            return false;
+        }
+        //创建一个缓存对象用于查询
+        AnnotationCacheKey cacheKey = new AnnotationCacheKey(annotationType, metaAnnotationType);
+        //尝试从缓存获取
+        Boolean metaPresent = metaPresentCache.get(cacheKey);
+        if (metaPresent != null) {
+            return metaPresent;
+        }
+        metaPresent = Boolean.FALSE;
+        if (findAnnotation(annotationType, metaAnnotationType, false) != null) {
+            metaPresent = Boolean.TRUE;
+        }
+        metaPresentCache.put(cacheKey, metaPresent);
+        return metaPresent;
+    }
+
+    /**
+     * 在给定的类上找到相应的注解
+     */
+    private static <A extends Annotation> A findAnnotation(
+            Class<?> clazz, @Nullable Class<A> annotationType, boolean synthesize) {
+
+        Assert.notNull(clazz, "Class不可为空");
+        if (annotationType == null) {
+            return null;
+        }
+
+        AnnotationCacheKey cacheKey = new AnnotationCacheKey(clazz, annotationType);
+        A result = (A) findAnnotationCache.get(cacheKey);
+        if (result == null) {
+            result = findAnnotation(clazz, annotationType, new HashSet<>());
+            if (result != null && synthesize) {
+                //合成注解
+                result = synthesizeAnnotation(result, clazz);
+                findAnnotationCache.put(cacheKey, result);
+            }
+        }
+        return result;
+    }
+
+    private static class AliasDescriptor {
+
+        private final Method sourceAttribute;
+
+        private final Class<? extends Annotation> sourceAnnotationType;
+
+        private final String sourceAttributeName;
+
+        private final Method aliasedAttribute;
+
+        private final Class<? extends Annotation> aliasedAnnotationType;
+
+        private final String aliasedAttributeName;
+
+        private final boolean isAliasPair;
+
+        /**
+         * 在提供的注释属性上从@AliasFor的声明中创建一个AliasDescriptor，并验证@AliasFor的配置
+         * @param attribute @AliasFor注释的注释属性
+         */
+        @Nullable
+        public static AliasDescriptor from(Method attribute) {
+            //尝试从缓存中获取AliasDescriptor
+            AliasDescriptor descriptor = aliasDescriptorCache.get(attribute);
+            if (descriptor != null) {
+                return descriptor;
+            }
+            //验证AliasFor注解
+            AliasFor aliasFor = attribute.getAnnotation(AliasFor.class);
+            if (aliasFor == null) {
+                return null;
+            }
+            //创建一个新AliasDescriptor
+            descriptor = new AliasDescriptor(attribute, aliasFor);
+            descriptor.validate();
+            aliasDescriptorCache.put(attribute, descriptor);
+            return descriptor;
+        }
+
+        /**
+         * 创建一个新AliasDescriptor
+         *
+         * @param sourceAttribute
+         * @param aliasFor
+         */
+        private AliasDescriptor(Method sourceAttribute, AliasFor aliasFor) {
+            Class<?> declaringClass = sourceAttribute.getDeclaringClass();
+            Assert.isTrue(declaringClass.isAnnotation(), "源属性必须来自注释");
+            //源属性的持有
+            this.sourceAttribute = sourceAttribute;
+            //源属性的类型
+            this.sourceAnnotationType = (Class<? extends Annotation>) declaringClass;
+            //源属性的名称
+            this.sourceAttributeName = sourceAttribute.getName();
+            //设置合并注解的类型
+            this.aliasedAnnotationType = (Annotation.class == aliasFor.annotation() ?
+                    this.sourceAnnotationType : aliasFor.annotation());
+            //设置合并注解的名称
+            this.aliasedAttributeName = getAliasedAttributeName(aliasFor, sourceAttribute);
+            if (this.aliasedAnnotationType == this.sourceAnnotationType &&
+                    this.aliasedAttributeName.equals(this.sourceAttributeName)) {
+                String msg = String.format("@AliasFor声明注释[%s]中的属性'%s'指向自身。指定'annotation'指向元注释上的同名属性。",
+                        sourceAttribute.getName(), declaringClass.getName());
+                throw new AnnotationConfigurationException(msg);
+            }
+            try {
+                //设置别名属性
+                this.aliasedAttribute = this.aliasedAnnotationType.getDeclaredMethod(this.aliasedAttributeName);
+            }
+            catch (NoSuchMethodException ex) {
+                String msg = String.format(
+                        "注释[%s]中的属性'%s'声明为@AliasFor，因为注释[%s]中不存在属性'%s'",
+                        this.sourceAttributeName, this.sourceAnnotationType.getName(), this.aliasedAttributeName,
+                        this.aliasedAnnotationType.getName());
+                throw new AnnotationConfigurationException(msg, ex);
+            }
+
+            this.isAliasPair = (this.sourceAnnotationType == this.aliasedAnnotationType);
+        }
+
+        private void validate() {
+            // Target annotation is not meta-present?
+            if (!this.isAliasPair && !isAnnotationMetaPresent(this.sourceAnnotationType, this.aliasedAnnotationType)) {
+                String msg = String.format("@AliasFor declaration on attribute '%s' in annotation [%s] declares " +
+                                "an alias for attribute '%s' in meta-annotation [%s] which is not meta-present.",
+                        this.sourceAttributeName, this.sourceAnnotationType.getName(), this.aliasedAttributeName,
+                        this.aliasedAnnotationType.getName());
+                throw new AnnotationConfigurationException(msg);
+            }
+
+            if (this.isAliasPair) {
+                AliasFor mirrorAliasFor = this.aliasedAttribute.getAnnotation(AliasFor.class);
+                if (mirrorAliasFor == null) {
+                    String msg = String.format("Attribute '%s' in annotation [%s] must be declared as an @AliasFor [%s].",
+                            this.aliasedAttributeName, this.sourceAnnotationType.getName(), this.sourceAttributeName);
+                    throw new AnnotationConfigurationException(msg);
+                }
+
+                String mirrorAliasedAttributeName = getAliasedAttributeName(mirrorAliasFor, this.aliasedAttribute);
+                if (!this.sourceAttributeName.equals(mirrorAliasedAttributeName)) {
+                    String msg = String.format("Attribute '%s' in annotation [%s] must be declared as an @AliasFor [%s], not [%s].",
+                            this.aliasedAttributeName, this.sourceAnnotationType.getName(), this.sourceAttributeName,
+                            mirrorAliasedAttributeName);
+                    throw new AnnotationConfigurationException(msg);
+                }
+            }
+
+            Class<?> returnType = this.sourceAttribute.getReturnType();
+            Class<?> aliasedReturnType = this.aliasedAttribute.getReturnType();
+            if (returnType != aliasedReturnType &&
+                    (!aliasedReturnType.isArray() || returnType != aliasedReturnType.getComponentType())) {
+                String msg = String.format("Misconfigured aliases: attribute '%s' in annotation [%s] " +
+                                "and attribute '%s' in annotation [%s] must declare the same return type.",
+                        this.sourceAttributeName, this.sourceAnnotationType.getName(), this.aliasedAttributeName,
+                        this.aliasedAnnotationType.getName());
+                throw new AnnotationConfigurationException(msg);
+            }
+
+            if (this.isAliasPair) {
+                validateDefaultValueConfiguration(this.aliasedAttribute);
+            }
+        }
+
+        private void validateDefaultValueConfiguration(Method aliasedAttribute) {
+            Assert.notNull(aliasedAttribute, "aliasedAttribute must not be null");
+            Object defaultValue = this.sourceAttribute.getDefaultValue();
+            Object aliasedDefaultValue = aliasedAttribute.getDefaultValue();
+
+            if (defaultValue == null || aliasedDefaultValue == null) {
+                String msg = String.format("Misconfigured aliases: attribute '%s' in annotation [%s] " +
+                                "and attribute '%s' in annotation [%s] must declare default values.",
+                        this.sourceAttributeName, this.sourceAnnotationType.getName(), aliasedAttribute.getName(),
+                        aliasedAttribute.getDeclaringClass().getName());
+                throw new AnnotationConfigurationException(msg);
+            }
+
+            if (!ObjectUtils.nullSafeEquals(defaultValue, aliasedDefaultValue)) {
+                String msg = String.format("Misconfigured aliases: attribute '%s' in annotation [%s] " +
+                                "and attribute '%s' in annotation [%s] must declare the same default value.",
+                        this.sourceAttributeName, this.sourceAnnotationType.getName(), aliasedAttribute.getName(),
+                        aliasedAttribute.getDeclaringClass().getName());
+                throw new AnnotationConfigurationException(msg);
+            }
+        }
+
+        /**
+         * Validate this descriptor against the supplied descriptor.
+         * <p>This method only validates the configuration of default values
+         * for the two descriptors, since other aspects of the descriptors
+         * are validated when they are created.
+         */
+        private void validateAgainst(AliasDescriptor otherDescriptor) {
+            validateDefaultValueConfiguration(otherDescriptor.sourceAttribute);
+        }
+
+        /**
+         * Determine if this descriptor represents an explicit override for
+         * an attribute in the supplied {@code metaAnnotationType}.
+         * @see #isAliasFor
+         */
+        private boolean isOverrideFor(Class<? extends Annotation> metaAnnotationType) {
+            return (this.aliasedAnnotationType == metaAnnotationType);
+        }
+
+        /**
+         * Determine if this descriptor and the supplied descriptor both
+         * effectively represent aliases for the same attribute in the same
+         * target annotation, either explicitly or implicitly.
+         * <p>This method searches the attribute override hierarchy, beginning
+         * with this descriptor, in order to detect implicit and transitively
+         * implicit aliases.
+         * @return {@code true} if this descriptor and the supplied descriptor
+         * effectively alias the same annotation attribute
+         * @see #isOverrideFor
+         */
+        private boolean isAliasFor(AliasDescriptor otherDescriptor) {
+            for (AliasDescriptor lhs = this; lhs != null; lhs = lhs.getAttributeOverrideDescriptor()) {
+                for (AliasDescriptor rhs = otherDescriptor; rhs != null; rhs = rhs.getAttributeOverrideDescriptor()) {
+                    if (lhs.aliasedAttribute.equals(rhs.aliasedAttribute)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public List<String> getAttributeAliasNames() {
+            // Explicit alias pair?
+            if (this.isAliasPair) {
+                return Collections.singletonList(this.aliasedAttributeName);
+            }
+
+            // Else: search for implicit aliases
+            List<String> aliases = new ArrayList<>();
+            for (AliasDescriptor otherDescriptor : getOtherDescriptors()) {
+                if (this.isAliasFor(otherDescriptor)) {
+                    this.validateAgainst(otherDescriptor);
+                    aliases.add(otherDescriptor.sourceAttributeName);
+                }
+            }
+            return aliases;
+        }
+
+        private List<AliasDescriptor> getOtherDescriptors() {
+            List<AliasDescriptor> otherDescriptors = new ArrayList<>();
+            for (Method currentAttribute : getAttributeMethods(this.sourceAnnotationType)) {
+                if (!this.sourceAttribute.equals(currentAttribute)) {
+                    AliasDescriptor otherDescriptor = AliasDescriptor.from(currentAttribute);
+                    if (otherDescriptor != null) {
+                        otherDescriptors.add(otherDescriptor);
+                    }
+                }
+            }
+            return otherDescriptors;
+        }
+
+        @Nullable
+        public String getAttributeOverrideName(Class<? extends Annotation> metaAnnotationType) {
+            Assert.notNull(metaAnnotationType, "metaAnnotationType must not be null");
+            Assert.isTrue(Annotation.class != metaAnnotationType,
+                    "[java.lang.annotation.Annotation]必须不是metaAnnotationType");
+
+            // Search the attribute override hierarchy, starting with the current attribute
+            for (AliasDescriptor desc = this; desc != null; desc = desc.getAttributeOverrideDescriptor()) {
+                if (desc.isOverrideFor(metaAnnotationType)) {
+                    return desc.aliasedAttributeName;
+                }
+            }
+
+            // Else: explicit attribute override for a different meta-annotation
+            return null;
+        }
+
+        @Nullable
+        private AliasDescriptor getAttributeOverrideDescriptor() {
+            if (this.isAliasPair) {
+                return null;
+            }
+            return AliasDescriptor.from(this.aliasedAttribute);
+        }
+
+        /**
+         * 获取源属性上提供的@AliasFor注释配置的别名属性，如果未指定别名，则获取原始属性的名称
+         * 此方法返回@AliasFor的attribute或value属性的值，以确保仅声明了一个属性，同时确保至少声明了一个属性。
+         * @param aliasFor 用于检索别名属性名的@AliasFor注释
+         * @param attribute the attribute that is annotated with {@code @AliasFor}
+         * @return the name of the aliased attribute (never {@code null} or empty)
+         * @throws AnnotationConfigurationException if invalid configuration of
+         * {@code @AliasFor} is detected
+         */
+        private String getAliasedAttributeName(AliasFor aliasFor, Method attribute) {
+            //获取属性的名称
+            String attributeName = aliasFor.name();
+            //获取属性值
+            String value = aliasFor.value();
+            boolean attributeDeclared = StringUtils.hasText(attributeName);
+            boolean valueDeclared = StringUtils.hasText(value);
+
+            // 用户未在@AliasFor中声明“值”和“属性”
+            if (attributeDeclared && valueDeclared) {
+                String msg = String.format("在注释[%s]中的属性'%s'上声明的@AliasFor中，" +
+                                "属性'attribute'及其别名'value'的值分别为[%s]和[%s]，但仅允许有一个。",
+                        attribute.getName(), attribute.getDeclaringClass().getName(), attributeName, value);
+                throw new AnnotationConfigurationException(msg);
+            }
+
+            //默认情况下，要么显式属性名，要么指向同名属性
+            attributeName = (attributeDeclared ? attributeName : value);
+            //当value和attributeName都没有填写的时候，使用attribute的名称
+            return (StringUtils.hasText(attributeName) ? attributeName.trim() : attribute.getName());
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s: @%s(%s)是 @%s(%s)的别名", getClass().getSimpleName(),
+                    this.sourceAnnotationType.getSimpleName(), this.sourceAttributeName,
+                    this.aliasedAnnotationType.getSimpleName(), this.aliasedAttributeName);
         }
     }
 
