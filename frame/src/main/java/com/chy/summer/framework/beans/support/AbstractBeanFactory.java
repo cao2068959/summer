@@ -204,13 +204,26 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     }
 
 
+
+
     @Override
     public boolean containsBean(String beanName) {
         return false;
     }
 
-    public <T> T doGetBean(final String name, final Class<T> requiredType, final Object[] args,
-                           boolean typeCheckOnly)throws BeansException{
+
+    @Override
+    public Object getBean(String name) {
+        return doGetBean(name,null,null);
+    }
+
+    @Override
+    public <T> T getBean(String name, Class<T> type) {
+        return doGetBean(name,type,null);
+    }
+
+
+    public <T> T doGetBean(final String name, final Class<T> requiredType, final Object[] args)throws BeansException{
         Object bean = null;
         final String beanName = transformedBeanName(name);
         //先去单例的缓存里看看有没有对应的对象
@@ -226,7 +239,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             //这里检查 对应的beanDefintion 是不是抽象类,抽象类不能实例化,抛出异常
             checkMergedBeanDefinition(mbd,beanName);
             //开始使用 BeanDefinition 去创建对象
-            creatObjectForBeanDefinition(name,beanName,mbd,args);
+            bean = creatObjectForBeanDefinition(name,beanName,mbd,args);
         }
 
         //如果 指定了生成的类型,但是拿到的实例和类型不符合进入这个if

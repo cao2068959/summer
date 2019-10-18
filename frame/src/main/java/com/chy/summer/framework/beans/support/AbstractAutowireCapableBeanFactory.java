@@ -119,7 +119,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     }
 
     private Object initializeBean(String beanName, Object exposedObject, RootBeanDefinition mbd) {
-        return null;
+        return exposedObject;
     }
 
     private void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper instanceWrapper) {

@@ -94,4 +94,10 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     public Class<?> getType(String name) throws NoSuchBeanDefinitionException {
         return null;
     }
+
+    @Override
+    public boolean isSingleton(String beanName) {
+        return beanFactory.isSingleton(beanName);
+    }
+
 }
