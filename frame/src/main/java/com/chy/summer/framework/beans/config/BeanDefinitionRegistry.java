@@ -41,4 +41,6 @@ public interface BeanDefinitionRegistry {
      * @param alias
      */
     void registerAlias(String beanName, String alias);
+
+    String[] getBeanDefinitionNames();
 }

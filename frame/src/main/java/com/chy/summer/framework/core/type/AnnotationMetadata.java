@@ -4,7 +4,7 @@ import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 
 import java.lang.annotation.Annotation;
 
-public interface AnnotationMetadata {
+public interface AnnotationMetadata extends ClassMetadata {
 
     /**
      * 判断是否有某一个注解,这里会把 派生注解和继承注解也算进去
@@ -33,4 +33,8 @@ public interface AnnotationMetadata {
      * @return
      */
     AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type);
+
+    boolean isInterface();
+
+    boolean hasAnnotatedMethods(String name);
 }

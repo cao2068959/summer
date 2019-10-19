@@ -3,7 +3,7 @@ package com.chy.summer.framework.beans.config;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.sun.istack.internal.Nullable;
 
-public interface BeanDefinition {
+public interface BeanDefinition extends AttributeAccessor {
 
      void setParentName(@Nullable String parentName);
 
@@ -74,6 +74,5 @@ public interface BeanDefinition {
      String getResourceDescription();
 
      Class<?> getBeanClass() throws IllegalStateException;
-
 
 }

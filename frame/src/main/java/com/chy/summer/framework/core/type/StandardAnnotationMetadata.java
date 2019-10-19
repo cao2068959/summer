@@ -51,4 +51,9 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
     public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
         return null;
     }
+
+    @Override
+    public boolean isAnnotated(String name) {
+        return false;
+    }
 }

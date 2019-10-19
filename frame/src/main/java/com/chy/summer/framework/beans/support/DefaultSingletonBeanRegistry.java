@@ -1,6 +1,7 @@
 package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.FactoryBean;
+import com.chy.summer.framework.beans.config.SingletonBeanRegistry;
 import com.chy.summer.framework.beans.factory.ObjectFactory;
 import com.chy.summer.framework.exception.BeanCreationException;
 import com.chy.summer.framework.exception.BeanCurrentlyInCreationException;
@@ -15,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 单例对象的处理都在这里面
  */
 @Slf4j
-public class DefaultSingletonBeanRegistry {
+public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
 
     /**
      * 单例对象的容器
@@ -31,9 +32,28 @@ public class DefaultSingletonBeanRegistry {
     /** 把单例对象的名字都给放进去 */
     private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
-    protected boolean containsSingleton(String beanName) {
+
+
+    @Override
+    public boolean containsSingleton(String beanName) {
         return this.singletonObjects.containsKey(beanName);
     }
+
+    @Override
+    public String[] getSingletonNames() {
+        return singletonObjects.keySet().toArray(new String[singletonObjects.size()]);
+    }
+
+    @Override
+    public int getSingletonCount() {
+        return singletonObjects.size();
+    }
+
+    @Override
+    public Object getSingletonMutex() {
+        return null;
+    }
+
     /** 正在创建的单例对象*/
     private final Set<String> singletonsCurrentlyInCreation = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 

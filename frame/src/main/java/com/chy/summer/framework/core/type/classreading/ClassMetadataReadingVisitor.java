@@ -3,6 +3,7 @@ package com.chy.summer.framework.core.type.classreading;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 import com.chy.summer.framework.core.type.ClassMetadata;
+import com.chy.summer.framework.core.type.MethodMetadata;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.StringUtils;
 import com.sun.istack.internal.Nullable;
@@ -41,6 +42,8 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     private String[] interfaces = new String[0];
 
     private Set<String> memberClassNames = new LinkedHashSet<>(4);
+
+    protected final Set<MethodMetadata> methodMetadataSet = new LinkedHashSet<>(4);
 
     /**
      * 记录了所有的注解的全路径
@@ -144,6 +147,16 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
 
     @Override
     public boolean isInterface() {
+        return isInterface;
+    }
+
+    @Override
+    public boolean hasAnnotatedMethods(String annotationName) {
+        for (MethodMetadata methodMetadata : this.methodMetadataSet) {
+            if (methodMetadata.isAnnotated(annotationName)) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -202,6 +215,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
         return annotationAttributes.get(type.getName());
     }
+
 
     @Override
     public boolean isConcrete() {

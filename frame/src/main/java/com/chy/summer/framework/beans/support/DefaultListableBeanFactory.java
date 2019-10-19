@@ -358,6 +358,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         this.autowireCandidateResolver = autowireCandidateResolver;
     }
 
+    @Override
+    public String[] getBeanDefinitionNames() {
+        return  StringUtils.toStringArray(this.beanDefinitionNames);
+    }
+
     //======================AbstractBeanFactory 的实现方法=================================
 
     @Override

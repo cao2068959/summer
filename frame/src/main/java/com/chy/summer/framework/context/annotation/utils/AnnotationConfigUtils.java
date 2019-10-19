@@ -3,11 +3,15 @@ package com.chy.summer.framework.context.annotation.utils;
 import com.chy.summer.framework.beans.config.AnnotatedBeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
+import com.chy.summer.framework.context.annotation.ComponentScan;
 import com.chy.summer.framework.context.annotation.Lazy;
 import com.chy.summer.framework.context.annotation.ScopeMetadata;
 import com.chy.summer.framework.context.annotation.constant.ScopedProxyMode;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
+import com.chy.summer.framework.core.type.ClassMetadata;
+
+import java.util.Set;
 
 /**
  * 用了解析annotation 的一个公用的工具类
@@ -48,5 +52,13 @@ public class AnnotationConfigUtils {
 
         //TODO 如果真设置了代理模式的，先留一个坑，后面慢慢填
         return beanDefinitionHolder;
+    }
+
+
+
+    public static Set<AnnotationAttributes> attributesForRepeatable(ClassMetadata metadata, Class<ComponentScan> componentScanClass) {
+
+
+
     }
 }
