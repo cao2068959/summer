@@ -1,5 +1,6 @@
 package com.chy.summer.framework.context.annotation;
 
+import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.exception.BeanDefinitionCommonException;
 import com.chy.summer.framework.annotation.stereotype.Component;
 import com.chy.summer.framework.beans.config.AnnotatedBeanDefinition;
@@ -31,6 +32,9 @@ import java.util.Set;
  * 默认扫描带有@component、@repository、@service或@controller的类
  */
 public class ClassPathBeanDefinitionScanner {
+
+    private  Environment environment;
+
     /**
      * 用来保存bean的定义
      */
@@ -71,6 +75,13 @@ public class ClassPathBeanDefinitionScanner {
         this.registry = registry;
         this.resourcePatternResolver = new PathMatchingResourcePatternResolver();
         registerDefaultFilters();
+    }
+
+    public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, Environment environment, BeanDefinitionRegistry resourceLoader) {
+        this.registry = registry;
+        this.environment = environment;
+        registerDefaultFilters();
+
     }
 
 
@@ -117,6 +128,8 @@ public class ClassPathBeanDefinitionScanner {
         }
         return beanDefinitions;
     }
+
+
 
 
     /**
@@ -211,6 +224,15 @@ public class ClassPathBeanDefinitionScanner {
     public static void main(String[] args) throws IOException {
         ClassPathBeanDefinitionScanner p = new ClassPathBeanDefinitionScanner(null);
         p.scan("classpath*:com/chy");
+    }
+
+
+    public void setBeanNameGenerator(BeanNameGenerator beanNameGenerator) {
+        this.beanNameGenerator = beanNameGenerator;
+    }
+
+    public void addExcludeFilter(TypeFilter typeFilter) {
+        excludeFilters.add(typeFilter);
     }
 
 

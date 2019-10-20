@@ -5,6 +5,7 @@ import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.support.AbstractBeanDefinition;
+import com.chy.summer.framework.beans.support.BeanDefinitionReader;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.context.ComponentScanAnnotationParser;
 import com.chy.summer.framework.context.annotation.utils.AnnotationConfigUtils;
@@ -23,10 +24,7 @@ import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ConfigurationClassUtils;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 配置类 的解析器
@@ -93,6 +91,12 @@ public class ConfigurationClassParser {
         processConfigurationClass(new ConfigurationClass(metadata, beanName));
     }
 
+
+    /**
+     *  解析 配置类
+     * @param configClass
+     * @throws Exception
+     */
     protected void processConfigurationClass(ConfigurationClass configClass) throws Exception {
 
         // 用 configClass 生成  SourceClass
@@ -134,23 +138,16 @@ public class ConfigurationClassParser {
         if(!(metadata instanceof AnnotationMetadata)){
             return null;
         }
-        // 拿到配置类上 所有
+        // 拿到配置类上 所有注解
         AnnotationMetadata annotationMetadata = (AnnotationMetadata) metadata;
         //拿到注解 ComponentScan 上面的所有属性
         AnnotationAttributes componentScan = annotationMetadata.getAnnotationAttributes(ComponentScan.class);
-
+        //根据 @ComponentScan 去扫描 对应的 class路径,生成 所有的 BeanDefinitionHolder
         Set<BeanDefinitionHolder> scannedBeanDefinitions =
                 this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
-        // Check the set of scanned definitions for any further config classes and parse recursively if needed
-        for (BeanDefinitionHolder holder : scannedBeanDefinitions) {
-            BeanDefinition bdCand = holder.getBeanDefinition().getOriginatingBeanDefinition();
-            if (bdCand == null) {
-                bdCand = holder.getBeanDefinition();
-            }
-            if (ConfigurationClassUtils.checkConfigurationClassCandidate(bdCand, this.metadataReaderFactory)) {
-                parse(bdCand.getBeanClassName(), holder.getBeanName());
-            }
-        }
+        //TODO 上面一路走下来,只是解析了一个用户在入口指定的一个配置类,而那些 以bean的方式配置的 配置类,还没处理,所以这里还需要 迭代上面扫描出来的 BeanDefinition,递归处理配置类
+
+
 
         // Process any @Import annotations
         processImports(configClass, sourceClass, getImports(sourceClass), true);
@@ -189,6 +186,27 @@ public class ConfigurationClassParser {
 
         // No superclass -> processing is complete
         return null;
+    }
+
+    private Object getImports(SourceClass sourceClass) throws IOException {
+        Set<SourceClass> imports = new LinkedHashSet<>();
+        Set<SourceClass> visited = new LinkedHashSet<>();
+        collectImports(sourceClass, imports, visited);
+        return imports;
+    }
+
+    private void collectImports(SourceClass sourceClass, Set<SourceClass> imports, Set<SourceClass> visited)
+            throws IOException {
+
+        if (visited.add(sourceClass)) {
+            for (SourceClass annotation : sourceClass.getAnnotations()) {
+                String annName = annotation.getMetadata().getClassName();
+                if (!annName.startsWith("java") && !annName.equals(Import.class.getName())) {
+                    collectImports(annotation, imports, visited);
+                }
+            }
+            imports.addAll(sourceClass.getAnnotationAttributes(Import.class.getName(), "value"));
+        }
     }
 
 

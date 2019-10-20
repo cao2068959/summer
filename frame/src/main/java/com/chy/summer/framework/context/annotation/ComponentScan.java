@@ -1,6 +1,7 @@
 package com.chy.summer.framework.context.annotation;
 
 import com.chy.summer.framework.annotation.core.AliasFor;
+import com.chy.summer.framework.beans.support.BeanNameGenerator;
 
 import java.lang.annotation.*;
 
@@ -17,6 +18,10 @@ public @interface ComponentScan {
 
     Class<?>[] basePackageClasses() default {};
 
-    boolean lazyInit() default false;
+    /**
+     * 设置 beanName 生成器,如果不自定义则就是 AnnotationBeanNameGenerator
+     * @return
+     */
+    Class<? extends BeanNameGenerator> nameGenerator() default BeanNameGenerator.class;
 
 }
