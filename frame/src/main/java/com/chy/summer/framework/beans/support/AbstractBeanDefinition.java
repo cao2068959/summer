@@ -7,7 +7,7 @@ import com.chy.summer.framework.util.ClassUtils;
 
 import java.util.function.Supplier;
 
-public abstract class AbstractBeanDefinition implements BeanDefinition {
+public abstract class AbstractBeanDefinition extends AttributeAccessorSupport implements BeanDefinition {
 
     private String beanClassName;
     private ScopeType scope = ScopeType.SINGLETON;

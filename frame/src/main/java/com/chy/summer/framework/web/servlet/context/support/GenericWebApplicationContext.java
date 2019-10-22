@@ -81,13 +81,18 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     }
 
     @Override
+    public String[] getBeanDefinitionNames() {
+        return  beanFactory.getBeanDefinitionNames();
+    }
+
+    @Override
     public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
-        return new String[0];
+        return   beanFactory.getBeanNamesForType(type,includeNonSingletons,allowEagerInit);
     }
 
     @Override
     public boolean isTypeMatch(String name, Class<?> typeToMatch) throws NoSuchBeanDefinitionException {
-        return false;
+        return beanFactory.isTypeMatch(name,typeToMatch);
     }
 
     @Override
