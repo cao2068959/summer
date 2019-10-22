@@ -161,6 +161,11 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     }
 
     @Override
+    public Set<String> getAnnotationTypes() {
+        return annotationSet;
+    }
+
+    @Override
     public boolean isAnnotation() {
         return false;
     }

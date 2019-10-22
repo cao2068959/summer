@@ -3,6 +3,7 @@ package com.chy.summer.framework.core.type;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 
 import java.lang.annotation.Annotation;
+import java.util.Set;
 
 public interface AnnotationMetadata extends ClassMetadata {
 
@@ -37,4 +38,7 @@ public interface AnnotationMetadata extends ClassMetadata {
     boolean isInterface();
 
     boolean hasAnnotatedMethods(String name);
+
+
+    Set<String> getAnnotationTypes();
 }

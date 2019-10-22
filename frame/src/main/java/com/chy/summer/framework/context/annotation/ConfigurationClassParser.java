@@ -147,8 +147,6 @@ public class ConfigurationClassParser {
                 this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
         //TODO 上面一路走下来,只是解析了一个用户在入口指定的一个配置类,而那些 以bean的方式配置的 配置类,还没处理,所以这里还需要 迭代上面扫描出来的 BeanDefinition,递归处理配置类
 
-
-
         // Process any @Import annotations
         processImports(configClass, sourceClass, getImports(sourceClass), true);
 
@@ -229,6 +227,19 @@ public class ConfigurationClassParser {
         public int getOrder() {
             Integer order = ConfigurationClassUtils.getOrder(this.metadata);
             return (order != null ? order : Ordered.LOWEST_PRECEDENCE);
+        }
+
+        public Set<SourceClass> getAnnotations() throws IOException {
+            Set<SourceClass> result = new LinkedHashSet<>();
+            for (String className : this.metadata.getAnnotationTypes()) {
+                try {
+                    result.add(asSourceClass(className));
+                }
+                catch (Throwable ex) {
+
+                }
+            }
+            return result;
         }
 
         public ClassMetadata getMetadata() {
