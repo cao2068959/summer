@@ -109,7 +109,6 @@ public abstract class AopUtils {
 		//用来存放适合的advisor
 		List<Advisor> eligibleAdvisors = new LinkedList<>();
 		for (Advisor candidate : candidateAdvisors) {
-			//找到
 			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
 				eligibleAdvisors.add(candidate);
 			}
@@ -201,5 +200,22 @@ public abstract class AopUtils {
 			// 如果没有切入点，就当做它适用
 			return true;
 		}
+	}
+
+	/**
+	 * 获取给定bean实例的目标类，它可能是AOP代理
+	 * 如果是AOP代理返回其目标类，否则返回普通类
+	 * @param candidate 要检查的实例(可能是AOP代理)
+	 */
+	public static Class<?> getTargetClass(Object candidate) {
+		Assert.notNull(candidate, "候选对象不能为空");
+		Class<?> result = null;
+		if (candidate instanceof TargetClassAware) {
+			result = ((TargetClassAware) candidate).getTargetClass();
+		}
+		if (result == null) {
+			result = (isCglibProxy(candidate) ? candidate.getClass().getSuperclass() : candidate.getClass());
+		}
+		return result;
 	}
 }
