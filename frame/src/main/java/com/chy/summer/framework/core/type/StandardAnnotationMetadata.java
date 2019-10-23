@@ -3,6 +3,7 @@ package com.chy.summer.framework.core.type;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 
 import java.lang.annotation.Annotation;
+import java.util.Set;
 
 public class StandardAnnotationMetadata extends StandardClassMetadata implements AnnotationMetadata {
 
@@ -53,6 +54,15 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
     }
 
     @Override
+    public boolean hasAnnotatedMethods(String name) {
+        return false;
+    }
+
+    @Override
+    public Set<String> getAnnotationTypes() {
+        return null;
+    }
+
     public boolean isAnnotated(String name) {
         return false;
     }

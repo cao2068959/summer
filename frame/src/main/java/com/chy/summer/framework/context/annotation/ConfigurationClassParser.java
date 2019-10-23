@@ -15,6 +15,7 @@ import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.ordered.Ordered;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 import com.chy.summer.framework.core.type.ClassMetadata;
+import com.chy.summer.framework.core.type.MethodMetadata;
 import com.chy.summer.framework.core.type.StandardAnnotationMetadata;
 import com.chy.summer.framework.core.type.classreading.MetadataReader;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
@@ -24,6 +25,7 @@ import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ConfigurationClassUtils;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.*;
 
 /**
@@ -99,6 +101,11 @@ public class ConfigurationClassParser {
      */
     protected void processConfigurationClass(ConfigurationClass configClass) throws Exception {
 
+        ConfigurationClass existingClass = this.configurationClasses.get(configClass);
+        if (existingClass != null) {
+            return;
+        }
+
         // 用 configClass 生成  SourceClass
         SourceClass sourceClass = asSourceClass(configClass);
         do {
@@ -132,7 +139,7 @@ public class ConfigurationClassParser {
 
 
     protected final SourceClass doProcessConfigurationClass(ConfigurationClass configClass, SourceClass sourceClass)
-            throws IOException {
+            throws Exception {
 
         ClassMetadata metadata = sourceClass.getMetadata();
         if(!(metadata instanceof AnnotationMetadata)){
@@ -147,22 +154,14 @@ public class ConfigurationClassParser {
                 this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
         //TODO 上面一路走下来,只是解析了一个用户在入口指定的一个配置类,而那些 以bean的方式配置的 配置类,还没处理,所以这里还需要 迭代上面扫描出来的 BeanDefinition,递归处理配置类
 
-        // Process any @Import annotations
-        processImports(configClass, sourceClass, getImports(sourceClass), true);
 
-        // Process any @ImportResource annotations
-        AnnotationAttributes importResource =
-                AnnotationConfigUtils.attributesFor(sourceClass.getMetadata(), ImportResource.class);
-        if (importResource != null) {
-            String[] resources = importResource.getStringArray("locations");
-            Class<? extends BeanDefinitionReader> readerClass = importResource.getClass("reader");
-            for (String resource : resources) {
-                String resolvedResource = this.environment.resolveRequiredPlaceholders(resource);
-                configClass.addImportedResource(resolvedResource, readerClass);
-            }
-        }
+        // @Import 注解的解析
+        //先把 class 上面所有 @Import 注解里 value 里写的 class 都收集一下
+        Set<SourceClass> imports = getImports(sourceClass);
+        //开始处理 @Import 注解
+        processImports(configClass, sourceClass, imports, true);
 
-        // Process individual @Bean methods
+        // 然后处理 @Bean 注解
         Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
         for (MethodMetadata methodMetadata : beanMethods) {
             configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
@@ -186,7 +185,28 @@ public class ConfigurationClassParser {
         return null;
     }
 
-    private Object getImports(SourceClass sourceClass) throws IOException {
+    /**
+     * 配置类上面 @Import 注解的 解析
+     * @param configClass
+     * @param currentSourceClass
+     * @param importCandidates
+     * @param checkForCircularImports
+     */
+    private void processImports(ConfigurationClass configClass, SourceClass currentSourceClass,
+                                Collection<SourceClass> importCandidates, boolean checkForCircularImports) throws Exception {
+
+        //如果没有 打上 @Import 注解就直接 跳过了
+        if (importCandidates.isEmpty()) {
+            return;
+        }
+        //循环把 @Import 上的类都给初始化了
+        for (SourceClass candidate : importCandidates) {
+            processConfigurationClass(candidate.asConfigClass(configClass));
+        }
+    }
+
+
+    private Set<SourceClass> getImports(SourceClass sourceClass) throws IOException {
         Set<SourceClass> imports = new LinkedHashSet<>();
         Set<SourceClass> visited = new LinkedHashSet<>();
         collectImports(sourceClass, imports, visited);
@@ -203,9 +223,10 @@ public class ConfigurationClassParser {
                     collectImports(annotation, imports, visited);
                 }
             }
-            imports.addAll(sourceClass.getAnnotationAttributes(Import.class.getName(), "value"));
+            imports.addAll(sourceClass.getAnnotationImportAttributes());
         }
     }
+
 
 
     private class SourceClass implements Ordered {
@@ -213,6 +234,14 @@ public class ConfigurationClassParser {
         private final Object source;
 
         private final AnnotationMetadata metadata;
+
+        public ConfigurationClass asConfigClass(ConfigurationClass importedBy) throws IOException {
+            if (this.source instanceof Class) {
+                return new ConfigurationClass((Class<?>) this.source, importedBy);
+            }
+            return new ConfigurationClass((MetadataReader) this.source, importedBy);
+        }
+
 
         public SourceClass(Object source) {
             this.source = source;
@@ -245,7 +274,42 @@ public class ConfigurationClassParser {
         public ClassMetadata getMetadata() {
             return metadata;
         }
+
+        /**
+         * 获取 @Import 注解上的 value值,并且把里面设置的 class 都转成 SourceClass
+         * @return
+         */
+        public Set<SourceClass> getAnnotationImportAttributes()  {
+            Set<SourceClass> result = new LinkedHashSet<>();
+            AnnotationAttributes annotationAttributes = this.metadata.getAnnotationAttributes(Import.class);
+            if (annotationAttributes == null) {
+                return result;
+            }
+            Class[] values = annotationAttributes.getRequiredAttribute("value", Class[].class);
+
+            if(values == null){
+                return result;
+            }
+
+            for (Class clazz : values) {
+                result.add(new SourceClass(clazz));
+            }
+
+            return result;
+
+        }
+
+
+        public Object getAnnotationAttributes(Class<? extends Annotation> annType, String attribute)  {
+            AnnotationAttributes annotationAttributes = this.metadata.getAnnotationAttributes(annType);
+            if (annotationAttributes == null) {
+                return Collections.emptySet();
+            }
+            return annotationAttributes.getAttributeValue(attribute);
+
+        }
+
     }
 
 
-    }
+}

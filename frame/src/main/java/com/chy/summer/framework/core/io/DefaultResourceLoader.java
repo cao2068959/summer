@@ -23,7 +23,6 @@ public class DefaultResourceLoader implements ResourceLoader {
     public Resource getResource(String location) {
         Assert.notNull(location, "文件位置不能 为空");
 
-
         if (location.startsWith(CLASSPATH_URL_PREFIX)) {
             return new ClassPathResource(location.substring(CLASSPATH_URL_PREFIX.length()), getClassLoader());
         }
