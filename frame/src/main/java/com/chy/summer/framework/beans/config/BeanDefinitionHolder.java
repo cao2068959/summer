@@ -1,9 +1,11 @@
 package com.chy.summer.framework.beans.config;
 
+import com.chy.summer.framework.beans.BeanNameAware;
+
 /**
  * beanDefinition 的持有者类
  */
-public class BeanDefinitionHolder {
+public class BeanDefinitionHolder  implements BeanNameAware {
 
     private  BeanDefinition beanDefinition;
 

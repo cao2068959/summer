@@ -1,5 +1,6 @@
 package com.chy.summer.framework.context.annotation;
 
+import com.chy.summer.framework.beans.BeanNameAware;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.exception.BeanDefinitionCommonException;
 import com.chy.summer.framework.annotation.stereotype.Component;
@@ -31,7 +32,7 @@ import java.util.Set;
  * 使用指定的注册器注册相应的bean。
  * 默认扫描带有@component、@repository、@service或@controller的类
  */
-public class ClassPathBeanDefinitionScanner {
+public class ClassPathBeanDefinitionScanner{
 
     private  Environment environment;
 
