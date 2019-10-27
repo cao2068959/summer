@@ -20,6 +20,7 @@ import com.chy.summer.framework.core.type.classreading.MetadataReader;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
 import com.chy.summer.framework.core.type.filter.AnnotationTypeFilter;
 import com.chy.summer.framework.core.type.filter.TypeFilter;
+import com.chy.summer.framework.util.ClassUtils;
 
 import java.io.IOException;
 import java.util.LinkedHashSet;
@@ -81,6 +82,7 @@ public class ClassPathBeanDefinitionScanner{
     public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, Environment environment, BeanDefinitionRegistry resourceLoader) {
         this.registry = registry;
         this.environment = environment;
+        this.resourcePatternResolver = new PathMatchingResourcePatternResolver();
         registerDefaultFilters();
 
     }
@@ -142,9 +144,13 @@ public class ClassPathBeanDefinitionScanner{
      */
     public Set<BeanDefinition> scanCandidateComponents(String basePackage) throws IOException {
         Set<BeanDefinition> result = new LinkedHashSet<>();
+        //先把路径里面的 . 全部变成 /
+        basePackage = ClassUtils.convertClassNameToResourcePath(basePackage);
+        //加上 classpath*: 前缀
+        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +basePackage;
         //扫描class文件，全部放入resource中，这里的实例类是FileSystemResource
         //resources会保存文件的句柄d
-        Resource[] resources = getResourcePatternResolver().getResources(basePackage);
+        Resource[] resources = getResourcePatternResolver().getResources(packageSearchPath);
         //拿到所有的class后用asm加载,判断是否有对应的注解,这里用 元数据处理器来解析
         for (Resource resource : resources) {
             MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);

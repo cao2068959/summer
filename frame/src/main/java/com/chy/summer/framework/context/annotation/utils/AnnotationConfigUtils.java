@@ -54,11 +54,4 @@ public class AnnotationConfigUtils {
         return beanDefinitionHolder;
     }
 
-
-
-    public static Set<AnnotationAttributes> attributesForRepeatable(ClassMetadata metadata, Class<ComponentScan> componentScanClass) {
-
-
-
-    }
 }

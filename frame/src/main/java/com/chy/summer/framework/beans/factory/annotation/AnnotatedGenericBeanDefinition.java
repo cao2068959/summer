@@ -19,6 +19,16 @@ public class AnnotatedGenericBeanDefinition extends AbstractBeanDefinition imple
         this.metadata = new StandardAnnotationMetadata(beanClass, true);
     }
 
+    public AnnotatedGenericBeanDefinition(AnnotationMetadata metadata) {
+        if (metadata instanceof StandardAnnotationMetadata) {
+            setBeanClass(((StandardAnnotationMetadata) metadata).getIntrospectedClass());
+        }
+        else {
+            setBeanClassName(metadata.getClassName());
+        }
+        this.metadata = metadata;
+    }
+
     @Override
     public AnnotationMetadata getMetadata() {
         return metadata;

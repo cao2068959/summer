@@ -9,6 +9,7 @@ import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.type.classreading.DefaultMetadataReaderFactory;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
 import com.chy.summer.framework.exception.BeansException;
+import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ConfigurationClassUtils;
 import com.chy.summer.framework.web.servlet.context.support.StandardServletEnvironment;
@@ -31,9 +32,20 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
     private BeanNameGenerator componentScanBeanNameGenerator = new AnnotationBeanNameGenerator();
 
+    private BeanNameGenerator importBeanNameGenerator = new AnnotationBeanNameGenerator() {
+        @Override
+        protected String buildDefaultBeanName(BeanDefinition definition) {
+            String beanClassName = definition.getBeanClassName();
+            Assert.state(beanClassName != null, "No bean class name set");
+            return beanClassName;
+        }
+    };
+
 
     //用了记录 registry 的hashcode ,对应的 registry已经执行过就会存入对应的 code,防止重复注册
     private final Set<Integer> registriesPostProcessed = new HashSet<>();
+
+    private ConfigurationClassBeanDefinitionReader reader;
 
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
@@ -97,54 +109,23 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
         Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
         Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
-        do {
-            parser.parse(candidates);
-            parser.validate();
 
-            Set<ConfigurationClass> configClasses = new LinkedHashSet<>(parser.getConfigurationClasses());
-            configClasses.removeAll(alreadyParsed);
+        //这`里就把所有的class给扫描了,然后放入 parser的configurationClasses对象里
+        parser.parse(candidates);
+        //这边又迭代了一次,去检查扫描到的类里面有没有  @Configuration 并且这个类是 final 类型的有的话报错,这里先忽略
+        //parser.validate();
+        Set<ConfigurationClass> configClasses = new LinkedHashSet(parser.getConfigurationClasses().keySet());
+        configClasses.removeAll(alreadyParsed);
 
-            // Read the model and create bean definitions based on its content
-            if (this.reader == null) {
-                this.reader = new ConfigurationClassBeanDefinitionReader(
-                        registry, this.sourceExtractor, this.resourceLoader, this.environment,
-                        this.importBeanNameGenerator, parser.getImportRegistry());
-            }
-            this.reader.loadBeanDefinitions(configClasses);
-            alreadyParsed.addAll(configClasses);
-
-            candidates.clear();
-            if (registry.getBeanDefinitionCount() > candidateNames.length) {
-                String[] newCandidateNames = registry.getBeanDefinitionNames();
-                Set<String> oldCandidateNames = new HashSet<>(Arrays.asList(candidateNames));
-                Set<String> alreadyParsedClasses = new HashSet<>();
-                for (ConfigurationClass configurationClass : alreadyParsed) {
-                    alreadyParsedClasses.add(configurationClass.getMetadata().getClassName());
-                }
-                for (String candidateName : newCandidateNames) {
-                    if (!oldCandidateNames.contains(candidateName)) {
-                        BeanDefinition bd = registry.getBeanDefinition(candidateName);
-                        if (ConfigurationClassUtils.checkConfigurationClassCandidate(bd, this.metadataReaderFactory) &&
-                                !alreadyParsedClasses.contains(bd.getBeanClassName())) {
-                            candidates.add(new BeanDefinitionHolder(bd, candidateName));
-                        }
-                    }
-                }
-                candidateNames = newCandidateNames;
-            }
+        //初始化 configurationClass 解析器
+        if (this.reader == null) {
+            this.reader = new ConfigurationClassBeanDefinitionReader(
+                    registry, this.resourceLoader, this.environment,
+                    this.importBeanNameGenerator);
         }
-        while (!candidates.isEmpty());
-
-        // Register the ImportRegistry as a bean in order to support ImportAware @Configuration classes
-        if (sbr != null && !sbr.containsSingleton(IMPORT_REGISTRY_BEAN_NAME)) {
-            sbr.registerSingleton(IMPORT_REGISTRY_BEAN_NAME, parser.getImportRegistry());
-        }
-
-        if (this.metadataReaderFactory instanceof CachingMetadataReaderFactory) {
-            // Clear cache in externally provided MetadataReaderFactory; this is a no-op
-            // for a shared cache since it'll be cleared by the ApplicationContext.
-            ((CachingMetadataReaderFactory) this.metadataReaderFactory).clearCache();
-        }
+        this.reader.loadBeanDefinitions(configClasses);
+        alreadyParsed.addAll(configClasses);
+        candidates.clear();
     }
 
 

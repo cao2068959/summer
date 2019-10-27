@@ -19,6 +19,7 @@ public class DefaultMetadataReaderFactory implements MetadataReaderFactory {
     private  ResourceLoader resourceLoader;
 
     public DefaultMetadataReaderFactory() {
+        this(null);
     }
 
     public DefaultMetadataReaderFactory(ResourceLoader resourceLoader) {

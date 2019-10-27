@@ -51,6 +51,9 @@ public abstract class ConfigurationClassUtils {
             return false;
         }
         AnnotationMetadata metadata;
+        if(!(beanDef instanceof AnnotatedBeanDefinition)){
+            return false;
+        }
         metadata = ((AnnotatedBeanDefinition) beanDef).getMetadata();
 
         if (isFullConfigurationCandidate(metadata)) {

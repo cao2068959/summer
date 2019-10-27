@@ -23,7 +23,13 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
 
     @Override
     public String getBeanClassName() {
-        return beanClassName;
+        Object beanClassObject = this.beanClass;
+        if (beanClassObject instanceof Class) {
+            return ((Class<?>) beanClassObject).getName();
+        }
+        else {
+            return (String) beanClassObject;
+        }
     }
 
     @Override
