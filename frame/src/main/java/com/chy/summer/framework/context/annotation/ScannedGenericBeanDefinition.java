@@ -19,6 +19,7 @@ public class ScannedGenericBeanDefinition extends AbstractBeanDefinition impleme
     public ScannedGenericBeanDefinition(MetadataReader metadataReader) {
         this.metadata = metadataReader.getAnnotationMetadata();
         setBeanClassName(this.metadata.getClassName());
+
     }
 
     @Override

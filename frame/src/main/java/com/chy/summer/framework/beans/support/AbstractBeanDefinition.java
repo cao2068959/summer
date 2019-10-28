@@ -12,7 +12,9 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
     private String beanClassName;
     private ScopeType scope = ScopeType.SINGLETON;
     private boolean lazyInit = false;
+
     private Resource resource;
+
     private boolean abstractFlag = false;
 
     private volatile Object beanClass;
@@ -91,8 +93,7 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
         setParentName(original.getParentName());
         setBeanClassName(original.getBeanClassName());
         setScope(original.getScope());
-        setBeanClass(original.getBeanClass());
-        //setAbstract(original.isAbstract());
+        setAbstract(original.isAbstract());
         setLazyInit(original.isLazyInit());
         setFactoryBeanName(original.getFactoryBeanName());
         setFactoryMethodName(original.getFactoryMethodName());
@@ -101,12 +102,19 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
 
         if (original instanceof AbstractBeanDefinition) {
             AbstractBeanDefinition originalAbd = (AbstractBeanDefinition) original;
+            if (originalAbd.hasBeanClass()) {
+                setBeanClass(originalAbd.getBeanClass());
+            }
             setDependsOn(originalAbd.getDependsOn());
             setAutowireCandidate(originalAbd.isAutowireCandidate());
             setPrimary(originalAbd.isPrimary());
             setResource(originalAbd.getResource());
         }
 
+    }
+
+    private void setAbstract(boolean anAbstract) {
+        this.abstractFlag = anAbstract;
     }
 
     @Override

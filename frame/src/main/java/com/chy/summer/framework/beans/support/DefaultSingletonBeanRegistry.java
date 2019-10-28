@@ -105,6 +105,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
                     singletonObject = singletonFactory.getObject();
                     newSingleton = true;
                 } catch (Exception ex) {
+                    ex.printStackTrace();
                     throw new BeanCreationException(beanName,ex.getMessage());
                 }
 
