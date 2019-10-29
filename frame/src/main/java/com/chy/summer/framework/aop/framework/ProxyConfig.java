@@ -45,7 +45,9 @@ public class ProxyConfig implements Serializable {
 	}
 
 	/**
-	 * 获取代理目标的方式
+	 * 判断代理的是目标类还是指定接口
+	 * True：目标类
+	 * False：指定接口
 	 */
 	public boolean isProxyTargetClass() {
 		return this.proxyTargetClass;
