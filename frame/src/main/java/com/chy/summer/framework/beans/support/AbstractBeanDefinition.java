@@ -4,12 +4,12 @@ import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.util.ClassUtils;
+import com.chy.summer.framework.util.ObjectUtils;
 
 import java.util.function.Supplier;
 
 public abstract class AbstractBeanDefinition extends AttributeAccessorSupport implements BeanDefinition {
 
-    private String beanClassName;
     private ScopeType scope = ScopeType.SINGLETON;
     private boolean lazyInit = false;
 
@@ -36,7 +36,7 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
 
     @Override
     public void setBeanClassName(String beanClassName) {
-        this.beanClassName = beanClassName;
+        this.beanClass = beanClassName;
     }
 
     @Override
@@ -166,6 +166,5 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
     public void setInstanceSupplier( Supplier<?> instanceSupplier) {
         this.instanceSupplier = instanceSupplier;
     }
-
 
 }

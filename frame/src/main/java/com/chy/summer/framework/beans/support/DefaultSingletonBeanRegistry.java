@@ -130,6 +130,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
      * @param beanName
      * @param singletonObject
      */
+    @Override
     public void registerSingleton(String beanName, Object singletonObject){
         Assert.notNull(beanName, "注册单例对象的时候 beanName 不能为空");
         Assert.notNull(singletonObject, "单例对象不能为空");
@@ -192,6 +193,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     }
 
 
+    @Override
     public Object getSingleton(String beanName) {
         return getSingleton(beanName, true);
     }

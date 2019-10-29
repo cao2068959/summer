@@ -68,9 +68,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
         }
 
+        //用反射去创建了 对象，并且把它放入 wrapper 中
         if (instanceWrapper == null) {
             instanceWrapper = createBeanInstance(beanName, mbd, args);
         }
+
+        //获取生成好的 对象
         final Object bean = instanceWrapper.getWrappedInstance();
         Class<?> beanType = instanceWrapper.getWrappedClass();
 
@@ -90,6 +93,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         }
 
         //是否面临了循环依赖的问题
+        //如果是正在创建中的单例对象，可能会有循环依赖问题
         boolean earlySingletonExposure = (mbd.isSingleton()  && isSingletonCurrentlyInCreation(beanName));
         if (earlySingletonExposure) {
             //这个getEarlyBeanReference 其实也是一个BeanPostProcessor 执行器,这里执行的是接口 SmartInstantiationAwareBeanPostProcessor
