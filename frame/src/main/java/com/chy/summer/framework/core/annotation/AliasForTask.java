@@ -16,6 +16,11 @@ public class AliasForTask {
 
     public AliasForTask(AliasFor aliasFor, String defaultName, Class<? extends Annotation> annotationClass) {
         targerClass =aliasFor.annotation();
+        //如果等于Annotation 说明他没有指定要继承到哪一个注解上面,那么就指向他自己
+        if(targerClass == Annotation.class){
+            targerClass = annotationClass;
+        }
+
         targerName = aliasFor.name();
         //如果没显性的设置属性的名称,就默认和方法名称一致
         if(StringUtils.isEmpty(targerName)){

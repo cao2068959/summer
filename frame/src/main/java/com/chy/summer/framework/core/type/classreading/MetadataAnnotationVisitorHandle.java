@@ -85,62 +85,14 @@ public class MetadataAnnotationVisitorHandle extends AnnotationVisitor  {
     public void visitEnd() {
         annotationType = getAnnotationType();
         //这个注解上面还有哪一些继承上去的注解
-        Set<String> allAnnotation = metaAnnotationMapHandle(annotationType, null);
+        Set<String> allAnnotation = AnnotationUtils
+                .metaAnnotationMapHandle(annotationType, annotationAttributes, aliasForTaskList, attributesMap, null);
         metaAnnotationMap.put(annotationType.getName(),allAnnotation);
-
-        doAliasForTask();
-    }
-
-    /**
-     * 执行注解属性继承关系的任务
-     */
-    private void doAliasForTask(){
-        for (AliasForTask aliasForTask : aliasForTaskList) {
-
-            AnnotationAttributes targetAttributes = attributesMap.get(aliasForTask.getTargerClass().getName());
-            AnnotationAttributes formAttributes = attributesMap.get(aliasForTask.getFormClass().getName());
-
-            targetAttributes.update(aliasForTask.getTargerName(),
-                    formAttributes.getAttributeValue(aliasForTask.getFormName()));
-
-        }
-
+        //执行注解上的继承任务,把所有的继承属性给赋值过去
+        AnnotationUtils.doAliasForTask(aliasForTaskList,attributesMap);
     }
 
 
-
-    /**
-     * 解析注解的继承关系，把他的继承关系存入 metaAnnotationMap
-     */
-    private Set<String> metaAnnotationMapHandle(Class<? extends Annotation> annotationType,Set<String> result){
-        if(result == null){
-            //这是根目录进来
-            result = new LinkedHashSet<>();
-            //解析root注解上面的属性
-            AnnotationAttributes attributes = AnnotationUtils
-                    .pareAnnotationToAttributes(annotationAttributes,annotationType,aliasForTaskList);
-            attributesMap.put(annotationType.getName(),attributes);
-        }else{
-            result.add(annotationType.getName());
-        }
-
-        //获取了这个注解上面的父注解
-        Annotation[] annotations = annotationType.getAnnotations();
-        Set<String> finalResult = result;
-        //递归扫描注解上面的注解,同时过滤掉一些不需要解析的注解
-        Arrays.stream(annotations).filter(annotation -> {
-           return !AnnotationConstant.ignoreAnnotation.contains(annotation.annotationType());
-        }).forEach(annotation ->{
-            Class<? extends Annotation> type = annotation.annotationType();
-            //解析注解上面的属性
-            AnnotationAttributes attributes = AnnotationUtils.pareAnnotationToAttributes(annotation,type,aliasForTaskList);
-            metaAnnotationMapHandle(type, finalResult);
-            attributesMap.put(type.getName(),attributes);
-        });
-
-        return result;
-
-    }
 
 
 

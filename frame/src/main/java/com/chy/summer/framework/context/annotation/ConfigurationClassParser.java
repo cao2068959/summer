@@ -4,11 +4,8 @@ import com.chy.summer.framework.beans.config.AnnotatedBeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
-import com.chy.summer.framework.beans.support.AbstractBeanDefinition;
-import com.chy.summer.framework.beans.support.BeanDefinitionReader;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.context.ComponentScanAnnotationParser;
-import com.chy.summer.framework.context.annotation.utils.AnnotationConfigUtils;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.core.io.ResourceLoader;
@@ -20,9 +17,8 @@ import com.chy.summer.framework.core.type.StandardAnnotationMetadata;
 import com.chy.summer.framework.core.type.classreading.MetadataReader;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
-import com.chy.summer.framework.util.Assert;
-import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ConfigurationClassUtils;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -45,6 +41,7 @@ public class ConfigurationClassParser {
 
     private final ComponentScanAnnotationParser componentScanParser;
 
+    @Getter
     private final Map<ConfigurationClass, ConfigurationClass> configurationClasses = new LinkedHashMap<>();
 
 
@@ -68,7 +65,8 @@ public class ConfigurationClassParser {
      * @param configCandidates
      */
     public void parse(Set<BeanDefinitionHolder> configCandidates) {
-        this.deferredImportSelectors = new LinkedList<>();
+        //用于 @Import 注解 class容器
+        //this.deferredImportSelectors = new LinkedList<>();
 
         for (BeanDefinitionHolder holder : configCandidates) {
             BeanDefinition bd = holder.getBeanDefinition();
@@ -81,11 +79,12 @@ public class ConfigurationClassParser {
                 throw ex;
             }
             catch (Throwable ex) {
+                ex.printStackTrace();
                 throw new BeanDefinitionStoreException("解析[%s]配置类失败,失败原因为: [%s] ",bd,ex.getMessage());
             }
         }
-
-        processDeferredImportSelectors();
+        // 也是对 @Import 的解析
+        //processDeferredImportSelectors();
     }
 
 
@@ -95,7 +94,7 @@ public class ConfigurationClassParser {
 
 
     /**
-     *  解析 配置类
+     *  这里会循环的的模式去解析 配置文件  解析-> 返回父类 -> 父类继续解析 ->...-> 直到没有任何的父类(返回了Null)
      * @param configClass
      * @throws Exception
      */
@@ -109,7 +108,7 @@ public class ConfigurationClassParser {
         // 用 configClass 生成  SourceClass
         SourceClass sourceClass = asSourceClass(configClass);
         do {
-            //开始真正执行解析
+            //开始解析类,这里如果有返回值说明 这个类有对应的 父类什么要继续处理
             sourceClass = doProcessConfigurationClass(configClass, sourceClass);
         }
         while (sourceClass != null);
@@ -119,25 +118,12 @@ public class ConfigurationClassParser {
 
 
     /**
-     *  生成 SourceClass
-     * @param configurationClass
+     * 解析配置文件的主流程
+     * @param configClass
+     * @param sourceClass
      * @return
      * @throws Exception
      */
-    private SourceClass asSourceClass(ConfigurationClass configurationClass) throws Exception {
-        AnnotationMetadata metadata = configurationClass.getMetadata();
-        return asSourceClass(metadata.getClassName());
-    }
-
-    SourceClass asSourceClass( String className) throws Exception {
-        if (className == null) {
-            return new SourceClass(Object.class);
-        }
-        return new SourceClass(this.metadataReaderFactory.getMetadataReader(className));
-    }
-
-
-
     protected final SourceClass doProcessConfigurationClass(ConfigurationClass configClass, SourceClass sourceClass)
             throws Exception {
 
@@ -149,9 +135,15 @@ public class ConfigurationClassParser {
         AnnotationMetadata annotationMetadata = (AnnotationMetadata) metadata;
         //拿到注解 ComponentScan 上面的所有属性
         AnnotationAttributes componentScan = annotationMetadata.getAnnotationAttributes(ComponentScan.class);
-        //根据 @ComponentScan 去扫描 对应的 class路径,生成 所有的 BeanDefinitionHolder
-        Set<BeanDefinitionHolder> scannedBeanDefinitions =
-                this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
+        //打了@ComponentScan 注解才会去执行下面的扫描逻辑
+        if(componentScan != null){
+            //根据 @ComponentScan 去扫描 对应的 class路径,生成 所有的 BeanDefinitionHolder
+            Set<BeanDefinitionHolder> scannedBeanDefinitions =
+                    this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
+            System.out.println(scannedBeanDefinitions);
+        }
+
+
         //TODO 上面一路走下来,只是解析了一个用户在入口指定的一个配置类,而那些 以bean的方式配置的 配置类,还没处理,所以这里还需要 迭代上面扫描出来的 BeanDefinition,递归处理配置类
 
 
@@ -167,23 +159,29 @@ public class ConfigurationClassParser {
             configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
         }
 
-        // Process default methods on interfaces
-        processInterfaces(configClass, sourceClass);
+        // TODO 这里是把 jdk8里面的 接口上的默认方法 也注册进去,当然前提是打了 @Bean 注解
+        //processInterfaces(configClass, sourceClass);
 
-        // Process superclass, if any
-        if (sourceClass.getMetadata().hasSuperClass()) {
-            String superclass = sourceClass.getMetadata().getSuperClassName();
-            if (superclass != null && !superclass.startsWith("java") &&
-                    !this.knownSuperclasses.containsKey(superclass)) {
-                this.knownSuperclasses.put(superclass, configClass);
-                // Superclass found, return its annotation metadata and recurse
-                return sourceClass.getSuperClass();
-            }
-        }
-
-        // No superclass -> processing is complete
+        // TODO 解析父类
         return null;
     }
+
+
+    /**
+     * 获取了 这个类下面 所有打了注解 @Bean 的方法
+     * @param sourceClass
+     * @return
+     */
+    private Set<MethodMetadata> retrieveBeanMethodMetadata(SourceClass sourceClass) {
+        AnnotationMetadata annotationMetadata = sourceClass.getMetadata();
+        //拿到了所有打了@Bean 的方法
+        Set<MethodMetadata> beanMethods = annotationMetadata.getAnnotatedMethods(Bean.class.getName());
+        if(beanMethods == null){
+            return new HashSet<>();
+        }
+        return beanMethods;
+    }
+
 
     /**
      * 配置类上面 @Import 注解的 解析
@@ -227,7 +225,29 @@ public class ConfigurationClassParser {
         }
     }
 
+    /**
+     *  生成 SourceClass
+     * @param configurationClass
+     * @return
+     * @throws Exception
+     */
+    private SourceClass asSourceClass(ConfigurationClass configurationClass) throws Exception {
+        AnnotationMetadata metadata = configurationClass.getMetadata();
+        if (metadata instanceof StandardAnnotationMetadata) {
+            return new SourceClass(((StandardAnnotationMetadata) metadata).getIntrospectedClass());
+        }
 
+        return asSourceClass(metadata.getClassName());
+    }
+
+    SourceClass asSourceClass( String className) throws Exception {
+        if (className == null) {
+            return new SourceClass(Object.class);
+        }
+        return new SourceClass(this.metadataReaderFactory.getMetadataReader(className));
+    }
+
+//=================================下面是内部类==========================================================================
 
     private class SourceClass implements Ordered {
 
@@ -265,13 +285,13 @@ public class ConfigurationClassParser {
                     result.add(asSourceClass(className));
                 }
                 catch (Throwable ex) {
-
+                    ex.printStackTrace();
                 }
             }
             return result;
         }
 
-        public ClassMetadata getMetadata() {
+        public AnnotationMetadata getMetadata() {
             return metadata;
         }
 
@@ -310,6 +330,5 @@ public class ConfigurationClassParser {
         }
 
     }
-
 
 }

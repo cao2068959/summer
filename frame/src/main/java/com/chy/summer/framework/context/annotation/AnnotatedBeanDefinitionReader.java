@@ -33,7 +33,7 @@ public class AnnotatedBeanDefinitionReader {
         beanNameGenerator = new AnnotationBeanNameGenerator();
         //把一些公用的 beanFactroyPostProcessor 给注册进去
         AnnotationUtils.registerAnnotationConfigProcessors(registry,null);
-        registry = registry;
+        this.registry = registry;
     }
 
     public void register(Class<?>... annotatedClasses) {

@@ -41,4 +41,11 @@ public interface AnnotationMetadata extends ClassMetadata {
 
 
     Set<String> getAnnotationTypes();
+
+    /**
+     * 获取打了某个注解的所有方法
+     * @param name
+     * @return
+     */
+    Set<MethodMetadata> getAnnotatedMethods(String name);
 }

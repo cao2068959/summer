@@ -43,4 +43,5 @@ public interface BeanDefinitionRegistry {
     void registerAlias(String beanName, String alias);
 
     String[] getBeanDefinitionNames();
+
 }

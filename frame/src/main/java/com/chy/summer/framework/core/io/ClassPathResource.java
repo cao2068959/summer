@@ -6,6 +6,7 @@ import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.StringUtils;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -73,6 +74,19 @@ public class ClassPathResource extends AbstractFileResolvingResource {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return null;
+        InputStream is;
+        if (this.clazz != null) {
+            is = this.clazz.getResourceAsStream(this.path);
+        }
+        else if (this.classLoader != null) {
+            is = this.classLoader.getResourceAsStream(this.path);
+        }
+        else {
+            is = ClassLoader.getSystemResourceAsStream(this.path);
+        }
+        if (is == null) {
+            throw new FileNotFoundException(getDescription() + " 不能打开 inputStream 因为对应的文件不存在");
+        }
+        return is;
     }
 }

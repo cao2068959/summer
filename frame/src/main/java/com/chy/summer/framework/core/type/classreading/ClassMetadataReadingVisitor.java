@@ -52,6 +52,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
 
     /**
      * 存放注解里面对应设置的属性值
+     * key: 注解全路径 , value 注解的属性值
      */
     private final Map<String, AnnotationAttributes> annotationAttributes = new HashMap<>();
 
@@ -163,6 +164,22 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     @Override
     public Set<String> getAnnotationTypes() {
         return annotationSet;
+    }
+
+    /**
+     * 获取类里面打了某个注解的 所有方法
+     * @param annotationName
+     * @return
+     */
+    @Override
+    public Set<MethodMetadata> getAnnotatedMethods(String annotationName) {
+        Set<MethodMetadata> annotatedMethods = new LinkedHashSet<>(4);
+        for (MethodMetadata methodMetadata : this.methodMetadataSet) {
+            if (methodMetadata.isAnnotated(annotationName)) {
+                annotatedMethods.add(methodMetadata);
+            }
+        }
+        return annotatedMethods;
     }
 
     @Override

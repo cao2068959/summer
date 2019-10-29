@@ -105,6 +105,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
                     singletonObject = singletonFactory.getObject();
                     newSingleton = true;
                 } catch (Exception ex) {
+                    ex.printStackTrace();
                     throw new BeanCreationException(beanName,ex.getMessage());
                 }
 
@@ -129,7 +130,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
      * @param beanName
      * @param singletonObject
      */
-    void registerSingleton(String beanName, Object singletonObject){
+    public void registerSingleton(String beanName, Object singletonObject){
         Assert.notNull(beanName, "注册单例对象的时候 beanName 不能为空");
         Assert.notNull(singletonObject, "单例对象不能为空");
         synchronized (this.singletonObjects) {
