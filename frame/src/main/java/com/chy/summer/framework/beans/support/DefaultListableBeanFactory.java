@@ -182,6 +182,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
      * @return
      * @throws NoSuchBeanDefinitionException
      */
+    @Override
     public boolean isSingleton(String name) throws NoSuchBeanDefinitionException {
         String beanName = transformedBeanName(name);
 

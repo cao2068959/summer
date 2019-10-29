@@ -149,40 +149,40 @@ public abstract class BeanFactoryUtils {
 //		}
 //		return result;
 //	}
-//
-//	/**
-//	 * Get all bean names for the given type, including those defined in ancestor
-//	 * factories. Will return unique names in case of overridden bean definitions.
-//	 * <p>Does consider objects created by FactoryBeans, which means that FactoryBeans
-//	 * will get initialized. If the object created by the FactoryBean doesn't match,
-//	 * the raw FactoryBean itself will be matched against the type.
-//	 * <p>This version of {@code beanNamesForTypeIncludingAncestors} automatically
-//	 * includes prototypes and FactoryBeans.
-//	 * @param lbf the bean factory
-//	 * @param type the type that beans must match (as a {@code Class})
-//	 * @return the array of matching bean names, or an empty array if none
-//	 */
-//	public static String[] beanNamesForTypeIncludingAncestors(ListableBeanFactory lbf, Class<?> type) {
-//		Assert.notNull(lbf, "ListableBeanFactory must not be null");
-//		String[] result = lbf.getBeanNamesForType(type);
-//		if (lbf instanceof HierarchicalBeanFactory) {
-//			HierarchicalBeanFactory hbf = (HierarchicalBeanFactory) lbf;
-//			if (hbf.getParentBeanFactory() instanceof ListableBeanFactory) {
-//				String[] parentResult = beanNamesForTypeIncludingAncestors(
-//						(ListableBeanFactory) hbf.getParentBeanFactory(), type);
-//				List<String> resultList = new ArrayList<>();
-//				resultList.addAll(Arrays.asList(result));
-//				for (String beanName : parentResult) {
-//					if (!resultList.contains(beanName) && !hbf.containsLocalBean(beanName)) {
-//						resultList.add(beanName);
-//					}
-//				}
-//				result = StringUtils.toStringArray(resultList);
-//			}
-//		}
-//		return result;
-//	}
-//
+
+	/**
+	 * Get all bean names for the given type, including those defined in ancestor
+	 * factories. Will return unique names in case of overridden bean definitions.
+	 * <p>Does consider objects created by FactoryBeans, which means that FactoryBeans
+	 * will get initialized. If the object created by the FactoryBean doesn't match,
+	 * the raw FactoryBean itself will be matched against the type.
+	 * <p>This version of {@code beanNamesForTypeIncludingAncestors} automatically
+	 * includes prototypes and FactoryBeans.
+	 * @param lbf the bean factory
+	 * @param type the type that beans must match (as a {@code Class})
+	 * @return the array of matching bean names, or an empty array if none
+	 */
+	public static String[] beanNamesForTypeIncludingAncestors(ListableBeanFactory lbf, Class<?> type) {
+		Assert.notNull(lbf, "ListableBeanFactory must not be null");
+		String[] result = lbf.getBeanNamesForType(type,true,true);
+		if (lbf instanceof HierarchicalBeanFactory) {
+			HierarchicalBeanFactory hbf = (HierarchicalBeanFactory) lbf;
+			if (hbf.getParentBeanFactory() instanceof ListableBeanFactory) {
+				String[] parentResult = beanNamesForTypeIncludingAncestors(
+						(ListableBeanFactory) hbf.getParentBeanFactory(), type);
+				List<String> resultList = new ArrayList<>();
+				resultList.addAll(Arrays.asList(result));
+				for (String beanName : parentResult) {
+					if (!resultList.contains(beanName) && !hbf.containsLocalBean(beanName)) {
+						resultList.add(beanName);
+					}
+				}
+				result = StringUtils.toStringArray(resultList);
+			}
+		}
+		return result;
+	}
+
 	/**
 	 * 获取给定类型的所有bean名称，包括所有父类工厂中定义的名称，如果bean定义被覆盖，将返回唯一的名称。
 	 * 如果“ allowEagerInit”标志为true，是否考虑由factorybean创建的对象，这意味着将初始化FactoryBeans。
