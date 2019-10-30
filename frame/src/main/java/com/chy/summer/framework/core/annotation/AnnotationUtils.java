@@ -6,6 +6,7 @@ import com.chy.summer.framework.annotation.core.AliasFor;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.factory.ContextAnnotationAutowireCandidateResolver;
+import com.chy.summer.framework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
 import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
 import com.chy.summer.framework.beans.support.RootBeanDefinition;
 import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
@@ -49,6 +50,9 @@ public  abstract class AnnotationUtils {
 
     public static final String CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME =
             "chy.summer.internalConfigurationAnnotationProcessor";
+
+    public static final String AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME =
+            "chy.summer.internalAutowiredAnnotationProcessor";
 
 
 
@@ -388,6 +392,15 @@ public  abstract class AnnotationUtils {
             RootBeanDefinition def = new RootBeanDefinition(ConfigurationClassPostProcessor.class);
             beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));
         }
+
+        //把 AutowiredAnnotationBeanPostProcessor 给注册进入 IOC 容器
+
+        if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+            RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);
+            beanDefs.add(registerPostProcessor(registry, def, AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME));
+        }
+
+
 
 
     }
