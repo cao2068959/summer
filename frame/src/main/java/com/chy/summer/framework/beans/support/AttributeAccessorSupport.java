@@ -58,16 +58,4 @@ public abstract class AttributeAccessorSupport implements AttributeAccessor {
             setAttribute(attributeName, source.getAttribute(attributeName));
         }
     }
-
-
-    @Override
-    public boolean equals(Object other) {
-        return (this == other || (other instanceof AttributeAccessorSupport &&
-                this.attributes.equals(((AttributeAccessorSupport) other).attributes)));
-    }
-
-    @Override
-    public int hashCode() {
-        return this.attributes.hashCode();
-    }
 }

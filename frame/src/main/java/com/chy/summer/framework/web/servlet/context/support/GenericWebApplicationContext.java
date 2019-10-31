@@ -50,12 +50,12 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
 
     @Override
     public Object getBean(String name) {
-        return null;
+        return beanFactory.getBean(name);
     }
 
     @Override
     public <T> T getBean(String name, Class<T> type) {
-        return null;
+        return beanFactory.getBean(name,type);
     }
 
 

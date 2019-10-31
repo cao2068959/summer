@@ -134,6 +134,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 
 
 
+
     public RootBeanDefinition cloneBeanDefinition() {
         return new RootBeanDefinition(this);
     }

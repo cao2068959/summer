@@ -3,11 +3,15 @@ package com.chy.summer.framework.beans.support;
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.BeanWrapper;
 import com.chy.summer.framework.beans.BeanWrapperImpl;
+import com.chy.summer.framework.beans.PropertyValues;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
+import com.chy.summer.framework.beans.config.InstantiationAwareBeanPostProcessor;
+import com.chy.summer.framework.beans.config.SmartInstantiationAwareBeanPostProcessor;
 import com.chy.summer.framework.exception.BeanCreationException;
 import com.chy.summer.framework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
@@ -68,9 +72,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
         }
 
+        //用反射去创建了 对象，并且把它放入 wrapper 中
         if (instanceWrapper == null) {
             instanceWrapper = createBeanInstance(beanName, mbd, args);
         }
+
+        //获取生成好的 对象
         final Object bean = instanceWrapper.getWrappedInstance();
         Class<?> beanType = instanceWrapper.getWrappedClass();
 
@@ -90,6 +97,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         }
 
         //是否面临了循环依赖的问题
+        //如果是正在创建中的单例对象，可能会有循环依赖问题
         boolean earlySingletonExposure = (mbd.isSingleton()  && isSingletonCurrentlyInCreation(beanName));
         if (earlySingletonExposure) {
             //这个getEarlyBeanReference 其实也是一个BeanPostProcessor 执行器,这里执行的是接口 SmartInstantiationAwareBeanPostProcessor
@@ -123,7 +131,21 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     }
 
     private void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper instanceWrapper) {
-
+        PropertyDescriptor[] filteredPds = null;
+        PropertyValues pvs = mbd.getPropertyValues();
+        //在spring中，这里还有一个开关来控制是否有对应的后置处理器，来控制是否执行下面的 for循环，这里就补设置这个开关
+        for (BeanPostProcessor bp : getBeanPostProcessors()) {
+            if (bp instanceof InstantiationAwareBeanPostProcessor) {
+                InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+                //执行 后置处理器 来给bean的属性做一些操作
+                //其中属性注入的 后置处理器 为：AutowiredAnnotationBeanPostProcessor
+                PropertyValues pvsToUse = ibp.postProcessProperties(pvs, instanceWrapper.getWrappedInstance(), beanName);
+                if (pvsToUse == null) {
+                    return;
+                }
+                pvs = pvsToUse;
+            }
+        }
     }
 
     private void applyMergedBeanDefinitionPostProcessors(RootBeanDefinition mbd, Class<?> beanType, String beanName) {

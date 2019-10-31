@@ -200,7 +200,7 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     private void initMessageSource() {
     }
 
-    protected void  registerBeanPostProcessors(ConfigurableListableBeanFactory beanFactory){
+    private void  registerBeanPostProcessors(ConfigurableListableBeanFactory beanFactory){
         PostProcessorRegistrationDelegate.registerBeanPostProcessors(beanFactory,this);
     }
 

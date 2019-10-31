@@ -38,4 +38,15 @@ public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
 		return pvs;
 	}
 
+	/**
+	 * 在生成Bean 对象后对属性的一些处理，比如 注入操作就在这里面操作的
+	 */
+	default PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName)
+			throws BeansException {
+
+		return pvs;
+	}
+
+
+
 }

@@ -1,15 +1,16 @@
 package com.chy.summer.framework.beans.support;
 
+import com.chy.summer.framework.beans.MutablePropertyValues;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.util.ClassUtils;
+import com.chy.summer.framework.util.ObjectUtils;
 
 import java.util.function.Supplier;
 
 public abstract class AbstractBeanDefinition extends AttributeAccessorSupport implements BeanDefinition {
 
-    private String beanClassName;
     private ScopeType scope = ScopeType.SINGLETON;
     private boolean lazyInit = false;
 
@@ -20,6 +21,9 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
     private volatile Object beanClass;
 
     private Supplier<?> instanceSupplier;
+
+    /** 代表了 这个beanDefinition 里的所有属性 */
+    private MutablePropertyValues propertyValues;
 
 
 
@@ -36,7 +40,7 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
 
     @Override
     public void setBeanClassName(String beanClassName) {
-        this.beanClassName = beanClassName;
+        this.beanClass = beanClassName;
     }
 
     @Override
@@ -167,5 +171,10 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
         this.instanceSupplier = instanceSupplier;
     }
 
-
+    public MutablePropertyValues getPropertyValues() {
+        if (this.propertyValues == null) {
+            this.propertyValues = new MutablePropertyValues();
+        }
+        return this.propertyValues;
+    }
 }

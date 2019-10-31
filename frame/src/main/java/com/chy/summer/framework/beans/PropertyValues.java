@@ -3,44 +3,31 @@ package com.chy.summer.framework.beans;
 import com.sun.istack.internal.Nullable;
 
 /**
- * Holder containing one or more PropertyValue objects,
- * typically comprising one update for a specific target bean.
+ * 代表大量属性的接口，一般放在 beanDefintion 里面，这样就代表了一个类上的所有属性
  */
 public interface PropertyValues {
-    //TODO GYX 此处没有完成
-//	/**
-//	 * Return an array of the PropertyValue objects held in this object.
-//	 */
-//	PropertyValue[] getPropertyValues();
-//
-//	/**
-//	 * Return the property value with the given name, if any.
-//	 * @param propertyName the name to search for
-//	 * @return the property value, or {@code null} if none
-//	 */
-//	@Nullable
-//	PropertyValue getPropertyValue(String propertyName);
-//
-//	/**
-//	 * Return the changes since the previous PropertyValues.
-//	 * Subclasses should also override {@code equals}.
-//	 * @param old old property values
-//	 * @return PropertyValues updated or new properties.
-//	 * Return empty PropertyValues if there are no changes.
-//	 * @see Object#equals
-//	 */
-//	PropertyValues changesSince(PropertyValues old);
-//
-//	/**
-//	 * Is there a property value (or other processing entry) for this property?
-//	 * @param propertyName the name of the property we're interested in
-//	 * @return whether there is a property value for this property
-//	 */
-//	boolean contains(String propertyName);
-//
-//	/**
-//	 * Does this holder not contain any PropertyValue objects at all?
-//	 */
-//	boolean isEmpty();
+
+	/**
+	 * 返回了所有的 属性对象
+	 */
+	PropertyValue[] getPropertyValues();
+
+	/**
+	 * 通过属性的 名称来获取对应的属性值
+	 */
+	@Nullable
+	PropertyValue getPropertyValue(String propertyName);
+
+	PropertyValues changesSince(PropertyValues old);
+
+	/**
+	 * 查看是否包含某一个属性
+	 */
+	boolean contains(String propertyName);
+
+	/**
+	 * 是不是没有任何一个属性
+	 */
+	boolean isEmpty();
 
 }

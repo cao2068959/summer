@@ -464,7 +464,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     }
 
     private RootBeanDefinition getMergedBeanDefinition(String beanName, BeanDefinition beanDefinition) {
-        return getMergedBeanDefinition(beanName,beanDefinition,null);
+        return  getMergedBeanDefinition(beanName,beanDefinition,null);
     }
 
 

@@ -172,9 +172,9 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
      * @throws BeanDefinitionStoreException
      */
     protected RootBeanDefinition getMergedBeanDefinition(
-            String beanName, BeanDefinition bd, @Nullable BeanDefinition containingBd)
+            String beanName, BeanDefinition bd, BeanDefinition containingBd)
             throws BeanDefinitionStoreException {
-
+        Assert.notNull(bd,"beanDefinition 不能为Null,可能 ["+beanName+"] 没有注册进容器");
         synchronized (this.mergedBeanDefinitions) {
             RootBeanDefinition mbd = null;
 
