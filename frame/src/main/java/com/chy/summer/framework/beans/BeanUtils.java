@@ -3,8 +3,10 @@ package com.chy.summer.framework.beans;
 import com.chy.summer.framework.exception.BeanInstantiationException;
 import com.chy.summer.framework.util.Assert;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class BeanUtils {
 
@@ -33,5 +35,16 @@ public class BeanUtils {
             throw new BeanInstantiationException("class: [%s],实例化异常: [%s]",ex.getMessage());
         }
 
+    }
+
+    public static PropertyDescriptor findPropertyForMethod(Method method, Class<?> clazz) {
+        for (PropertyDescriptor pd : pds) {
+            if (method.equals(pd.getReadMethod()) || method.equals(pd.getWriteMethod())) {
+                return pd;
+            }
+        }
+        return null;
+
+        return null;
     }
 }

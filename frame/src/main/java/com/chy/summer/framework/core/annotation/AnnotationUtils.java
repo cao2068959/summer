@@ -61,7 +61,7 @@ public  abstract class AnnotationUtils {
      * 如果这里有属性需要继承下去,就把相关任务放入 LinkList 中,这里是有顺序要求的
      * @annotationValue 这里根据不同的类型执行不同的策略,是注解类型就反射拿,是map类型就put拿
      * @annotationClass 要解析的注解的类型
-     * @aliasForTaskList 如果属性上有打了注解 @AliasFor 则生成任务放入队列里
+     * @aliasForTaskList 如果属性上有打了注解 @AliasFor 则生成任务放入队列里,如果为null则不会解析 @AliasFor
      */
     public static AnnotationAttributes pareAnnotationToAttributes(Object value,
                                                                    Class<? extends Annotation> annotationClass,
@@ -76,6 +76,7 @@ public  abstract class AnnotationUtils {
 
             Object defaultValue = method.getDefaultValue();
             attributes.put(method.getName(),annotationValue,defaultValue);
+            if(aliasForTaskList == null){return;}
             //判断上这个属性上是否有 @AliasFor 注解,有的话这个方法上的值将会传递给对应的注解上
             AliasFor aliasFor = method.getAnnotation(AliasFor.class);
             if(aliasFor == null){return;}
