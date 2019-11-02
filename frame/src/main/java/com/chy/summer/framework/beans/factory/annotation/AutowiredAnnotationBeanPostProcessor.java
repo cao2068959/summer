@@ -5,15 +5,15 @@ import com.chy.summer.framework.annotation.beans.Autowired;
 import com.chy.summer.framework.annotation.beans.Value;
 import com.chy.summer.framework.beans.BeanUtils;
 import com.chy.summer.framework.beans.PropertyValues;
+import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.beans.config.SmartInstantiationAwareBeanPostProcessor;
+import com.chy.summer.framework.beans.factory.DependencyDescriptor;
 import com.chy.summer.framework.beans.support.annotation.InjectionMetadata;
 import com.chy.summer.framework.core.BridgeMethodResolver;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
+import com.chy.summer.framework.exception.BeanCreationException;
 import com.chy.summer.framework.exception.BeansException;
-import com.chy.summer.framework.util.AnnotatedElementUtils;
-import com.chy.summer.framework.util.ClassUtils;
-import com.chy.summer.framework.util.ReflectionUtils;
-import com.chy.summer.framework.util.StringUtils;
+import com.chy.summer.framework.util.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.beans.PropertyDescriptor;
@@ -40,6 +40,8 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 
     private boolean requiredParameterValue = true;
 
+    private ConfigurableListableBeanFactory beanFactory;
+
     public AutowiredAnnotationBeanPostProcessor() {
         this.autowiredAnnotationTypes.add(Autowired.class);
         this.autowiredAnnotationTypes.add(Value.class);
@@ -47,9 +49,21 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 
     @Override
     public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) throws BeansException {
-
-        return null;
+        //获取要注入的元数据对象,这里面保存了 那些已经被打了 @Autowired 注解的 元素和方法
+        InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
+        try {
+            metadata.inject(bean, beanName, pvs);
+        }
+        catch (BeanCreationException ex) {
+            throw ex;
+        }
+        catch (Throwable ex) {
+            throw new BeanCreationException(beanName, " 注入属性异常 ", ex);
+        }
+        return pvs;
     }
+
+
 
     private InjectionMetadata findAutowiringMetadata(String beanName, Class<?> clazz, PropertyValues pvs) {
         String cacheKey = (StringUtils.hasLength(beanName) ? beanName : clazz.getName());
@@ -112,12 +126,14 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
                         log.warn("Autowired 注解作用的方法最少要有一个参数 ： {}",method);
                     }
                     boolean required = determineRequiredStatus(ann);
+                    //获取对应 getter setter 方法的 PropertyDescriptor
                     PropertyDescriptor pd = BeanUtils.findPropertyForMethod(bridgedMethod, clazz);
                     currElements.add(new AutowiredMethodElement(method, required, pd));
                 }
             });
 
             elements.addAll(0, currElements);
+            //获取他的父类 再处理一遍,直到没有父类,或者父类是 Obejct
             targetClass = targetClass.getSuperclass();
         }
         while (targetClass != null && targetClass != Object.class);
@@ -163,6 +179,39 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 
         public AutowiredFieldElement(Field field, boolean required) {
             super(field, null);
+            this.required = required;
+        }
+
+        @Override
+        public void inject(Object bean,  String beanName,  PropertyValues pvs) throws Throwable {
+            Field field = (Field) this.member;
+            Object value;
+            DependencyDescriptor desc = new DependencyDescriptor(field, this.required);
+            desc.setContainingClass(bean.getClass());
+            Set<String> autowiredBeanNames = new LinkedHashSet<>(1);
+            Assert.state(beanFactory != null, "beanFactory 不能是Null");
+
+            value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames);
+
+            if (value != null) {
+                ReflectionUtils.makeAccessible(field);
+                field.set(bean, value);
+            }
+        }
+
+
+    }
+
+    private class AutowiredMethodElement extends InjectionMetadata.InjectedElement {
+
+        private final boolean required;
+
+        private volatile boolean cached = false;
+
+        private volatile Object[] cachedMethodArguments;
+
+        public AutowiredMethodElement(Method method, boolean required,PropertyDescriptor pd) {
+            super(method, pd);
             this.required = required;
         }
 

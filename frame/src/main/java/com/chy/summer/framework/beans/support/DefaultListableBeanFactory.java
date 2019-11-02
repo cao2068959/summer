@@ -3,6 +3,8 @@ package com.chy.summer.framework.beans.support;
 import com.chy.summer.framework.beans.*;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.factory.AutowireCandidateResolver;
+import com.chy.summer.framework.beans.factory.DependencyDescriptor;
+import com.chy.summer.framework.beans.factory.InjectionPoint;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.exception.BeanCreationException;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
@@ -511,4 +513,138 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public Object getSingletonMutex() {
         return getSingletonObjects();
     }
+
+    /**
+     * 解析 依赖,并且把这个 依赖的 单列对象给拿出来
+     * @param descriptor
+     * @param requestingBeanName
+     * @param autowiredBeanNames
+     * @return
+     * @throws BeansException
+     */
+    @Override
+    public Object resolveDependency(DependencyDescriptor descriptor,  String requestingBeanName,
+                                     Set<String> autowiredBeanNames) throws BeansException {
+
+        Object result;
+        result = doResolveDependency(descriptor, requestingBeanName, autowiredBeanNames);
+        return result;
+    }
+
+    public Object doResolveDependency(DependencyDescriptor descriptor,  String beanName,
+                                      Set<String> autowiredBeanNames) throws BeansException {
+
+        InjectionPoint previousInjectionPoint = ConstructorResolver.setCurrentInjectionPoint(descriptor);
+        try {
+
+            Class<?> type = descriptor.getDependencyType();
+            //去找一找有可能会拿到的注入对象有哪些
+            Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
+            if (matchingBeans.isEmpty()) {
+                if (isRequired(descriptor)) {
+                    raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
+                }
+                return null;
+            }
+
+            String autowiredBeanName;
+            Object instanceCandidate;
+
+            if (matchingBeans.size() > 1) {
+                autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
+                if (autowiredBeanName == null) {
+                    if (isRequired(descriptor) || !indicatesMultipleBeans(type)) {
+                        return descriptor.resolveNotUnique(type, matchingBeans);
+                    }
+                    else {
+                        // In case of an optional Collection/Map, silently ignore a non-unique case:
+                        // possibly it was meant to be an empty collection of multiple regular beans
+                        // (before 4.3 in particular when we didn't even look for collection beans).
+                        return null;
+                    }
+                }
+                instanceCandidate = matchingBeans.get(autowiredBeanName);
+            }
+            else {
+                // We have exactly one match.
+                Map.Entry<String, Object> entry = matchingBeans.entrySet().iterator().next();
+                autowiredBeanName = entry.getKey();
+                instanceCandidate = entry.getValue();
+            }
+
+            if (autowiredBeanNames != null) {
+                autowiredBeanNames.add(autowiredBeanName);
+            }
+            if (instanceCandidate instanceof Class) {
+                instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
+            }
+            Object result = instanceCandidate;
+            if (result instanceof NullBean) {
+                if (isRequired(descriptor)) {
+                    raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
+                }
+                result = null;
+            }
+            if (!ClassUtils.isAssignableValue(type, result)) {
+                throw new BeanNotOfRequiredTypeException(autowiredBeanName, type, instanceCandidate.getClass());
+            }
+            return result;
+        }
+        finally {
+            ConstructorResolver.setCurrentInjectionPoint(previousInjectionPoint);
+        }
+    }
+
+    /**
+     * 寻找可能注入的对象
+     * @param beanName
+     * @param requiredType
+     * @param descriptor
+     * @return
+     */
+    protected Map<String, Object> findAutowireCandidates(
+             String beanName, Class<?> requiredType, DependencyDescriptor descriptor) {
+
+        String[] candidateNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
+                this, requiredType, true, descriptor.isEager());
+        Map<String, Object> result = new LinkedHashMap<>(candidateNames.length);
+        for (Class<?> autowiringType : this.resolvableDependencies.keySet()) {
+            if (autowiringType.isAssignableFrom(requiredType)) {
+                Object autowiringValue = this.resolvableDependencies.get(autowiringType);
+                autowiringValue = AutowireUtils.resolveAutowiringValue(autowiringValue, requiredType);
+                if (requiredType.isInstance(autowiringValue)) {
+                    result.put(ObjectUtils.identityToString(autowiringValue), autowiringValue);
+                    break;
+                }
+            }
+        }
+        for (String candidate : candidateNames) {
+            if (!isSelfReference(beanName, candidate) && isAutowireCandidate(candidate, descriptor)) {
+                addCandidateEntry(result, candidate, descriptor, requiredType);
+            }
+        }
+        if (result.isEmpty() && !indicatesMultipleBeans(requiredType)) {
+            // Consider fallback matches if the first pass failed to find anything...
+            DependencyDescriptor fallbackDescriptor = descriptor.forFallbackMatch();
+            for (String candidate : candidateNames) {
+                if (!isSelfReference(beanName, candidate) && isAutowireCandidate(candidate, fallbackDescriptor)) {
+                    addCandidateEntry(result, candidate, descriptor, requiredType);
+                }
+            }
+            if (result.isEmpty()) {
+                // Consider self references as a final pass...
+                // but in the case of a dependency collection, not the very same bean itself.
+                for (String candidate : candidateNames) {
+                    if (isSelfReference(beanName, candidate) &&
+                            (!(descriptor instanceof MultiElementDescriptor) || !beanName.equals(candidate)) &&
+                            isAutowireCandidate(candidate, fallbackDescriptor)) {
+                        addCandidateEntry(result, candidate, descriptor, requiredType);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+
 }
