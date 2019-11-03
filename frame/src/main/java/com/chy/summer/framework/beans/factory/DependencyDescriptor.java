@@ -1,5 +1,10 @@
 package com.chy.summer.framework.beans.factory;
 
+import com.chy.summer.framework.beans.BeanFactory;
+import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
+import com.chy.summer.framework.exception.BeansException;
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
 public class DependencyDescriptor extends InjectionPoint {
@@ -35,4 +40,15 @@ public class DependencyDescriptor extends InjectionPoint {
     public Class<?> getDependencyType() {
         return this.field.getType();
     }
+
+    public boolean isEager() {
+        return true;
+    }
+
+    public Annotation[] getAnnotations() {
+
+        return null;
+    }
+
+
 }

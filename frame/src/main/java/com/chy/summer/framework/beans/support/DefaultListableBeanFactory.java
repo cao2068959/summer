@@ -99,7 +99,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             return resolvedBeanNames;
         }
         //真正去判断ioc容器里 有没对应类型的bean
-        resolvedBeanNames = doGetBeanNamesForType(ResolvableType.forClass(type), includeNonSingletons, true);
+        resolvedBeanNames = doGetBeanNamesForType(ResolvableType.forClass(type), includeNonSingletons, allowEagerInit);
         //写入缓存
         cache.put(type, resolvedBeanNames);
         return resolvedBeanNames;
@@ -325,6 +325,28 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         }
     }
 
+    /**
+     * 获取对应 name的所有别名
+     * @param name
+     * @return
+     */
+    public String[] getAliases(String name) {
+        List<String> result = new ArrayList<>();
+        synchronized (this.aliasMap) {
+            retrieveAliases(name, result);
+        }
+        return StringUtils.toStringArray(result);
+    }
+
+    private void retrieveAliases(String name, List<String> result) {
+        this.aliasMap.forEach((alias, registeredName) -> {
+            if (registeredName.equals(name)) {
+                result.add(alias);
+                retrieveAliases(alias, result);
+            }
+        });
+    }
+
 
     /**
      * 如果已经存在了对应name的 beanDefinition 存在容器中，那么这个方法登场
@@ -349,7 +371,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     }
 
 
-    public Object getAutowireCandidateResolver() {
+    public AutowireCandidateResolver getAutowireCandidateResolver() {
         return this.autowireCandidateResolver;
     }
 
@@ -608,19 +630,12 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         String[] candidateNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
                 this, requiredType, true, descriptor.isEager());
         Map<String, Object> result = new LinkedHashMap<>(candidateNames.length);
-        for (Class<?> autowiringType : this.resolvableDependencies.keySet()) {
-            if (autowiringType.isAssignableFrom(requiredType)) {
-                Object autowiringValue = this.resolvableDependencies.get(autowiringType);
-                autowiringValue = AutowireUtils.resolveAutowiringValue(autowiringValue, requiredType);
-                if (requiredType.isInstance(autowiringValue)) {
-                    result.put(ObjectUtils.identityToString(autowiringValue), autowiringValue);
-                    break;
-                }
-            }
-        }
+
         for (String candidate : candidateNames) {
+            //如果 找到的bean 不是自己依赖了自己,并且是 指定的注入对象(@Resource 或者 @Qualifler 注解指定) 那么就放入 result
             if (!isSelfReference(beanName, candidate) && isAutowireCandidate(candidate, descriptor)) {
-                addCandidateEntry(result, candidate, descriptor, requiredType);
+                //使用候选人的name 生成对应的对象,单例的话是 直接 getBean 拿了,这里其实就递归了
+                addCandidateEntry(result, candidate);
             }
         }
         if (result.isEmpty() && !indicatesMultipleBeans(requiredType)) {
@@ -628,7 +643,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             DependencyDescriptor fallbackDescriptor = descriptor.forFallbackMatch();
             for (String candidate : candidateNames) {
                 if (!isSelfReference(beanName, candidate) && isAutowireCandidate(candidate, fallbackDescriptor)) {
-                    addCandidateEntry(result, candidate, descriptor, requiredType);
+                    addCandidateEntry(result, candidate);
                 }
             }
             if (result.isEmpty()) {
@@ -645,6 +660,79 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         }
         return result;
     }
+
+    /**
+     * 获取 要注入进去的对象,并且把它放入 容器里
+     * @param candidates  结果容器
+     * @param candidateName 要注入对象的 name
+     * 详情看方法 @findAutowireCandidates
+     */
+    private void addCandidateEntry(Map<String, Object> candidates, String candidateName) {
+
+        if (containsSingleton(candidateName)) {
+            Object beanInstance = getBean(candidateName);
+            candidates.put(candidateName, beanInstance);
+        }
+        else {
+            candidates.put(candidateName, getType(candidateName));
+        }
+    }
+
+
+    /**
+     * 判断 是不是 在bean 里面自己引用了自己
+     * @param beanName
+     * @param candidateName
+     * @return
+     */
+    private boolean isSelfReference(String beanName, String candidateName) {
+        if(beanName == null || candidateName == null){
+            return false;
+        }
+        if(beanName.equals(candidateName)){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 判断 beanName 对应的 类是不是 注入属性所需要的对象
+     * @param beanName
+     * @param descriptor
+     * @return
+     * @throws NoSuchBeanDefinitionException
+     */
+    public boolean isAutowireCandidate(String beanName, DependencyDescriptor descriptor)
+            throws NoSuchBeanDefinitionException {
+        return isAutowireCandidate(beanName, descriptor, getAutowireCandidateResolver());
+    }
+
+    protected boolean isAutowireCandidate(String beanName, DependencyDescriptor descriptor, AutowireCandidateResolver resolver)
+            throws NoSuchBeanDefinitionException {
+
+        String beanDefinitionName = BeanFactoryUtils.transformedBeanName(beanName);
+        if (containsBeanDefinition(beanDefinitionName)) {
+            return isAutowireCandidate(beanName, getMergedLocalBeanDefinition(beanDefinitionName), descriptor, resolver);
+        }
+        else if (containsSingleton(beanName)) {
+            return isAutowireCandidate(beanName, new RootBeanDefinition(getType(beanName)), descriptor, resolver);
+        }
+        return false;
+    }
+
+    protected boolean isAutowireCandidate(String beanName, RootBeanDefinition mbd,
+                                          DependencyDescriptor descriptor, AutowireCandidateResolver resolver) {
+
+        String beanDefinitionName = BeanFactoryUtils.transformedBeanName(beanName);
+        resolveBeanClass(mbd);
+        //拿到 要注入的候选人对象,这个 holder里面除了 封装了候选人的 bd外还放了所有的别名,用于等一下的判断
+        BeanDefinitionHolder beanDefinitionHolder = new BeanDefinitionHolder(mbd, beanName, getAliases(beanDefinitionName));
+        return resolver.isAutowireCandidate(beanDefinitionHolder, descriptor);
+    }
+
+
+
+
 
 
 }
