@@ -3,6 +3,7 @@ package com.chy.summer.framework.beans.factory;
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
 import com.chy.summer.framework.exception.BeansException;
+import lombok.Getter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -14,6 +15,7 @@ public class DependencyDescriptor extends InjectionPoint {
     //要注入 字段的名字
     private final String fieldName;
     //是否一定要注入 也就是 @Autowired 注解的那个属性
+    @Getter
     private final boolean required;
 
     private final boolean eager;
@@ -50,5 +52,15 @@ public class DependencyDescriptor extends InjectionPoint {
         return null;
     }
 
+    @Override
+    public String toString() {
+        return "DependencyDescriptor{" +
+                "declaringClass=" + declaringClass +
+                ", fieldName='" + fieldName + '\'' +
+                '}';
+    }
 
+    public String getDependencyName() {
+        return this.field.getName();
+    }
 }
