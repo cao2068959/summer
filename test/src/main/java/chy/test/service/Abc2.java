@@ -8,7 +8,7 @@ import com.chy.summer.framework.context.annotation.Lazy;
 @Lazy
 public class Abc2 {
     public void test(){
-        System.out.println("------------> 打印了呀");
+        System.out.println("执行了 Abc2 里面的方法呀呀呀有");
     }
 }
 

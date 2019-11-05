@@ -548,63 +548,50 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public Object doResolveDependency(DependencyDescriptor descriptor, String beanName,
                                       Set<String> autowiredBeanNames) throws BeansException {
 
-        InjectionPoint previousInjectionPoint = ConstructorResolver.setCurrentInjectionPoint(descriptor);
-        try {
+        Class<?> type = descriptor.getDependencyType();
+        //去找一找有可能会拿到的注入对象有哪些
+        Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
+        if (matchingBeans.isEmpty()) {
+            //如果设置了 required = true 那么 如果没有找到要注入对象是要抛异常的
+            if (descriptor.isRequired()) {
+                throw new NoSuchBeanDefinitionException("在bean [%s] 中注入属性 [%s] 失败,因为没有找到适合的注入对象....",
+                        beanName, descriptor);
+            }
+            return null;
+        }
 
-            Class<?> type = descriptor.getDependencyType();
-            //去找一找有可能会拿到的注入对象有哪些
-            Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
-            if (matchingBeans.isEmpty()) {
-                //如果设置了 required = true 那么 如果没有找到要注入对象是要抛异常的
+        String autowiredBeanName;
+        Object instanceCandidate;
+
+        // 大于1说明找到了多个可以注入的对象,需要一定的筛选策略
+        if (matchingBeans.size() > 1) {
+            autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
+            if (autowiredBeanName == null) {
+                //同样,如果没有从多个候选人里面选举出合适的候选人,那么抛出异常
                 if (descriptor.isRequired()) {
-                    throw new NoSuchBeanDefinitionException("在bean [%s] 中注入属性 [%s] 失败,因为没有找到适合的注入对象....",
-                            beanName, descriptor);
+                    throw new NoUniqueBeanDefinitionException("在bean [%s] 中注入属性 [%s] 失败 因为有多个候选人,不知道用谁,候选人名单为[%s]",
+                            beanName, descriptor, matchingBeans.keySet());
                 }
                 return null;
             }
-
-            String autowiredBeanName;
-            Object instanceCandidate;
-
-            // 大于1说明找到了多个可以注入的对象,需要一定的筛选策略
-            if (matchingBeans.size() > 1) {
-                autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
-                if (autowiredBeanName == null) {
-                    //同样,如果没有从多个候选人里面选举出合适的候选人,那么抛出异常
-                    if (descriptor.isRequired()) {
-                        throw new NoUniqueBeanDefinitionException("在bean [%s] 中注入属性 [%s] 失败 因为有多个候选人,不知道用谁,候选人名单为[%s]",
-                                beanName, descriptor, matchingBeans.keySet());
-                    }
-                    return null;
-                }
-                instanceCandidate = matchingBeans.get(autowiredBeanName);
-            } else {
-                //只有一个可候选对象直接拿了
-                Map.Entry<String, Object> entry = matchingBeans.entrySet().iterator().next();
-                autowiredBeanName = entry.getKey();
-                instanceCandidate = entry.getValue();
-            }
-
-            if (autowiredBeanNames != null) {
-                autowiredBeanNames.add(autowiredBeanName);
-            }
-            if (instanceCandidate instanceof Class) {
-                instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
-            }
-            Object result = instanceCandidate;
-            if (result instanceof NullBean) {
-                if (isRequired(descriptor)) {
-                    raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
-                }
-                result = null;
-            }
-            if (!ClassUtils.isAssignableValue(type, result)) {
-                throw new BeanNotOfRequiredTypeException(autowiredBeanName, type, instanceCandidate.getClass());
-            }
-            return result;
-        } finally {
-            ConstructorResolver.setCurrentInjectionPoint(previousInjectionPoint);
+            instanceCandidate = matchingBeans.get(autowiredBeanName);
+        } else {
+            //只有一个可候选对象直接拿了
+            Map.Entry<String, Object> entry = matchingBeans.entrySet().iterator().next();
+            autowiredBeanName = entry.getKey();
+            instanceCandidate = entry.getValue();
         }
+
+        if (autowiredBeanNames != null) {
+            autowiredBeanNames.add(autowiredBeanName);
+        }
+
+        Object result = instanceCandidate;
+        //最后检查一波类型.
+        if (!ClassUtils.isAssignableValue(type, result)) {
+            throw new BeanNotOfRequiredTypeException(autowiredBeanName, type, instanceCandidate.getClass());
+        }
+        return result;
     }
 
     /**

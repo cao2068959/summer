@@ -116,7 +116,8 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 	@Override
 	public ListenableFuture<?> submitListenable(Runnable task) {
 		try {
-			ListenableFutureTask<Object> future = new ListenableFutureTask<>(task, null);
+			ListenableFutureTask<Object> future = ListenableFutureTask.create(task,null);
+
 			doExecute(this.concurrentExecutor, this.taskDecorator, future);
 			return future;
 		}
@@ -134,7 +135,7 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 	@Override
 	public <T> ListenableFuture<T> submitListenable(Callable<T> task) {
 		try {
-			ListenableFutureTask<T> future = new ListenableFutureTask<>(task);
+			ListenableFutureTask<T> future = ListenableFutureTask.create(task);
 			doExecute(this.concurrentExecutor, this.taskDecorator, future);
 			return future;
 		}

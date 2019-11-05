@@ -3,6 +3,8 @@ package com.chy.summer.framework.beans.factory.annotation;
 
 import com.chy.summer.framework.annotation.beans.Autowired;
 import com.chy.summer.framework.annotation.beans.Value;
+import com.chy.summer.framework.beans.BeanFactory;
+import com.chy.summer.framework.beans.BeanFactoryAware;
 import com.chy.summer.framework.beans.BeanUtils;
 import com.chy.summer.framework.beans.PropertyValues;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
@@ -26,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationAwareBeanPostProcessor {
+public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationAwareBeanPostProcessor, BeanFactoryAware {
 
     /**
      * InjectionMetadata 的缓存
@@ -45,6 +47,12 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
     public AutowiredAnnotationBeanPostProcessor() {
         this.autowiredAnnotationTypes.add(Autowired.class);
         this.autowiredAnnotationTypes.add(Value.class);
+    }
+
+
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) {
+        this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
     }
 
     @Override
@@ -169,6 +177,8 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
     }
 
 
+
+
     private class AutowiredFieldElement extends InjectionMetadata.InjectedElement {
 
         private final boolean required;
@@ -191,8 +201,10 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
             Set<String> autowiredBeanNames = new LinkedHashSet<>(1);
             Assert.state(beanFactory != null, "beanFactory 不能是Null");
 
+            //获取属性上要注入对象的 实例
             value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames);
 
+            //如果获取到了,就用反射把他设置进去
             if (value != null) {
                 ReflectionUtils.makeAccessible(field);
                 field.set(bean, value);
