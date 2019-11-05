@@ -40,10 +40,8 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 		this.taskDecorator = taskDecorator;
 	}
 
-	//TODO GYX 写到这里
 	/**
-	 * Delegates to the specified JDK concurrent executor.
-	 * @see java.util.concurrent.Executor#execute(Runnable)
+	 * 委托给指定的JDK并发执行器
 	 */
 	@Override
 	public void execute(Runnable task) {
@@ -52,15 +50,23 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 		}
 		catch (RejectedExecutionException ex) {
 			throw new TaskRejectedException(
-					"Executor [" + this.concurrentExecutor + "] did not accept task: " + task, ex);
+					"执行者 [" + this.concurrentExecutor + "] 不接受任务：" + task, ex);
 		}
 	}
 
+	/**
+	 * 获取执行任务.
+	 */
 	@Override
 	public void execute(Runnable task, long startTimeout) {
 		execute(task);
 	}
 
+	/**
+	 * 提交要执行的Runnable任务，并接收代表该任务的Future
+	 * Future将在完成后返回空结果
+	 * @param task 要执行的Runnable（不可为null）
+	 */
 	@Override
 	public Future<?> submit(Runnable task) {
 		try {
@@ -75,10 +81,15 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 		}
 		catch (RejectedExecutionException ex) {
 			throw new TaskRejectedException(
-					"Executor [" + this.concurrentExecutor + "] did not accept task: " + task, ex);
+					"执行者 [" + this.concurrentExecutor + "] 不接受任务：" + task, ex);
 		}
 	}
 
+	/**
+	 * 提交要执行的Callable任务，接收代表该任务的Future
+	 * 在以后完成时返回可调用的结果
+	 * @param task 要执行的Callable（不可为null）
+	 */
 	@Override
 	public <T> Future<T> submit(Callable<T> task) {
 		try {
@@ -93,10 +104,15 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 		}
 		catch (RejectedExecutionException ex) {
 			throw new TaskRejectedException(
-					"Executor [" + this.concurrentExecutor + "] did not accept task: " + task, ex);
+					"执行者 [" + this.concurrentExecutor + "] 不接受任务：" + task, ex);
 		}
 	}
 
+	/**
+	 * 提交要执行的Runnable任务，接收代表该任务的ListenableFuture
+	 * Future将在完成后返回空结果。
+	 * @param task 要执行的Runnable（不可为null）
+	 */
 	@Override
 	public ListenableFuture<?> submitListenable(Runnable task) {
 		try {
@@ -106,10 +122,15 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 		}
 		catch (RejectedExecutionException ex) {
 			throw new TaskRejectedException(
-					"Executor [" + this.concurrentExecutor + "] did not accept task: " + task, ex);
+					"执行者 [" + this.concurrentExecutor + "] 不接受任务：" + task, ex);
 		}
 	}
 
+	/**
+	 * 提交要执行的Callable任务，接收代表该任务的ListenableFuture
+	 * 在以后完成时返回可调用的结果
+	 * @param task 要执行的Callable（不可为null）
+	 */
 	@Override
 	public <T> ListenableFuture<T> submitListenable(Callable<T> task) {
 		try {
@@ -119,19 +140,16 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 		}
 		catch (RejectedExecutionException ex) {
 			throw new TaskRejectedException(
-					"Executor [" + this.concurrentExecutor + "] did not accept task: " + task, ex);
+					"执行者 [" + this.concurrentExecutor + "] 不接受任务：" + task, ex);
 		}
 	}
 
 
 	/**
-	 * Actually execute the given {@code Runnable} (which may be a user-supplied task
-	 * or a wrapper around a user-supplied task) with the given executor.
-	 * @param concurrentExecutor the underlying JDK concurrent executor to delegate to
-	 * @param taskDecorator the specified decorator to be applied, if any
-	 * @param runnable the runnable to execute
-	 * @throws RejectedExecutionException if the given runnable cannot be accepted
-	 * @since 4.3
+	 * 使用给定的执行器实际执行给定的Runnable
+	 * @param concurrentExecutor 要委托给的底层JDK并发执行程序
+	 * @param taskDecorator 指定要应用的装饰器(如果有的话)
+	 * @param runnable 可运行的执行
 	 */
 	protected void doExecute(Executor concurrentExecutor, @Nullable TaskDecorator taskDecorator, Runnable runnable)
 			throws RejectedExecutionException{
