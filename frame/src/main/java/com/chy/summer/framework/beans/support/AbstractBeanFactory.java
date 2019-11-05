@@ -9,6 +9,7 @@ import com.chy.summer.framework.exception.*;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
 import com.chy.summer.framework.util.ClassUtils;
+import com.chy.summer.framework.util.StringUtils;
 import com.sun.istack.internal.Nullable;
 
 
@@ -327,4 +328,5 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             throw new BeanIsAbstractException("类 : [%s] 是抽象类,不能实例化",beanName);
         }
     }
+
 }

@@ -13,6 +13,14 @@ public class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionExcepti
 	@Nullable
 	private Collection<String> beanNamesFound;
 
+	public NoUniqueBeanDefinitionException(String message) {
+		super(message);
+	}
+
+
+	public NoUniqueBeanDefinitionException(String format, Object... param) {
+		super(format, param);
+	}
 
 	/**
 	 * Create a new {@code NoUniqueBeanDefinitionException}.

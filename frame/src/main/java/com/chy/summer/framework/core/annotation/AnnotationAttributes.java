@@ -66,6 +66,10 @@ public class AnnotationAttributes {
         return (T) value;
     }
 
+    public Boolean containsKey(String key){
+        return datas.containsKey(key);
+    }
+
     private void assertAttributePresence(String attributeName, Object attributeValue) {
         Assert.notNull(attributeValue, () -> String.format(
                 "Attribute '%s' not found in attributes for annotation [%s]",
@@ -80,7 +84,6 @@ public class AnnotationAttributes {
                     this.className));
         }
     }
-
 
     class AnnotationAttribute{
         Object value;

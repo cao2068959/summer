@@ -10,4 +10,7 @@ public class NoSuchBeanDefinitionException extends BaseRuntimeException {
     }
 
 
+    public NoSuchBeanDefinitionException(String format, Object... param) {
+        super(format, param);
+    }
 }
