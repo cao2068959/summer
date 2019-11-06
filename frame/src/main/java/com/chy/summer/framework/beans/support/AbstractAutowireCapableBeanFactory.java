@@ -1,13 +1,11 @@
 package com.chy.summer.framework.beans.support;
 
-import com.chy.summer.framework.beans.BeanFactory;
-import com.chy.summer.framework.beans.BeanWrapper;
-import com.chy.summer.framework.beans.BeanWrapperImpl;
-import com.chy.summer.framework.beans.PropertyValues;
+import com.chy.summer.framework.beans.*;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.beans.config.InstantiationAwareBeanPostProcessor;
 import com.chy.summer.framework.beans.config.SmartInstantiationAwareBeanPostProcessor;
 import com.chy.summer.framework.exception.BeanCreationException;
+import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -111,6 +109,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             //这个执行器的主要功能在于 属性的注入
             populateBean(beanName, mbd, instanceWrapper);
             //这里也是 BeanPostProcessor执行器 ,但是这次是真的执行了所有 BeanPostProcessor 接口
+            //同时也执行了所有的 Aware 接口
             exposedObject = initializeBean(beanName, exposedObject, mbd);
         }
         catch (Throwable ex) {
@@ -126,8 +125,34 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         return exposedObject;
     }
 
-    private Object initializeBean(String beanName, Object exposedObject, RootBeanDefinition mbd) {
-        return exposedObject;
+    private Object initializeBean(String beanName, Object bean, RootBeanDefinition mbd) {
+
+        //执行对应的 Aware 接口
+        invokeAwareMethods(beanName, bean);
+
+        return bean;
+    }
+
+    /**
+     * 执行对应的 Aware 接口
+     * @param beanName
+     * @param bean
+     */
+    private void invokeAwareMethods(final String beanName, final Object bean) {
+        if (bean instanceof Aware) {
+            if (bean instanceof BeanNameAware) {
+                ((BeanNameAware) bean).setBeanName(beanName);
+            }
+            if (bean instanceof BeanClassLoaderAware) {
+                ClassLoader bcl = ClassUtils.getDefaultClassLoader();
+                if (bcl != null) {
+                    ((BeanClassLoaderAware) bean).setBeanClassLoader(bcl);
+                }
+            }
+            if (bean instanceof BeanFactoryAware) {
+                ((BeanFactoryAware) bean).setBeanFactory(AbstractAutowireCapableBeanFactory.this);
+            }
+        }
     }
 
     private void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper instanceWrapper) {
