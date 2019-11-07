@@ -10,6 +10,7 @@ import com.chy.summer.framework.beans.factory.annotation.AutowiredAnnotationBean
 import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
 import com.chy.summer.framework.beans.support.RootBeanDefinition;
 import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
+import com.chy.summer.framework.context.support.AbstractApplicationContext;
 import com.chy.summer.framework.core.BridgeMethodResolver;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.util.*;
@@ -633,10 +634,10 @@ public  abstract class AnnotationUtils {
     private static DefaultListableBeanFactory unwrapDefaultListableBeanFactory(BeanDefinitionRegistry registry) {
         if (registry instanceof DefaultListableBeanFactory) {
             return (DefaultListableBeanFactory) registry;
+        }if(registry instanceof AbstractApplicationContext){
+            return (DefaultListableBeanFactory) ((AbstractApplicationContext) registry).getBeanFactory();
         }
-        else {
-            return null;
-        }
+        return null;
     }
 
     /**
