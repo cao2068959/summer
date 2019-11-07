@@ -4,6 +4,7 @@ import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.beans.HierarchicalBeanFactory;
 import com.chy.summer.framework.beans.config.BeanDefinition;
+import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.exception.*;
 import com.chy.summer.framework.util.Assert;
@@ -11,6 +12,7 @@ import com.chy.summer.framework.util.BeanFactoryUtils;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.StringUtils;
 import com.sun.istack.internal.Nullable;
+import lombok.extern.slf4j.Slf4j;
 
 
 import java.util.*;
@@ -18,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.chy.summer.framework.util.BeanFactoryUtils.transformedBeanName;
 
+@Slf4j
 public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements HierarchicalBeanFactory {
 
     private final Set<String> alreadyCreated = Collections.newSetFromMap(new ConcurrentHashMap<>(256));
@@ -115,6 +118,20 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         return factoryBean.getObjectType();
     }
 
+    protected Class<?> getTypeForFactoryBean(String beanName, RootBeanDefinition mbd) {
+        if (!mbd.isSingleton()) {
+            return null;
+        }
+        try {
+            FactoryBean<?> factoryBean = doGetBean(FACTORY_BEAN_PREFIX + beanName, FactoryBean.class, null);
+            return getTypeForFactoryBean(factoryBean);
+        }
+        catch (BeanCreationException ex) {
+            log.warn("生成对应的 factoryBean [{}] 失败",beanName);
+            return null;
+        }
+    }
+
 
     public List<BeanPostProcessor> getBeanPostProcessors() {
         return this.beanPostProcessors;
@@ -133,12 +150,18 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                 (!BeanFactoryUtils.isFactoryDereference(name)));
     }
 
+    /**
+     * 通过beanName 获取对应的类型
+     * @param name
+     * @return
+     * @throws NoSuchBeanDefinitionException
+     */
     @Override
     @Nullable
     public Class<?> getType(String name) throws NoSuchBeanDefinitionException {
         String beanName = transformedBeanName(name);
 
-        // 尝试拿一下单列对象
+        // 尝试拿一下已经生成好的单列对象
         Object beanInstance = getSingleton(beanName, false);
         if (beanInstance != null) {
             //如果拿到了,那么看看是不是 FactoryBean 是的话走 FactoryBean 的专用方法,不是就直接给类型
@@ -150,9 +173,30 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             }
         }
 
-        // 如果不是单例对象,那么从BeanDefinition 上入手,这里
-        //TODO 先留坑
-        return null;
+        RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+        BeanDefinitionHolder dbd = mbd.getDecoratedDefinition();
+        if (dbd != null && !BeanFactoryUtils.isFactoryDereference(name)) {
+            RootBeanDefinition tbd = getMergedBeanDefinition(dbd.getBeanName(), dbd.getBeanDefinition(), mbd);
+            Class<?> targetClass = predictBeanType(tbd);
+            if (targetClass != null && !FactoryBean.class.isAssignableFrom(targetClass)) {
+                return targetClass;
+            }
+        }
+
+        Class<?> beanClass = predictBeanType(mbd);
+
+        //如果是属于 FactoryBean 的走下面
+        if (beanClass != null && FactoryBean.class.isAssignableFrom(beanClass)) {
+            if (!BeanFactoryUtils.isFactoryDereference(name)) {
+                return getTypeForFactoryBean(beanName, mbd);
+            } else {
+                return beanClass;
+            }
+        }
+
+        //只是普通的class 直接返回
+        return (!BeanFactoryUtils.isFactoryDereference(name) ? beanClass : null);
+
     }
 
 

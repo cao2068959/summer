@@ -238,7 +238,7 @@ public class SummerApplication {
     private void startupInfoLogger(Stopwatch stopWatch) {
         String text = String.format("================= summer 启动完成 启动耗时为 [%s s] ================="
                 ,stopWatch.elapsed(TimeUnit.SECONDS));
-        System.out.println(AnsiOutput.toString(AnsiColor.GREEN,text, AnsiStyle.BOLD));
+        System.out.println(AnsiOutput.toString(AnsiColor.GREEN,text, AnsiStyle.NORMAL));
     }
 
     private void callRunners(ConfigurableApplicationContext context, ApplicationArguments applicationArguments) {
