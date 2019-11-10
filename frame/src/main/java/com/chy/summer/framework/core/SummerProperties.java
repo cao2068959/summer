@@ -69,9 +69,7 @@ public abstract class SummerProperties {
 				value = System.getProperty(key);
 			}
 			catch (Throwable ex) {
-//				if (logger.isDebugEnabled()) {
-//					logger.debug("Could not retrieve system property '" + key + "': " + ex);
-//				}
+
 			}
 		}
 		return value;

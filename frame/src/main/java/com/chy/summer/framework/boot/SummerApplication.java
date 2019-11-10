@@ -2,6 +2,7 @@ package com.chy.summer.framework.boot;
 
 import com.chy.summer.framework.beans.BeanUtils;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
+import com.chy.summer.framework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
 import com.chy.summer.framework.boot.ansi.AnsiColor;
 import com.chy.summer.framework.boot.ansi.AnsiOutput;
 import com.chy.summer.framework.boot.ansi.AnsiStyle;
@@ -10,6 +11,7 @@ import com.chy.summer.framework.boot.listeners.SummerApplicationRunListeners;
 import com.chy.summer.framework.context.ApplicationContext;
 import com.chy.summer.framework.context.ApplicationContextInitializer;
 import com.chy.summer.framework.context.ConfigurableApplicationContext;
+import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
 import com.chy.summer.framework.context.event.ApplicationListener;
 import com.chy.summer.framework.context.support.AbstractApplicationContext;
 import com.chy.summer.framework.core.GenericTypeResolver;
@@ -207,7 +209,8 @@ public class SummerApplication {
             printBanner(environment);
             //把 applicationContext 给实例化完成了,这里默认用 AnnotationConfigServletWebServerApplicationContext
             context = createApplicationContext();
-            //对context 做一些前期的配置工作
+            //对context 做一些前期的配置工作,把入口类给注册进入ioc容器 把一些事先准备好的后置处理器给注册进入IOC容器,为后面的refresh 做准备
+            //@see load(ApplicationContext, Set)
             prepareContext(context, environment, listeners, applicationArguments);
             //调用 context的refresh 方法真正开始初始化容器生命周期
             refreshContext(context);
@@ -258,10 +261,13 @@ public class SummerApplication {
 
     /**
      * applicationContext 生成完成 后做一些配置
+     * 重点关注 load(context, sources)
+     * 这个方法会把入口类(main函数所在的类,给注册进入 IOC 容器之中) 同时还会把几个重要的后置处理器给注册进入Ioc 容器
+     *
      * @param context
-     * @param environment
-     * @param listeners
-     * @param applicationArguments
+     * @param environment  配置文件的信息会设置进入 application 里面
+     * @param listeners    会初始化监听器,会把application 对象给设置进入 监听器之中
+     * @param applicationArguments  就是main函数上面 传入的自定义参数,这里会把这些参数封装成一个参数,当做单例给注册进去
      */
     private void prepareContext(ConfigurableApplicationContext context,
                                 ConfigurableEnvironment environment, SummerApplicationRunListeners listeners,
@@ -276,13 +282,27 @@ public class SummerApplication {
         context.getBeanFactory().registerSingleton("springApplicationArguments", applicationArguments);
         Set<Object> sources = getAllSources();
         Assert.notEmpty(sources, "Sources 不能为空");
-        //这里会把 sources 注册进ioc容器，sources 一般只是main函数所在那个类
+        //这里会把 sources(入口类) 注册进ioc容器
         load(context, sources);
         //向所有监听器注入 context对象
         listeners.contextLoaded(context);
     }
 
-
+    /**
+     * 入口类的解析,在boot项目里 其实就是那个 main函数所在的类
+     * 这里解析了入口类之后,会把他生成 beanDefinition 然后注册进入ioc里面
+     *
+     * 同时 还会注册几个后置处理器,用来真正扫描整个项目,注册后置处理器的位置在
+     * new BeanDefinitionLoader() --> new AnnotatedBeanDefinitionReader(registry) --> AnnotationUtils.registerAnnotationConfigProcessors(registry,null)
+     * @see com.chy.summer.framework.core.annotation.AnnotationUtils#registerAnnotationConfigProcessors(BeanDefinitionRegistry, Object)
+     * 注册进入的 postProcessor 为:
+     *      @see ConfigurationClassPostProcessor    用了解析入口类,然后扫描项目里的所有业务类,注册进Ioc中
+     *      @see AutowiredAnnotationBeanPostProcessor  用来生成对象之后注入属性的值
+     *
+     * @param context applicationContext 主要就是用了用他去获取 DefaultListableBeanFactory
+     * @param  sources 要解析的入口对象,一般就是 main函数所在的类
+     *
+     **/
     protected void load(ApplicationContext context, Set<Object> sources) {
         log.debug("开始加载 source : [%s]",sources);
 
@@ -294,6 +314,7 @@ public class SummerApplication {
         if (this.resourceLoader != null) {
             loader.setResourceLoader(this.resourceLoader);
         }
+        //上面都是前戏,这里开始干活
         loader.load();
     }
 

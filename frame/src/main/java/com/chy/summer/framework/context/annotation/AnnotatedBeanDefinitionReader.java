@@ -36,17 +36,25 @@ public class AnnotatedBeanDefinitionReader {
         this.registry = registry;
     }
 
+    /**
+     * 把入参进来的类给生成对应的 BeanDefinition 然后注册进入 ioc容器里面
+     * @param annotatedClasses
+     */
     public void register(Class<?>... annotatedClasses) {
         for (Class<?> annotatedClass : annotatedClasses) {
-            registerBean(annotatedClass);
+            doRegisterBean(annotatedClass, null, null, null);
         }
     }
 
-    public void registerBean(Class<?> annotatedClass) {
-        doRegisterBean(annotatedClass, null, null, null);
-    }
 
-    <T> void doRegisterBean(Class<T> annotatedClass,  Supplier<T> instanceSupplier,  String name,
+    /**
+     * 开始真正注册
+     * @param annotatedClass  要注册的class
+     * @param instanceSupplier 实例的父类
+     * @param name             是否要指定对应的beanName 没有就直接用类名生成了
+     * @param qualifiers      通过显示的指定注解的形式来给 对应的 beanDefinition 来设置 值 ,比如 可以传入 一个 @Lazy 来设置这个类是否懒加载
+     */
+    public <T> void doRegisterBean(Class<T> annotatedClass,  Supplier<T> instanceSupplier,  String name,
                              Class<? extends Annotation>[] qualifiers) {
 
         AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(annotatedClass);

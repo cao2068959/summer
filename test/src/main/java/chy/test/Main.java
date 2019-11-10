@@ -11,9 +11,10 @@ public class Main {
     public static void main(String[] args) {
 
         ApplicationContext context = SummerApplication.run(Main.class, args);
-        Abc abc2 = context.getBean("啦啦啦啦",Abc.class);
-        abc2.test();
-    }
+        Abc abc = context.getBean("啦啦啦啦",Abc.class);
+        abc.test();
 
+        abc.abc2.test2();
+    }
 
 }

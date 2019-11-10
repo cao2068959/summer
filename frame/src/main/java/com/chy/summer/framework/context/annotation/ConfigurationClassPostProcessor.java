@@ -17,16 +17,21 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
+/**
+ *
+ *  解析入口类 然后扫描所有业务类
+ *
+ *  BeanDefinitionRegistryPostProcessor 的实现类,会在 refresh --> invokeBeanFactoryPostProcessors 的时候执行
+ *
+ * @see #postProcessBeanDefinitionRegistry(BeanDefinitionRegistry)  入口方法
+ */
 @Slf4j
 public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPostProcessor,
         PriorityOrdered {
 
     private Environment environment;
 
-
     private ResourceLoader resourceLoader = new DefaultResourceLoader();
-
-    private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
     private MetadataReaderFactory metadataReaderFactory = new DefaultMetadataReaderFactory();
 
@@ -47,6 +52,11 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
     private ConfigurationClassBeanDefinitionReader reader;
 
+    /**
+     * BeanDefinitionRegistryPostProcessor 处理器的执行方法,执行之前会先检查一下,防止多次执行
+     * @param registry
+     * @throws BeansException
+     */
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
         //获取了 registry 的hashcode,用来做唯一表示
@@ -58,11 +68,17 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
         }
 
         this.registriesPostProcessed.add(registryId);
+        //真正去解析入口类
         processConfigBeanDefinitions(registry);
     }
 
 
-
+    /**
+     * 会去ioc 拿所有已经注册进去的配置类,然后逐个解析
+     * 在默认的boot 项目中,只有一个 入口类(main函数所在类) 作为配置类
+     *
+     * @param registry
+     */
     public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
         List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
         String[] candidateNames = registry.getBeanDefinitionNames();
@@ -70,6 +86,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
         //这里会扫描 所有的初始化的 bd,来判断是不是配置类,是的话就放入 configCandidates
         for (String beanName : candidateNames) {
             BeanDefinition beanDef = registry.getBeanDefinition(beanName);
+            //检查 bd中的属性 CONFIGURATION_CLASS_ATTRIBUTE 里面的值是不是 full或者lite
             //如果 bd 已经被检验过一次那么就会设置 Full 和 Lite 标志这里检查就是为了查重
             if (ConfigurationClassUtils.isFullConfigurationClass(beanDef) ||
                     ConfigurationClassUtils.isLiteConfigurationClass(beanDef)) {
@@ -110,7 +127,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
         Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
         Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 
-        //这`里就把所有的class给扫描了,然后放入 parser的configurationClasses对象里
+        //这里就把所有的class给扫描了,然后放入 parser的configurationClasses对象里
         parser.parse(candidates);
         //这边又迭代了一次,去检查扫描到的类里面有没有  @Configuration 并且这个类是 final 类型的有的话报错,这里先忽略
         //parser.validate();
@@ -131,7 +148,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-        System.out.println("执行了 postProcessBeanFactory");
+
     }
 
     @Override

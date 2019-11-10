@@ -385,12 +385,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         return this.dependencyComparator;
     }
 
-    @Override
-    protected Object getSingleton(String beanName, boolean b) {
-        //TODO 获取单例
-        return null;
-    }
-
     public void setDependencyComparator(Comparator<Object> dependencyComparator) {
         this.dependencyComparator = dependencyComparator;
     }

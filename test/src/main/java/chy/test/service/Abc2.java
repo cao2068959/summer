@@ -14,7 +14,11 @@ public class Abc2 {
     Abc abc;
 
     public void test(){
-        System.out.println("执行了 Abc2 里面的方法呀呀呀有");
+        System.out.println("循环依赖测试 执行了 Abc2 里面的方法呀呀呀有");
+    }
+
+    public void test2(){
+        abc.test2();
     }
 }
 

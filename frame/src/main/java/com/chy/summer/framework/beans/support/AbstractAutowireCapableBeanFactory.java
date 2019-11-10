@@ -97,9 +97,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         //是否面临了循环依赖的问题
         //如果是正在创建中的单例对象，可能会有循环依赖问题
         boolean earlySingletonExposure = (mbd.isSingleton()  && isSingletonCurrentlyInCreation(beanName));
+        //如果会面临循环依赖的问题,那么 把这个半成品的bean 给放入单例容器里面
         if (earlySingletonExposure) {
-            //这个getEarlyBeanReference 其实也是一个BeanPostProcessor 执行器,这里执行的是接口 SmartInstantiationAwareBeanPostProcessor
-            //这里也是循环依赖的破解关键
+            //getEarlyBeanReference 这个其实就是直接返回入参的bean对象,只是在返回的时候会执行一下 半成品的后置处理器(如果存在的话)
             addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
         }
 
@@ -184,7 +184,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 
     /**
-     * 执行 BeanPostProcessor 不过是 SmartInstantiationAwareBeanPostProcessor 的执行器
+     * 获取半成品的单例对象,并且执行了半成品的后置处理器,这是方法是
+     *
+     * @see #doCreateBean(String, RootBeanDefinition, Object[])  在这方法上设置进入这个方法
+     *
+     * @see DefaultSingletonBeanRegistry#getSingleton(String beanName, boolean allowEarlyReference)
+     * 当第二个参数是true的时候会调用这个方法来获取单例对象
+     *
      * @param beanName
      * @param mbd
      * @param bean

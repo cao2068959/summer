@@ -64,7 +64,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     /**
      * 获取单例对象
      * @param beanName
-     * @param allowEarlyReference
+     * @param allowEarlyReference true 就算是半成品的单例对象也把他给拿出来
      * @return
      */
     protected Object getSingleton(String beanName, boolean allowEarlyReference) {
@@ -74,7 +74,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
             synchronized (this.singletonObjects) {
                 //在单例对象的容器里没有找到，那么去半成品的容器里 瞅一瞅有没有
                 singletonObject = this.earlySingletonObjects.get(beanName);
-                //半成品也没有，那么如果传入了 allowEarlyReference 允许现场造一个那么就继续
+                //半成品也没有，那么如果传入了 allowEarlyReference 允许现场造一个半成品
                 if (singletonObject == null && allowEarlyReference) {
                     ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
                     if (singletonFactory != null) {
@@ -90,6 +90,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
 
     /**
      * 这里同样是获取单列对象.没有就会从 singletonFactory 里去调用 getObject 获取
+     * 这里在去拿单例对象的时候,会把 对应的 beanName 放入一个 singletonsCurrentlyInCreation 容器里,代表这个单例已经开始创建,用了解决循环依赖问题
      * @param beanName
      * @param singletonFactory
      * @return
@@ -100,6 +101,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
             Object singletonObject = this.singletonObjects.get(beanName);
             if (singletonObject == null) {
                 log.debug("开始创建单例对象 : {}",beanName);
+                beforeSingletonCreation(beanName);
                 boolean newSingleton = false;
                 try {
                     singletonObject = singletonFactory.getObject();
@@ -120,6 +122,15 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     }
 
 
+    /**
+     * 在创建单例之前把 创建的beanName 放入容器里,如果已经存在了同样的beanName 则抛出异常
+     * @param beanName
+     */
+    protected void beforeSingletonCreation(String beanName) {
+        if (!this.singletonsCurrentlyInCreation.add(beanName)) {
+            throw new BeanCurrentlyInCreationException(beanName);
+        }
+    }
 
     public boolean isSingletonCurrentlyInCreation(String beanName) {
         return this.singletonsCurrentlyInCreation.contains(beanName);
@@ -200,9 +211,14 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
 
     protected void addSingleton(String beanName, Object singletonObject) {
         synchronized (this.singletonObjects) {
+            //把单例放入容器
             this.singletonObjects.put(beanName, singletonObject);
+            //删除单例创建工厂
+            //@see doCreateBean 方法的时候会放入半成品的创建工厂,主要是用了执行 半成品的后置处理器
             this.singletonFactories.remove(beanName);
+            //把半成品容器里的删了
             this.earlySingletonObjects.remove(beanName);
+            //注册名字到容器,正式成为一名单例对象
             this.registeredSingletons.add(beanName);
         }
     }

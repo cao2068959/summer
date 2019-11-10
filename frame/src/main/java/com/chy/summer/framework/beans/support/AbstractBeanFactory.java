@@ -272,7 +272,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         Object bean = null;
         final String beanName = transformedBeanName(name);
         //先去单例的缓存里看看有没有对应的对象
-        Object sharedInstance = getSingleton(beanName);
+        Object sharedInstance = getSingleton(beanName,true);
         if (sharedInstance != null && args == null) {
             //虽然已经拿到了单列对象，但是这个对象可以能还没初始化完成
             // 如果是FactoryBean,需要在这个方法里去调用 getObject 方法来获取真正的对象
@@ -310,8 +310,10 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         Object result = null;
         if (mbd.isSingleton()) {
             //这里真正开始创建单例哦
+            //这里的getSingleton 会去拿单例对象,拿不到的话就会走 这个匿名方法 创建对象,然后存入单例容器
             result = getSingleton(beanName, () -> {
                 try {
+                    //我就是楼上说的那个创建方法
                     return createBean(beanName, mbd, args);
                 }
                 catch (BeansException ex) {

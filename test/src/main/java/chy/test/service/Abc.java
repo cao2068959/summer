@@ -16,4 +16,8 @@ public class Abc {
         abc2.test();
     }
 
+    public void test2(){
+        System.out.println("循环依赖测试 执行了 拉阿拉啦啦啦啦 的方法");
+    }
+
 }

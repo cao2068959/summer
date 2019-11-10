@@ -36,47 +36,16 @@ public class BeanDefinitionLoader {
         //this.scanner.addExcludeFilter(new ClassExcludeFilter(sources));
     }
 
-    public Set<Object> getSources() {
-        return sources;
-    }
-
-    public void setSources(Set<Object> sources) {
-        this.sources = sources;
-    }
-
-    public AnnotatedBeanDefinitionReader getAnnotatedReader() {
-        return annotatedReader;
-    }
-
-    public void setAnnotatedReader(AnnotatedBeanDefinitionReader annotatedReader) {
-        this.annotatedReader = annotatedReader;
-    }
-
-    public BeanDefinitionReader getGroovyReader() {
-        return groovyReader;
-    }
-
-    public void setGroovyReader(BeanDefinitionReader groovyReader) {
-        this.groovyReader = groovyReader;
-    }
-
-    public ClassPathBeanDefinitionScanner getScanner() {
-        return scanner;
-    }
-
-    public void setScanner(ClassPathBeanDefinitionScanner scanner) {
-        this.scanner = scanner;
-    }
-
-    public ResourceLoader getResourceLoader() {
-        return resourceLoader;
-    }
-
     public void setResourceLoader(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
     }
 
 
+    /**
+     *
+     * @see #load(Class<?> source)  直接看这个方法进入解析
+     * @return
+     */
     public int load() {
         int count = 0;
         for (Object source : this.sources) {
@@ -94,6 +63,12 @@ public class BeanDefinitionLoader {
     }
 
 
+    /**
+     * 开始解析 入口类,这里用的 annotatedReader 是 AnnotatedBeanDefinitionReader
+     *
+     * @param source
+     * @return
+     */
     private int load(Class<?> source) {
         if (isComponent(source)) {
             this.annotatedReader.register(source);
@@ -104,7 +79,7 @@ public class BeanDefinitionLoader {
 
 
     /**
-     * 判断
+     * 判断这个类上面有没有 @Component 注解
      * @param type
      * @return
      */
