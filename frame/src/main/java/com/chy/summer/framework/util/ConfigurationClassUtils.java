@@ -55,10 +55,11 @@ public abstract class ConfigurationClassUtils {
             return false;
         }
         metadata = ((AnnotatedBeanDefinition) beanDef).getMetadata();
-
+        //简单的匹配有没有 @Configuration 注解
         if (isFullConfigurationCandidate(metadata)) {
             beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
         }
+        //匹配有没有 @Component @ComponentScan @Import 或者 存在 @bean 方法 有任意一种都行
         else if (isLiteConfigurationCandidate(metadata)) {
             beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
         }
