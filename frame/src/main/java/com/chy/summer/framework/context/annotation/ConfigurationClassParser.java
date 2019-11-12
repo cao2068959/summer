@@ -92,9 +92,19 @@ public class ConfigurationClassParser {
         processConfigurationClass(new ConfigurationClass(metadata, beanName));
     }
 
+    protected final void parse(String className, String beanName) throws Exception {
+        MetadataReader reader = this.metadataReaderFactory.getMetadataReader(className);
+        processConfigurationClass(new ConfigurationClass(reader.getAnnotationMetadata(), beanName));
+    }
+
 
     /**
      *  这里会循环的的模式去解析 配置文件  解析-> 返回父类 -> 父类继续解析 ->...-> 直到没有任何的父类(返回了Null)
+     *
+     *  这里会把所有的class对象转成一个 SourceClass 对象, 里面重点在于
+     *  source: 目标类的类型
+     *  AnnotationMetadata: 元数据类型的描述
+     *
      * @param configClass
      * @throws Exception
      */
@@ -119,8 +129,8 @@ public class ConfigurationClassParser {
 
     /**
      * 解析配置文件的主流程
-     * @param configClass
-     * @param sourceClass
+     * @param configClass 配置类 的描述对象
+     * @param sourceClass 如果配置类有 继承什么那么 这个对象可能是父类等,如果没有任何继承关系,那么这个对象和上面的 configClass 相同
      * @return
      * @throws Exception
      */
@@ -140,7 +150,20 @@ public class ConfigurationClassParser {
             //根据 @ComponentScan 去扫描 对应的 class路径,生成 所有的 BeanDefinitionHolder
             Set<BeanDefinitionHolder> scannedBeanDefinitions =
                     this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
-            System.out.println(scannedBeanDefinitions);
+
+            //在扫描了入口类之后发现了一堆类,这些类里面可能会存在配置类,需要循环处理
+            for (BeanDefinitionHolder holder : scannedBeanDefinitions) {
+                BeanDefinition beanDefinition = holder.getBeanDefinition();
+                //检查是不是配置类 @Configuration @Component @ComponentScan @Import 或者 存在 @bean方法
+                if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDefinition)) {
+                    if(beanDefinition instanceof AnnotatedBeanDefinition){
+                        AnnotatedBeanDefinition annotatedBeanDefinition = (AnnotatedBeanDefinition) beanDefinition;
+                        //把扫描到的类用递归 再走一次解析配置类的流程
+                        parse(annotatedBeanDefinition.getMetadata(), holder.getBeanName());
+                    }
+                }
+            }
+
         }
 
 
