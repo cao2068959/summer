@@ -166,10 +166,6 @@ public class ConfigurationClassParser {
 
         }
 
-
-        //TODO 上面一路走下来,只是解析了一个用户在入口指定的一个配置类,而那些 以bean的方式配置的 配置类,还没处理,所以这里还需要 迭代上面扫描出来的 BeanDefinition,递归处理配置类
-
-
         // @Import 注解的解析
         //先把 class 上面所有 @Import 注解里 value 里写的 class 都收集一下
         Set<SourceClass> imports = getImports(sourceClass);
@@ -234,16 +230,26 @@ public class ConfigurationClassParser {
         return imports;
     }
 
+    /**
+     *
+     * @param sourceClass 目标class
+     * @param imports  结果放这里面,会把所有 @import 注解上涉及到的所有class放入这个容器
+     * @param visited  用了防止重复扫描类的,处理过的class都会放入这个容器
+     * @throws IOException
+     */
     private void collectImports(SourceClass sourceClass, Set<SourceClass> imports, Set<SourceClass> visited)
             throws IOException {
 
         if (visited.add(sourceClass)) {
+            //获取目标类上的所有的注解,然后遍历
             for (SourceClass annotation : sourceClass.getAnnotations()) {
                 String annName = annotation.getMetadata().getClassName();
+                //如果不是Java 自带的注解,并且不是 @Import 注解,那么就递归继续一层层扫描
                 if (!annName.startsWith("java") && !annName.equals(Import.class.getName())) {
                     collectImports(annotation, imports, visited);
                 }
             }
+            //把sourceClass 对象所代表的class 上面所有@import注解所涉及到的所有class 放入容器,这里会包括处理父类上面的
             imports.addAll(sourceClass.getAnnotationImportAttributes());
         }
     }
