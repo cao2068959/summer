@@ -6,10 +6,12 @@ import com.chy.summer.framework.beans.support.AbstractBeanDefinition;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 import com.chy.summer.framework.core.type.MethodMetadata;
 import com.chy.summer.framework.core.type.classreading.MetadataReader;
+import lombok.Getter;
 
 public class ScannedGenericBeanDefinition extends AbstractBeanDefinition implements AnnotatedBeanDefinition {
 
-    private final AnnotationMetadata metadata;
+    @Getter
+    private  AnnotationMetadata metadata;
 
     private String parentName;
 
@@ -22,10 +24,6 @@ public class ScannedGenericBeanDefinition extends AbstractBeanDefinition impleme
 
     }
 
-    @Override
-    public AnnotationMetadata getMetadata() {
-        return metadata;
-    }
 
     @Override
     public MethodMetadata getFactoryMethodMetadata() {
