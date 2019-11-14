@@ -75,7 +75,7 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 	}
 
 	/**
-	 * Return the external factory to use for creating new Threads, if any.
+	 * 返回用于创建新线程的工厂
 	 */
 	@Nullable
 	public final ThreadFactory getThreadFactory() {
@@ -83,45 +83,32 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 	}
 
 	/**
-	 * Specify a custom {@link TaskDecorator} to be applied to any {@link Runnable}
-	 * about to be executed.
-	 * <p>Note that such a decorator is not necessarily being applied to the
-	 * user-supplied {@code Runnable}/{@code Callable} but rather to the actual
-	 * execution callback (which may be a wrapper around the user-supplied task).
-	 * <p>The primary use case is to set some execution context around the task's
-	 * invocation, or to provide some monitoring/statistics for task execution.
-	 * @since 4.3
+	 * 指定一个自定义TaskDecorator应用于要执行的任何Runnable
+	 * 请注意，这样的装饰器不一定适用于用户提供的Runnable / Callable，而是适用于实际的执行回调
 	 */
 	public final void setTaskDecorator(TaskDecorator taskDecorator) {
 		this.taskDecorator = taskDecorator;
 	}
 
 	/**
-	 * Set the maximum number of parallel accesses allowed.
-	 * -1 indicates no concurrency limit at all.
-	 * <p>In principle, this limit can be changed at runtime,
-	 * although it is generally designed as a config time setting.
-	 * NOTE: Do not switch between -1 and any concrete limit at runtime,
-	 * as this will lead to inconsistent concurrency counts: A limit
-	 * of -1 effectively turns off concurrency counting completely.
-	 * @see #UNBOUNDED_CONCURRENCY
+	 * 设置允许的最大并行访问数
+	 * -1表示完全没有并发限制
+	 * 此限制可以在运行时更改，尽管通常将其设计为配置时间设置
+	 * 但是不要在运行时在-1和任何具体的限制之间切换，因为这可能会导致并发数不一致
 	 */
 	public void setConcurrencyLimit(int concurrencyLimit) {
 		this.concurrencyThrottle.setConcurrencyLimit(concurrencyLimit);
 	}
 
 	/**
-	 * Return the maximum number of parallel accesses allowed.
+	 * 获取允许的最大并行访问数
 	 */
 	public final int getConcurrencyLimit() {
 		return this.concurrencyThrottle.getConcurrencyLimit();
 	}
 
 	/**
-	 * Return whether this throttle is currently active.
-	 * @return {@code true} if the concurrency limit for this instance is active
-	 * @see #getConcurrencyLimit()
-	 * @see #setConcurrencyLimit
+	 * 获取该并发限制当前是否处于活动状态
 	 */
 	public final boolean isThrottleActive() {
 		return this.concurrencyThrottle.isThrottleActive();
@@ -129,9 +116,7 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 
 
 	/**
-	 * Executes the given task, within a concurrency throttle
-	 * if configured (through the superclass's settings).
-	 * @see #doExecute(Runnable)
+	 * 执行给定的任务
 	 */
 	@Override
 	public void execute(Runnable task) {
@@ -139,27 +124,26 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 	}
 
 	/**
-	 * Executes the given task, within a concurrency throttle
-	 * if configured (through the superclass's settings).
-	 * <p>Executes urgent tasks (with 'immediate' timeout) directly,
-	 * bypassing the concurrency throttle (if active). All other
-	 * tasks are subject to throttling.
-	 * @see #TIMEOUT_IMMEDIATE
-	 * @see #doExecute(Runnable)
+	 * 执行给定的任务
 	 */
 	@Override
 	public void execute(Runnable task, long startTimeout) {
-		Assert.notNull(task, "Runnable must not be null");
+		Assert.notNull(task, "Runnable不能为空");
+		//判断是否需要装饰任务
 		Runnable taskToUse = (this.taskDecorator != null ? this.taskDecorator.decorate(task) : task);
 		if (isThrottleActive() && startTimeout > TIMEOUT_IMMEDIATE) {
 			this.concurrencyThrottle.beforeAccess();
 			doExecute(new ConcurrencyThrottlingRunnable(taskToUse));
 		}
 		else {
+			//不带任务时间执行
 			doExecute(taskToUse);
 		}
 	}
 
+	/**
+	 * 提交要执行的Runnable任务，并接收代表该任务的Future
+	 */
 	@Override
 	public Future<?> submit(Runnable task) {
 		FutureTask<Object> future = new FutureTask<>(task, null);
@@ -167,6 +151,9 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 		return future;
 	}
 
+	/**
+	 * 提交要执行的Callable任务，接收代表该任务的Future
+	 */
 	@Override
 	public <T> Future<T> submit(Callable<T> task) {
 		FutureTask<T> future = new FutureTask<>(task);
@@ -174,6 +161,9 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 		return future;
 	}
 
+	/**
+	 * 提交要执行的Runnable任务，接收代表该任务的ListenableFuture
+	 */
 	@Override
 	public ListenableFuture<?> submitListenable(Runnable task) {
 		ListenableFutureTask<Object> future = ListenableFutureTask.create(task,null);
@@ -181,6 +171,9 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 		return future;
 	}
 
+	/**
+	 * 提交要执行的Callable任务，接收代表该任务的ListenableFuture
+	 */
 	@Override
 	public <T> ListenableFuture<T> submitListenable(Callable<T> task) {
 		ListenableFutureTask<T> future = ListenableFutureTask.create(task);
@@ -189,23 +182,17 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 	}
 
 	/**
-	 * Template method for the actual execution of a task.
-	 * <p>The default implementation creates a new Thread and starts it.
-	 * @param task the Runnable to execute
-	 * @see #setThreadFactory
-	 * @see #createThread
-	 * @see java.lang.Thread#start()
+	 * 实际执行任务的模板方法
+	 * 默认实现创建一个新线程并启动它
+	 * @param task 需要执行的任务
 	 */
 	protected void doExecute(Runnable task) {
 		Thread thread = (this.threadFactory != null ? this.threadFactory.newThread(task) : createThread(task));
 		thread.start();
 	}
 
-
 	/**
-	 * Subclass of the general ConcurrencyThrottleSupport class,
-	 * making {@code beforeAccess()} and {@code afterAccess()}
-	 * visible to the surrounding class.
+	 * 通用ConcurrencyThrottleSupport类的子类，使beforeAccess()和afterAccess()对周围的类可见
 	 */
 	private static class ConcurrencyThrottleAdapter extends ConcurrencyThrottleSupport {
 
@@ -222,8 +209,7 @@ public class SimpleAsyncTaskExecutor extends CustomizableThreadCreator
 
 
 	/**
-	 * This Runnable calls {@code afterAccess()} after the
-	 * target Runnable has finished its execution.
+	 * 这个Runnable在目标Runnable完成执行后调用afterAccess()
 	 */
 	private class ConcurrencyThrottlingRunnable implements Runnable {
 
