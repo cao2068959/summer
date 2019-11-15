@@ -13,5 +13,9 @@ public interface ConfigurableBeanFactory {
     boolean isCurrentlyInCreation(String beanName);
 
     Object getSingletonMutex();
+
+    Object getBean(String beanName);
+
+//    void destroyScopedBean(String beanName);
     //TODO 尚未完成
 }

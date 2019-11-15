@@ -88,6 +88,13 @@
                 <artifactId>derbyclient</artifactId>
                 <version>10.14.1.0</version>
             </dependency>
+
+            <!-- 性能监测 -->
+            <dependency>
+                <groupId>com.jamonapi</groupId>
+                <artifactId>jamon</artifactId>
+                <version>2.81</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
