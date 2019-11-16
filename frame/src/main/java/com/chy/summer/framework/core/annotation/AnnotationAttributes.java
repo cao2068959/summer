@@ -1,9 +1,13 @@
 package com.chy.summer.framework.core.annotation;
 
 import com.chy.summer.framework.util.Assert;
+import com.chy.summer.framework.util.ClassUtils;
 import javafx.beans.binding.ObjectExpression;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,9 +19,21 @@ public class AnnotationAttributes {
     private final String className;
     private Map<String,AnnotationAttribute> datas = new HashMap<>();
 
-    public AnnotationAttributes(String name) {
+    private String classSuffix = "#class";
+
+    //用来记录这个属性整体的等级 数字越小等级越大 . 等级小的属性不能覆盖等级大的属性
+    //直接挂在解析类上面等级最高,每被派生一次就降一级
+    @Setter
+    @Getter
+    private Integer level;
+
+
+    public AnnotationAttributes(String name , Integer level) {
         this.className = name;
+        this.level = level;
     }
+
+
 
     public void put(String key,Object data,Object defaultValue){
         AnnotationAttribute annotationAttribute = new AnnotationAttribute();
@@ -37,10 +53,21 @@ public class AnnotationAttributes {
 
     /**
      * 获取属性的值,如果属性没有值则获取默认值
+     * class类型的数据全部都是以 string类型存的class的全路径,这里如果用 key#class 来获取真实的class属性
+     * 如果是正常的key拿到的是 string类型的 class全路径
+     *
      * @param key
      */
     public Object getAttributeValue(String key){
         AnnotationAttribute annotationAttribute = datas.get(key);
+        //如果没有拿到值,并且后缀是 #class 说明他是要拿 class类型,这边帮他生成对应的数据
+        if(annotationAttribute == null && key.endsWith(classSuffix)){
+            try {
+                annotationAttribute = createClassFromPathString(key);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
         //检查annotationAttribute 是否是Null，是的话直接抛出异常
         assertAttributePresence(key,annotationAttribute);
         if(annotationAttribute.value == null){
@@ -50,11 +77,44 @@ public class AnnotationAttributes {
     }
 
     /**
+     * 使用 classPath 生成 对应的 class类型,并且存入到属性里
+     * @param key
+     * @return
+     */
+    private AnnotationAttribute createClassFromPathString(String key) throws ClassNotFoundException {
+        String classPathKey = key.substring(0,key.lastIndexOf(classSuffix));
+        Object classValue = getAttributeValue(classPathKey);
+        AnnotationAttribute result = new AnnotationAttribute();
+        if(classValue instanceof String){
+            Class<?> resultClass = ClassUtils.forName((String) classValue, ClassUtils.getDefaultClassLoader());
+            result.value = resultClass;
+        }else if(classValue instanceof String[]){
+            String[] classValues = (String[]) classValue;
+            result.value = Arrays.stream(classValues).map(path -> {
+                try {
+                    return ClassUtils.forName((String) path, ClassUtils.getDefaultClassLoader());
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }).toArray(Class[]::new);
+
+        }else {
+            throw new IllegalArgumentException("classValue 类型只能是 string或者 String[] 现在却是: "+classValue.getClass());
+        }
+        return result;
+    }
+
+    /**
      * 根据属性的name获取值.
      * @param attributeName 要获取的属性的名字
      * @param expectedType 要获取的类型
      */
     public <T> T getRequiredAttribute(String attributeName, Class<T> expectedType) {
+        if(expectedType == Class.class || expectedType == Class[].class){
+            attributeName = attributeName + classSuffix;
+        }
+
         Object value = getAttributeValue(attributeName);
         if (!expectedType.isInstance(value) && expectedType.isArray() &&
                 expectedType.getComponentType().isInstance(value)) {
@@ -62,6 +122,7 @@ public class AnnotationAttributes {
             Array.set(array, 0, value);
             value = array;
         }
+
         assertAttributeType(attributeName, value, expectedType);
         return (T) value;
     }

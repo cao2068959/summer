@@ -23,7 +23,7 @@ public abstract class AnnotatedElementUtils {
                                                                      Class<? extends Annotation> type) {
         Annotation annoation = getAnnoationByType(annotatedElement, type);
         if(annoation == null){return null;}
-        return AnnotationUtils.pareAnnotationToAttributes(annoation,type,null);
+        return AnnotationUtils.pareAnnotationToAttributes(annoation,type,null , 0);
     }
 
     /**

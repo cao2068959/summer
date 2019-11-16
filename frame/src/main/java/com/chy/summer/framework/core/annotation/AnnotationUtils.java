@@ -23,9 +23,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-public  abstract class AnnotationUtils {
+public abstract class AnnotationUtils {
 
-    private static Map<String,List<Method>>  annotationMethodCache = new ConcurrentHashMap<>();
+    private static Map<String, List<Method>> annotationMethodCache = new ConcurrentHashMap<>();
 
     private static final Map<AnnotationCacheKey, Annotation> findAnnotationCache =
             new ConcurrentHashMap<>(256);
@@ -56,62 +56,67 @@ public  abstract class AnnotationUtils {
             "chy.summer.internalAutowiredAnnotationProcessor";
 
 
-
     /**
      * 把注解里的属性给抽出来放入 AnnotationAttributes
      * 如果这里有属性需要继承下去,就把相关任务放入 LinkList 中,这里是有顺序要求的
-     * @annotationValue 这里根据不同的类型执行不同的策略,是注解类型就反射拿,是map类型就put拿
+     *
+     * @annotationValue 这里根据不同的类型执行不同的策略, 是注解类型就反射拿, 是map类型就put拿
      * @annotationClass 要解析的注解的类型
      * @aliasForTaskList 如果属性上有打了注解 @AliasFor 则生成任务放入队列里,如果为null则不会解析 @AliasFor
      */
     public static AnnotationAttributes pareAnnotationToAttributes(Object value,
-                                                                   Class<? extends Annotation> annotationClass,
-                                                                   List<AliasForTask> aliasForTaskList) {
+                                                                  Class<? extends Annotation> annotationClass,
+                                                                  List<AliasForTask> aliasForTaskList,
+                                                                  Integer level) {
 
-        AnnotationAttributes attributes = new AnnotationAttributes(annotationClass.getName());
+        AnnotationAttributes attributes = new AnnotationAttributes(annotationClass.getName(), level);
         List<Method> methodsByCache = getMethodsByCache(annotationClass);
         methodsByCache.stream().forEach(method -> {
 
             //通过value的类型拿到真正的 annotationValue
-            Object annotationValue = getAnnotationValue(value,method);
+            Object annotationValue = getAnnotationValue(value, method);
 
             Object defaultValue = method.getDefaultValue();
-            attributes.put(method.getName(),annotationValue,defaultValue);
-            if(aliasForTaskList == null){return;}
+            attributes.put(method.getName(), annotationValue, defaultValue);
+            if (aliasForTaskList == null) {
+                return;
+            }
             //判断上这个属性上是否有 @AliasFor 注解,有的话这个方法上的值将会传递给对应的注解上
             AliasFor aliasFor = method.getAnnotation(AliasFor.class);
-            if(aliasFor == null){return;}
-            aliasForTaskList.add(new AliasForTask(aliasFor,method.getName(),annotationClass));
+            if (aliasFor == null) {
+                return;
+            }
+            aliasForTaskList.add(new AliasForTask(aliasFor, method.getName(), annotationClass));
         });
         return attributes;
     }
 
     /**
      * 从类上获取注解的所有信息,包括继承关系,属性等
+     *
      * @clazz 要获取的类
      * @attributesMap 返回参数, 处理的结果会放入这个字典中,请传入一个 空的字典对象进去 key:注解名称,value:对应注解的属性值
      * @shouldSuper 是否连这个类的父类和接口上的注解一起扫描
      */
     public static Map<String, Set<String>> getAnnotationInfoByClass(Class clazz,
-                                                                    Map<String,AnnotationAttributes> attributesMap,
-                                                                    boolean shouldSuper){
+                                                                    Map<String, AnnotationAttributes> attributesMap,
+                                                                    boolean shouldSuper) {
 
         List<AliasForTask> aliasForTaskList = new LinkedList<>();
         Map<String, Set<String>> result = null;
-        if(shouldSuper){
-            result = doGetAnnotationInfoByClassAll(clazz,aliasForTaskList,attributesMap);
-        }else {
-            result = doGetAnnotationInfoByClass(clazz,aliasForTaskList,attributesMap);
+        if (shouldSuper) {
+            result = doGetAnnotationInfoByClassAll(clazz, aliasForTaskList, attributesMap);
+        } else {
+            result = doGetAnnotationInfoByClass(clazz, aliasForTaskList, attributesMap);
         }
-        doAliasForTask(aliasForTaskList,attributesMap);
+        doAliasForTask(aliasForTaskList, attributesMap);
         return result;
     }
 
 
-
     private static Map<String, Set<String>> doGetAnnotationInfoByClassAll(Class clazz,
                                                                           List<AliasForTask> aliasForTaskList,
-                                                                          Map<String, AnnotationAttributes> attributesMap){
+                                                                          Map<String, AnnotationAttributes> attributesMap) {
 
         //开始解析,拿到这个类的注解 树状图
         Map<String, Set<String>> classAnnotationTree =
@@ -120,7 +125,7 @@ public  abstract class AnnotationUtils {
 
         Class superclass = clazz.getSuperclass();
         //排除掉 Object 这些公用的父类对象后递归处理父类对象
-        if(superclass !=null && superclass.getName().startsWith("java.")){
+        if (superclass != null && superclass.getName().startsWith("java.")) {
             Map<String, Set<String>> superTree =
                     doGetAnnotationInfoByClassAll(superclass, aliasForTaskList, attributesMap);
             //把父类上的注解给综合一下
@@ -138,20 +143,20 @@ public  abstract class AnnotationUtils {
     }
 
 
-
     /**
      * 解析 class 获取这个类上所有注解的关系,以及属性,这个方法只会扫描当前类上面的,父类和接口上面的注解不会处理
-     * @return  key:这个类上的注解的名称 value:这个注解上面继承的所有注解的名称
+     *
+     * @return key:这个类上的注解的名称 value:这个注解上面继承的所有注解的名称
      */
-    public static Map<String,Set<String>> doGetAnnotationInfoByClass(Class clazz,
-                                                  List<AliasForTask> aliasForTaskList,
-                                                  Map<String, AnnotationAttributes> attributesMap){
-        Map<String,Set<String>> result = new HashMap();
+    public static Map<String, Set<String>> doGetAnnotationInfoByClass(Class clazz,
+                                                                      List<AliasForTask> aliasForTaskList,
+                                                                      Map<String, AnnotationAttributes> attributesMap) {
+        Map<String, Set<String>> result = new HashMap();
         for (Annotation annotation : clazz.getAnnotations()) {
             //解析注解,返回值是 这个注解后面还继承的所有注解的名字
             Set<String> annotationTree = metaAnnotationMapHandle(annotation.annotationType(),
-                    annotation, aliasForTaskList, attributesMap, null);
-            result.put(annotation.annotationType().getName(),annotationTree);
+                    annotation, aliasForTaskList, attributesMap, null, 0);
+            result.put(annotation.annotationType().getName(), annotationTree);
         }
         return result;
     }
@@ -159,11 +164,12 @@ public  abstract class AnnotationUtils {
 
     /**
      * 执行注解属性继承关系的任务
+     *
      * @aliasForTaskList 要执行的任务的列表
      * @attributesMap key:注解名字 value:这个注解里的所有属性 任务里涉及到的所有注解这个字典里都必须要有
      */
     public static void doAliasForTask(List<AliasForTask> aliasForTaskList,
-                                       Map<String, AnnotationAttributes> attributesMap){
+                                      Map<String, AnnotationAttributes> attributesMap) {
         for (AliasForTask aliasForTask : aliasForTaskList) {
             AnnotationAttributes targetAttributes = attributesMap.get(aliasForTask.getTargerClass().getName());
             AnnotationAttributes formAttributes = attributesMap.get(aliasForTask.getFormClass().getName());
@@ -175,71 +181,82 @@ public  abstract class AnnotationUtils {
     }
 
 
-
     /**
      * 解析注解的继承关系，把他的继承关系存入 metaAnnotationMap
-     * @annotationType 要解析的注解的类型
-     * @annotationAttributes 这个注解里面填入的属性值 可以手动提取以map 的形式存在,也可以直接传入 一个 annotation对象,用反射获取
-     * @aliasForTaskList 返回参数 因为注解会存在属性继承覆盖的关系,这边会把所有的继承任务放入这个属性
-     * @attributesMap  返回参数 key:注解名字 value:这个注解里的所有属性(注解会有继承)
-     * @result 返回参数 会把这个注解下面所有继承的注解的名字放进去
      *
+     * @param annotationType       要解析的注解的类型
+     * @param annotationAttributes 这个注解里面填入的属性值 可以手动提取以map 的形式存在,也可以直接传入 一个 annotation对象,用反射获取
+     * @param aliasForTaskList     返回参数 因为注解会存在属性继承覆盖的关系,这边会把所有的继承任务放入这个属性
+     * @param attributesMap        返回参数 key:注解名字 value:这个注解里的所有属性(注解会有继承)
+     * @param result               返回参数 会把这个注解下面所有继承的注解的名字放进去
+     * @param level                递归的深度初始给0,高深度的属性不能覆盖低深度的
      */
     public static Set<String> metaAnnotationMapHandle(Class<? extends Annotation> annotationType,
-                                                Object annotationAttributes,
-                                                List<AliasForTask> aliasForTaskList,
-                                                Map<String, AnnotationAttributes> attributesMap,
-                                                Set<String> result){
-        if(result == null){
+                                                      Object annotationAttributes,
+                                                      List<AliasForTask> aliasForTaskList,
+                                                      Map<String, AnnotationAttributes> attributesMap,
+                                                      Set<String> result,
+                                                      Integer level) {
+
+        //如果已经存在了相同的注解,并且递归深度大于他,那么直接忽略这个派生注解
+        AnnotationAttributes exist = attributesMap.get(annotationType.getName());
+        if (exist != null && exist.getLevel() < level) {
+            return result;
+        }
+        Integer nextLevel = level + 1;
+
+        if (result == null) {
             //这是根目录进来
             result = new LinkedHashSet<>();
             //解析root注解上面的属性
-            AnnotationAttributes attributes = pareAnnotationToAttributes(annotationAttributes,annotationType,aliasForTaskList);
-            attributesMap.put(annotationType.getName(),attributes);
-        }else{
+            AnnotationAttributes attributes = pareAnnotationToAttributes(annotationAttributes, annotationType, aliasForTaskList, 0);
+            attributesMap.put(annotationType.getName(), attributes);
+        } else {
             result.add(annotationType.getName());
+            //解析注解上面的属性
+            AnnotationAttributes attributes = pareAnnotationToAttributes(annotationAttributes, annotationType, aliasForTaskList, nextLevel);
+            attributesMap.put(annotationType.getName(), attributes);
+
         }
 
         //获取了这个注解上面的父注解
         Annotation[] annotations = annotationType.getAnnotations();
         Set<String> finalResult = result;
         //递归扫描注解上面的注解,同时过滤掉一些不需要解析的注解
+
         Arrays.stream(annotations).filter(annotation -> {
             return !AnnotationConstant.ignoreAnnotation.contains(annotation.annotationType());
-        }).forEach(annotation ->{
+        }).forEach(annotation -> {
+
+            //递归去解析注解上面的注解
             Class<? extends Annotation> type = annotation.annotationType();
-            //解析注解上面的属性
-            AnnotationAttributes attributes = AnnotationUtils.pareAnnotationToAttributes(annotation,type,aliasForTaskList);
-            metaAnnotationMapHandle(type,annotationAttributes,aliasForTaskList,attributesMap, finalResult);
-            attributesMap.put(type.getName(),attributes);
+            metaAnnotationMapHandle(type, annotation, aliasForTaskList, attributesMap, finalResult, nextLevel);
         });
 
         return result;
     }
 
 
-
-    private static Object getAnnotationValue(Object value,Method method){
-        if(value instanceof Annotation){
-          return  getAnnotationValueByAnnotation((Annotation) value,method);
+    private static Object getAnnotationValue(Object value, Method method) {
+        if (value instanceof Annotation) {
+            return getAnnotationValueByAnnotation((Annotation) value, method);
         }
 
-        if(value instanceof Map){
-           return getAnnotationValueByMap((Map<String, Object>) value,method);
+        if (value instanceof Map) {
+            return getAnnotationValueByMap((Map<String, Object>) value, method);
         }
-
 
 
         return null;
     }
 
 
-    private static Object getAnnotationValueByMap(Map<String,Object> map,Method method){
+    private static Object getAnnotationValueByMap(Map<String, Object> map, Method method) {
         String name = method.getName();
         return map.get(name);
     }
 
-    private static Object getAnnotationValueByAnnotation(Annotation annotation,Method method){
+    private static Object getAnnotationValueByAnnotation(Annotation annotation, Method method) {
         Object annotationValue = null;
         try {
             //获取注解里的属性值
@@ -249,18 +266,26 @@ public  abstract class AnnotationUtils {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
+        //如果这里是class[] 类型,就转成string[] 类型
+        if(annotationValue instanceof Class[]){
+            annotationValue = ObjectUtils.classArryToPathArry((Class[]) annotationValue);
+        }else if(annotationValue instanceof  Class){
+            Class clazz = (Class) annotationValue;
+            annotationValue = clazz.getName();
+        }
+
         return annotationValue;
     }
 
 
-
     /**
      * 获取注解里所有方法,这里会先过滤,然后有缓存
+     *
      * @return
      */
-    static List<Method> getMethodsByCache(Class<? extends Annotation> annotationClass){
+    static List<Method> getMethodsByCache(Class<? extends Annotation> annotationClass) {
         List<Method> result = annotationMethodCache.get(annotationClass.getName());
-        if(result == null){
+        if (result == null) {
             Method[] methods = annotationClass.getDeclaredMethods();
             result = new ArrayList<>(methods.length);
             final List fresult = result;
@@ -269,7 +294,7 @@ public  abstract class AnnotationUtils {
                         method.setAccessible(true);
                         fresult.add(method);
                     });
-            annotationMethodCache.put(annotationClass.getName(),result);
+            annotationMethodCache.put(annotationClass.getName(), result);
         }
 
         return result;
@@ -279,10 +304,11 @@ public  abstract class AnnotationUtils {
 
     /**
      * 判断 注解里的某个方法是不是属性
+     *
      * @param method
      * @return
      */
-    static boolean isAttributeMethod( Method method) {
+    static boolean isAttributeMethod(Method method) {
         return (method != null && method.getParameterCount() == 0 && method.getReturnType() != void.class);
     }
 
@@ -327,9 +353,8 @@ public  abstract class AnnotationUtils {
                     }
                 }
             }
-        }
-        catch (Throwable ex) {
-            log.warn("获取类 [%s] 上的注解 [%s] 失败",clazz,annotationType);
+        } catch (Throwable ex) {
+            log.warn("获取类 [%s] 上的注解 [%s] 失败", clazz, annotationType);
             return null;
         }
 
@@ -350,6 +375,7 @@ public  abstract class AnnotationUtils {
 
     /**
      * 判断这个注解是不是 jdk 里面定义注解的那几个注解,比如 @Documented @Target
+     *
      * @param annotationType
      * @return
      */
@@ -370,6 +396,7 @@ public  abstract class AnnotationUtils {
 
     /**
      * 注册一些 通用的 beanFactroyPostProcessor 前置处理器 进入ioc容器
+     *
      * @param registry
      * @param source
      */
@@ -403,12 +430,11 @@ public  abstract class AnnotationUtils {
         }
 
 
-
-
     }
 
     /**
-     *  把对应的 BeanDefinition 给注册进入 IOC 容器
+     * 把对应的 BeanDefinition 给注册进入 IOC 容器
+     *
      * @param registry
      * @param definition
      * @param beanName
@@ -445,8 +471,7 @@ public  abstract class AnnotationUtils {
                 }
             }
             return (annotation != null ? synthesizeAnnotation(annotation, annotatedElement) : null);
-        }
-        catch (Throwable ex) {
+        } catch (Throwable ex) {
             //额外的异常抛出
             //handleIntrospectionFailure(annotatedElement, ex);
             return null;
@@ -481,7 +506,7 @@ public  abstract class AnnotationUtils {
         InvocationHandler handler = new SynthesizedAnnotationInvocationHandler(attributeExtractor);
 
         //创建合成注解
-        Class<?>[] exposedInterfaces = new Class<?>[] {annotationType, SynthesizedAnnotation.class};
+        Class<?>[] exposedInterfaces = new Class<?>[]{annotationType, SynthesizedAnnotation.class};
         return (A) Proxy.newProxyInstance(annotation.getClass().getClassLoader(), exposedInterfaces, handler);
     }
 
@@ -508,6 +533,7 @@ public  abstract class AnnotationUtils {
 
     /**
      * 判断提供的注释类型的注释是否可合成，即是否需要包装在提供功能高于标准JDK注释的动态代理中
+     *
      * @param annotationType 需要判断的注解类型
      * @return
      */
@@ -533,8 +559,7 @@ public  abstract class AnnotationUtils {
                     synthesizable = Boolean.TRUE;
                     break;
                 }
-            }
-            else if (Annotation.class.isAssignableFrom(returnType)) {
+            } else if (Annotation.class.isAssignableFrom(returnType)) {
                 Class<? extends Annotation> nestedAnnotationType = (Class<? extends Annotation>) returnType;
                 if (isSynthesizable(nestedAnnotationType)) {
                     synthesizable = Boolean.TRUE;
@@ -549,6 +574,7 @@ public  abstract class AnnotationUtils {
 
     /**
      * 获取注解的属性别名
+     *
      * @param annotationType
      * @return
      */
@@ -576,8 +602,9 @@ public  abstract class AnnotationUtils {
 
     /**
      * 给定类注释类型，检索指定属性的默认值
+     *
      * @param annotationType 注释类型
-     * @param attributeName 属性名
+     * @param attributeName  属性名
      * @return
      */
     @Nullable
@@ -589,8 +616,7 @@ public  abstract class AnnotationUtils {
         }
         try {
             return annotationType.getDeclaredMethod(attributeName).getDefaultValue();
-        }
-        catch (Throwable ex) {
+        } catch (Throwable ex) {
             //抛出额外的错误
 //            handleIntrospectionFailure(annotationType, ex);
             return null;
@@ -599,6 +625,7 @@ public  abstract class AnnotationUtils {
 
     /**
      * 获取在提供的annotationType中声明方法（注解的参数）
+     *
      * @param annotationType
      * @return
      */
@@ -628,13 +655,14 @@ public  abstract class AnnotationUtils {
     static List<String> getAttributeAliasNames(Method attribute) {
         Assert.notNull(attribute, "attribute不可为空");
         AliasDescriptor descriptor = AliasDescriptor.from(attribute);
-        return (descriptor != null ? descriptor.getAttributeAliasNames() : Collections.<String> emptyList());
+        return (descriptor != null ? descriptor.getAttributeAliasNames() : Collections.<String>emptyList());
     }
 
     private static DefaultListableBeanFactory unwrapDefaultListableBeanFactory(BeanDefinitionRegistry registry) {
         if (registry instanceof DefaultListableBeanFactory) {
             return (DefaultListableBeanFactory) registry;
-        }if(registry instanceof AbstractApplicationContext){
+        }
+        if (registry instanceof AbstractApplicationContext) {
             return (DefaultListableBeanFactory) ((AbstractApplicationContext) registry).getBeanFactory();
         }
         return null;
@@ -642,6 +670,7 @@ public  abstract class AnnotationUtils {
 
     /**
      * 判断metaAnnotationType注释元是否存在
+     *
      * @param annotationType
      * @param metaAnnotationType
      * @return
@@ -709,6 +738,7 @@ public  abstract class AnnotationUtils {
 
         /**
          * 在提供的注释属性上从@AliasFor的声明中创建一个AliasDescriptor，并验证@AliasFor的配置
+         *
          * @param attribute @AliasFor注释的注释属性
          */
         @Nullable
@@ -759,8 +789,7 @@ public  abstract class AnnotationUtils {
             try {
                 //设置别名属性
                 this.aliasedAttribute = this.aliasedAnnotationType.getDeclaredMethod(this.aliasedAttributeName);
-            }
-            catch (NoSuchMethodException ex) {
+            } catch (NoSuchMethodException ex) {
                 String msg = String.format(
                         "注释[%s]中的属性'%s'声明为@AliasFor，因为注释[%s]中不存在属性'%s'",
                         this.sourceAttributeName, this.sourceAnnotationType.getName(), this.aliasedAttributeName,
@@ -849,6 +878,7 @@ public  abstract class AnnotationUtils {
         /**
          * Determine if this descriptor represents an explicit override for
          * an attribute in the supplied {@code metaAnnotationType}.
+         *
          * @see #isAliasFor
          */
         private boolean isOverrideFor(Class<? extends Annotation> metaAnnotationType) {
@@ -862,6 +892,7 @@ public  abstract class AnnotationUtils {
          * <p>This method searches the attribute override hierarchy, beginning
          * with this descriptor, in order to detect implicit and transitively
          * implicit aliases.
+         *
          * @return {@code true} if this descriptor and the supplied descriptor
          * effectively alias the same annotation attribute
          * @see #isOverrideFor
@@ -935,11 +966,12 @@ public  abstract class AnnotationUtils {
         /**
          * 获取源属性上提供的@AliasFor注释配置的别名属性，如果未指定别名，则获取原始属性的名称
          * 此方法返回@AliasFor的attribute或value属性的值，以确保仅声明了一个属性，同时确保至少声明了一个属性。
-         * @param aliasFor 用于检索别名属性名的@AliasFor注释
+         *
+         * @param aliasFor  用于检索别名属性名的@AliasFor注释
          * @param attribute the attribute that is annotated with {@code @AliasFor}
          * @return the name of the aliased attribute (never {@code null} or empty)
          * @throws AnnotationConfigurationException if invalid configuration of
-         * {@code @AliasFor} is detected
+         *                                          {@code @AliasFor} is detected
          */
         private String getAliasedAttributeName(AliasFor aliasFor, Method attribute) {
             //获取属性的名称
@@ -1014,8 +1046,6 @@ public  abstract class AnnotationUtils {
             return result;
         }
     }
-
-
 
 
 }
