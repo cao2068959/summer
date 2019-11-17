@@ -125,7 +125,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
      */
     @Override
     public AnnotationVisitor visitAnnotation(final String desc, boolean visible) {
-        if(isAnnotation){
+        if(isAnnotation && desc.startsWith("Ljava/lang/annotation") ){
             //如果这个source本身就是annotion就跳过
             return null;
         }
@@ -133,6 +133,23 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
         this.annotationSet.add(className);
         return new MetadataAnnotationVisitorHandle(className,annotationAttributes,metaAnnotationMap);
     }
+
+
+    /**
+     * 这个类里面所有方法的解析
+     */
+    @Override
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        if ((access & Opcodes.ACC_BRIDGE) != 0) {
+            return super.visitMethod(access, name, desc, signature, exceptions);
+        }
+        //反正正真的返回值类型
+        String returnType = Type.getReturnType(desc).getClassName();
+
+        return new MethodMetadataReadingVisitorHandle(name, access, getClassName(),
+                Type.getReturnType(desc).getClassName(), this.methodMetadataSet);
+    }
+
 
     //================================下面是AnnotationMetadata接口的实现======================================
 
@@ -267,11 +284,6 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
         return new EmptyFieldVisitor();
     }
 
-    @Override
-    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-        // no-op
-        return new EmptyMethodVisitor();
-    }
 
     @Override
     public void visitEnd() {

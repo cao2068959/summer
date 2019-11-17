@@ -17,12 +17,14 @@ import com.chy.summer.framework.core.type.StandardAnnotationMetadata;
 import com.chy.summer.framework.core.type.classreading.MetadataReader;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
+import com.chy.summer.framework.util.CollectionUtils;
 import com.chy.summer.framework.util.ConfigurationClassUtils;
 import lombok.Getter;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 配置类 的解析器
@@ -43,6 +45,8 @@ public class ConfigurationClassParser {
 
     @Getter
     private final Map<ConfigurationClass, ConfigurationClass> configurationClasses = new LinkedHashMap<>();
+
+    private final ImportStack importStack = new ImportStack();
 
 
 
@@ -216,10 +220,37 @@ public class ConfigurationClassParser {
         if (importCandidates.isEmpty()) {
             return;
         }
-        //循环把 @Import 上的类都给初始化了
-        for (SourceClass candidate : importCandidates) {
-            processConfigurationClass(candidate.asConfigClass(configClass));
+
+        //防止循环依赖问题
+        if(checkForCircularImports && isChainedImportOnStack(configClass)){
+            return;
         }
+
+        //开始执行之前先推入栈里
+        this.importStack.push(configClass);
+
+        try {
+            //循环把 @Import 上的类都给初始化了
+            for (SourceClass candidate : importCandidates) {
+                this.importStack.registerImport(candidate.getMetadata().getClassName() , currentSourceClass.getMetadata());
+                processConfigurationClass(candidate.asConfigClass(configClass));
+            }
+        }finally {
+            //执行结束后推出栈
+            this.importStack.pop();
+        }
+    }
+
+    /**
+     * 检查 指定的类是不是已经在 栈里了,如果在说明这个类正在被执行.
+     * @param configClass
+     * @return
+     */
+    private boolean isChainedImportOnStack(ConfigurationClass configClass) {
+        if (this.importStack.contains(configClass)) {
+            return true;
+        }
+        return false;
     }
 
 
@@ -359,5 +390,21 @@ public class ConfigurationClassParser {
         }
 
     }
+
+
+    private static class ImportStack extends ArrayDeque<ConfigurationClass>  {
+
+        private final Map<String, AnnotationMetadata> imports = new ConcurrentHashMap<>();
+
+        public void registerImport(String importedClass , AnnotationMetadata importingClass) {
+            this.imports.put(importedClass, importingClass);
+        }
+
+        public AnnotationMetadata getImportingClassFor(String importedClass) {
+            return this.imports.get(importedClass);
+        }
+
+    }
+
 
 }

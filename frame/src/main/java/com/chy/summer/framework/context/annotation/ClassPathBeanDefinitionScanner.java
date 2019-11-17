@@ -204,8 +204,7 @@ public class ClassPathBeanDefinitionScanner{
      */
     protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
         AnnotationMetadata metadata = beanDefinition.getMetadata();
-        return (metadata.isIndependent() &&
-                (metadata.isConcrete() || (metadata.isAbstract() )));
+        return (metadata.isIndependent() && (metadata.isConcrete()));
     }
 
     /**
