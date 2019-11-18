@@ -1,12 +1,15 @@
 package com.chy.summer.framework.util;
 
 import com.sun.istack.internal.Nullable;
+import com.sun.org.apache.xpath.internal.axes.AxesWalker;
 
+import java.awt.image.ImageProducer;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class ObjectUtils {
     private static final int INITIAL_HASH = 7;
@@ -936,6 +939,18 @@ public class ObjectUtils {
         }
         sb.append(ARRAY_END);
         return sb.toString();
+    }
+
+    /**
+     * 从 class[] 转成 string[]
+     * @param classes
+     * @return
+     */
+    public static String[] classArryToPathArry(Class[] classes){
+        if(classes == null){
+            return new String[0];
+        }
+        return Arrays.stream(classes).map(Class::getName).toArray(String[]::new);
     }
 
 }
