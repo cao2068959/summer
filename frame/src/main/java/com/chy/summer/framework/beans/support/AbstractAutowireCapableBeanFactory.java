@@ -5,8 +5,11 @@ import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.beans.config.InstantiationAwareBeanPostProcessor;
 import com.chy.summer.framework.beans.config.SmartInstantiationAwareBeanPostProcessor;
 import com.chy.summer.framework.exception.BeanCreationException;
+import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.util.ClassUtils;
+import com.chy.summer.framework.util.ObjectUtils;
 import com.chy.summer.framework.util.StringUtils;
+import com.sun.istack.internal.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 import java.beans.PropertyDescriptor;
@@ -54,6 +57,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             //这里深拷贝,不污染入参
             mbdToUse = new RootBeanDefinition(mbd);
             mbdToUse.setBeanClass(resolvedClass);
+        }
+
+        //aop 替换
+        Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
+        if (bean != null) {
+            return bean;
         }
 
         //这里正真去创建对象了
@@ -131,6 +140,50 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         invokeAwareMethods(beanName, bean);
 
         return bean;
+    }
+
+    protected Object resolveBeforeInstantiation(String beanName, RootBeanDefinition mbd) {
+        Object bean = null;
+        if (!Boolean.FALSE.equals(mbd.beforeInstantiationResolved)) {
+            // Make sure bean class is actually resolved at this point.
+            if (!mbd.isSynthetic()) {
+                Class<?> targetType = determineTargetType(beanName, mbd);
+                if (targetType != null) {
+                    bean = applyBeanPostProcessorsBeforeInstantiation(targetType, beanName);
+                    if (bean != null) {
+//                        bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
+                    }
+                }
+            }
+            mbd.beforeInstantiationResolved = (bean != null);
+        }
+        return bean;
+    }
+
+    @Nullable
+    protected Class<?> determineTargetType(String beanName, RootBeanDefinition mbd, Class<?>... typesToMatch) {
+        Class<?> targetType = mbd.getTargetType();
+        if (targetType == null) {
+            targetType = resolveBeanClass(mbd);
+            if (ObjectUtils.isEmpty(typesToMatch)) {
+                mbd.resolvedTargetType = targetType;
+            }
+        }
+        return targetType;
+    }
+
+    //调用BeanPostProcessor后置处理器实例对象初始化之前的处理方法
+    protected Object applyBeanPostProcessorsBeforeInstantiation(Class<?> beanClass, String beanName) {
+        for (BeanPostProcessor bp : getBeanPostProcessors()) {
+            if (bp instanceof InstantiationAwareBeanPostProcessor) {
+                InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+                Object result = ibp.postProcessBeforeInstantiation(beanClass, beanName);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
     }
 
     /**

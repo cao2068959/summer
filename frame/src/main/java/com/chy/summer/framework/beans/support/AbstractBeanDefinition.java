@@ -1,18 +1,25 @@
 package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.MutablePropertyValues;
+import com.chy.summer.framework.beans.PropertyValue;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.chy.summer.framework.core.io.support.Resource;
+import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ObjectUtils;
+import com.sun.istack.internal.Nullable;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public abstract class AbstractBeanDefinition extends AttributeAccessorSupport implements BeanDefinition {
 
     private ScopeType scope = ScopeType.SINGLETON;
     private boolean lazyInit = false;
+
+    private boolean synthetic = false;
 
     private Resource resource;
 
@@ -24,6 +31,8 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
 
     /** 代表了 这个beanDefinition 里的所有属性 */
     private MutablePropertyValues propertyValues;
+
+//    private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>(0);
 
 
 
@@ -176,5 +185,14 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
             this.propertyValues = new MutablePropertyValues();
         }
         return this.propertyValues;
+    }
+
+//    public void copyQualifiersFrom(AbstractBeanDefinition source) {
+//        Assert.notNull(source, "Source不可为空");
+//        this.qualifiers.putAll(source.qualifiers);
+//    }
+
+    public boolean isSynthetic() {
+        return this.synthetic;
     }
 }

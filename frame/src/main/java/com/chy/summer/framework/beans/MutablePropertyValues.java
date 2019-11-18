@@ -1,5 +1,9 @@
 package com.chy.summer.framework.beans;
 
+import com.chy.summer.framework.exception.BaseRuntimeException;
+import com.chy.summer.framework.exception.BeansException;
+import com.sun.istack.internal.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -41,5 +45,14 @@ public class MutablePropertyValues implements PropertyValues {
     @Override
     public boolean isEmpty() {
         return propertyValueMap.isEmpty();
+    }
+
+    public MutablePropertyValues add(String propertyName, @Nullable Object propertyValue) {
+        if (propertyValue instanceof PropertyValue) {
+            propertyValueMap.put(propertyName, (PropertyValue)propertyValue);
+        }else {
+            throw new BeansException("MutablePropertyValues元素添加错误");
+        }
+        return this;
     }
 }

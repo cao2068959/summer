@@ -5,6 +5,7 @@ import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.util.ClassUtils;
+import com.sun.istack.internal.Nullable;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
@@ -20,6 +21,12 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     boolean allowCaching = true;
 
     boolean isFactoryMethodUnique = false;
+
+    /**
+     * 前置处理或者后置处理是否开启
+     */
+    @Nullable
+    volatile Boolean beforeInstantiationResolved = true;
 
     volatile ResolvableType targetType;
 
@@ -151,5 +158,8 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
         return (targetType != null ? targetType.resolve() : null);
     }
 
+    public void setDecoratedDefinition(@Nullable BeanDefinitionHolder decoratedDefinition) {
+        this.decoratedDefinition = decoratedDefinition;
+    }
 
 }
