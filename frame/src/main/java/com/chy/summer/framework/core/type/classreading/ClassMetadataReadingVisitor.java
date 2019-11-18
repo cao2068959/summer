@@ -216,6 +216,11 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     }
 
     @Override
+    public boolean hasSuperClass() {
+        return (this.superClassName != null);
+    }
+
+    @Override
     public boolean hasEnclosingClass() {
         return false;
     }
@@ -225,10 +230,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
         return null;
     }
 
-    @Override
-    public boolean hasSuperClass() {
-        return false;
-    }
+
 
     @Override
     public String getSuperClassName() {

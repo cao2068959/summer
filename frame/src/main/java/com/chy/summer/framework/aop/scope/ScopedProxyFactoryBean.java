@@ -4,7 +4,6 @@ import com.chy.summer.framework.aop.framework.AopInfrastructureBean;
 import com.chy.summer.framework.aop.framework.ProxyConfig;
 import com.chy.summer.framework.aop.framework.ProxyFactory;
 import com.chy.summer.framework.aop.support.DelegatingIntroductionInterceptor;
-import com.chy.summer.framework.aop.target.SimpleBeanTargetSource;
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.BeanFactoryAware;
 import com.chy.summer.framework.beans.ConfigurableBeanFactory;
@@ -19,7 +18,7 @@ import java.lang.reflect.Modifier;
 public class ScopedProxyFactoryBean extends ProxyConfig implements FactoryBean<Object>, BeanFactoryAware {
 
 	/** 管理范围的TargetSource */
-	private final SimpleBeanTargetSource scopedTargetSource = new SimpleBeanTargetSource();
+	//private final SimpleBeanTargetSource scopedTargetSource = new SimpleBeanTargetSource();
 
 	/** 目标bean的名称 */
 	@Nullable
@@ -43,7 +42,7 @@ public class ScopedProxyFactoryBean extends ProxyConfig implements FactoryBean<O
 	 */
 	public void setTargetBeanName(String targetBeanName) {
 		this.targetBeanName = targetBeanName;
-		this.scopedTargetSource.setTargetBeanName(targetBeanName);
+		//this.scopedTargetSource.setTargetBeanName(targetBeanName);
 	}
 
 	/**
@@ -56,11 +55,11 @@ public class ScopedProxyFactoryBean extends ProxyConfig implements FactoryBean<O
 		}
 		ConfigurableBeanFactory cbf = (ConfigurableBeanFactory) beanFactory;
 
-		this.scopedTargetSource.setBeanFactory(beanFactory);
+		//this.scopedTargetSource.setBeanFactory(beanFactory);
 
 		ProxyFactory pf = new ProxyFactory();
 		pf.copyFrom(this);
-		pf.setTargetSource(this.scopedTargetSource);
+		//pf.setTargetSource(this.scopedTargetSource);
 
 		Assert.notNull(this.targetBeanName, "属性'targetBeanName' 为空");
 		Class<?> beanType = beanFactory.getType(this.targetBeanName);
@@ -72,7 +71,7 @@ public class ScopedProxyFactoryBean extends ProxyConfig implements FactoryBean<O
 		}
 
 		// 添加一个只实现ScopedObject上的方法的介绍
-		ScopedObject scopedObject = new DefaultScopedObject(cbf, this.scopedTargetSource.getTargetBeanName());
+		ScopedObject scopedObject = new DefaultScopedObject(cbf, "");
 		pf.addAdvice(new DelegatingIntroductionInterceptor(scopedObject));
 
 		// 添加AopInfrastructureBean标记，以指示作用域代理本身不受自动代理
@@ -95,7 +94,7 @@ public class ScopedProxyFactoryBean extends ProxyConfig implements FactoryBean<O
 		if (this.proxy != null) {
 			return this.proxy.getClass();
 		}
-		return this.scopedTargetSource.getTargetClass();
+		return null;
 	}
 
 	@Override

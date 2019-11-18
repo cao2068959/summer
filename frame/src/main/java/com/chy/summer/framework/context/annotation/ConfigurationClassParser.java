@@ -17,7 +17,6 @@ import com.chy.summer.framework.core.type.StandardAnnotationMetadata;
 import com.chy.summer.framework.core.type.classreading.MetadataReader;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
-import com.chy.summer.framework.util.CollectionUtils;
 import com.chy.summer.framework.util.ConfigurationClassUtils;
 import lombok.Getter;
 
@@ -47,6 +46,9 @@ public class ConfigurationClassParser {
     private final Map<ConfigurationClass, ConfigurationClass> configurationClasses = new LinkedHashMap<>();
 
     private final ImportStack importStack = new ImportStack();
+
+    private final Map<String, ConfigurationClass> knownSuperclasses = new HashMap<>();
+
 
 
 
@@ -179,13 +181,22 @@ public class ConfigurationClassParser {
         // 然后处理 @Bean 注解
         Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
         for (MethodMetadata methodMetadata : beanMethods) {
+            //先把所有的 @bean 标注的方法存起来
             configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
         }
 
         // TODO 这里是把 jdk8里面的 接口上的默认方法 也注册进去,当然前提是打了 @Bean 注解
         //processInterfaces(configClass, sourceClass);
 
-        // TODO 解析父类
+        //去解析配置类上的父类,
+        if (sourceClass.getMetadata().hasSuperClass()) {
+            String superclass = sourceClass.getMetadata().getSuperClassName();
+            if (superclass != null && !superclass.startsWith("java") &&
+                    !this.knownSuperclasses.containsKey(superclass)) {
+                this.knownSuperclasses.put(superclass, configClass);
+                return sourceClass.getSuperClass();
+            }
+        }
         return null;
     }
 
@@ -307,6 +318,10 @@ public class ConfigurationClassParser {
         return new SourceClass(this.metadataReaderFactory.getMetadataReader(className));
     }
 
+    SourceClass asSourceClass(Class<?> classType) throws Exception {
+        return new SourceClass(classType);
+    }
+
 //=================================下面是内部类==========================================================================
 
     private class SourceClass implements Ordered {
@@ -389,6 +404,12 @@ public class ConfigurationClassParser {
 
         }
 
+        public SourceClass getSuperClass() throws Exception {
+            if (this.source instanceof Class) {
+                return asSourceClass(((Class<?>) this.source).getSuperclass());
+            }
+            return asSourceClass(((MetadataReader) this.source).getClassMetadata().getSuperClassName());
+        }
     }
 
 

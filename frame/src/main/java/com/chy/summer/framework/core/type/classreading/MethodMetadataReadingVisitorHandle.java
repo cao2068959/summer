@@ -27,7 +27,7 @@ public class MethodMetadataReadingVisitorHandle extends MethodVisitor implements
     /** 这个方法上面所有的注解  key : 注解的name value: 这个注解上面的所有派生注解  */
     private final Map<String, Set<String>> metaAnnotationMap;
     /** 这个方法上所有注解的属性的集合 */
-    private final Map<String, AnnotationAttributes> attributesMap = new HashMap<>();
+    private final Map<String, AnnotationAttributes> annotationAttributesMap = new HashMap<>();
 
 
 
@@ -39,17 +39,45 @@ public class MethodMetadataReadingVisitorHandle extends MethodVisitor implements
         this.returnTypeName = returnTypeName;
         this.methodMetadataSet = methodMetadataSet;
         metaAnnotationMap = new HashMap<>();
+        this.methodMetadataSet.add(this);
     }
 
+    /**
+     * 方法上每有一个注解就会调用一次这个方法
+     * @param desc
+     * @param visible
+     * @return
+     */
     @Override
     public AnnotationVisitor visitAnnotation(final String desc, boolean visible) {
-        this.methodMetadataSet.add(this);
         String className = Type.getType(desc).getClassName();
-        return new MetadataAnnotationVisitorHandle(className, this.attributesMap, this.metaAnnotationMap);
+        return new MetadataAnnotationVisitorHandle(className, this.annotationAttributesMap, this.metaAnnotationMap);
     }
+
 
 
     //======================================下面是 MethodMetadata 接口的实现==============================================
+
+    /**
+     * 查询这个方法上有没有指定的注解
+     * @param annotationName
+     * @return
+     */
+    @Override
+    public boolean isAnnotated(String annotationName) {
+        //先扫描方法上面有没有指定的注解
+        if(metaAnnotationMap.containsKey(annotationName)){
+            return true;
+        }
+        //如果没有就去看看派生注解里有没有
+        for (Set<String> value : metaAnnotationMap.values()) {
+            if(value.contains(annotationName)){
+                return true;
+            }
+        }
+        //如果全部都没有 就返回false
+        return false;
+    }
 
 
     @Override
@@ -87,10 +115,7 @@ public class MethodMetadataReadingVisitorHandle extends MethodVisitor implements
         return false;
     }
 
-    @Override
-    public boolean isAnnotated(String annotationName) {
-        return false;
-    }
+
 
     @Override
     public Map<String, Object> getAnnotationAttributes(String annotationName) {
