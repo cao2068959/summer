@@ -1,7 +1,10 @@
 package com.chy.summer.framework.beans.config;
 
+import com.chy.summer.framework.beans.MutablePropertyValues;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.sun.istack.internal.Nullable;
+
+import java.util.List;
 
 public interface BeanDefinition extends AttributeAccessor {
 
@@ -75,4 +78,5 @@ public interface BeanDefinition extends AttributeAccessor {
 
      Class<?> getBeanClass() throws IllegalStateException;
 
+     MutablePropertyValues getPropertyValues();
 }

@@ -48,6 +48,11 @@ public class BeanUtils {
 
     }
 
+    public static <T> T instantiateClass(Class<?> clazz, Class<T> assignableTo) throws BeanInstantiationException {
+        Assert.isAssignable(assignableTo, clazz);
+        return (T) instantiateClass(clazz);
+    }
+
 
     /**
      * 从class中 获取对应 方法的 PropertyDescriptor

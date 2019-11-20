@@ -10,6 +10,7 @@ import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 import com.chy.summer.framework.util.StringUtils;
 
+import java.util.Map;
 import java.util.Set;
 
 public class ConfigurationClassBeanDefinitionReader {
@@ -51,10 +52,16 @@ public class ConfigurationClassBeanDefinitionReader {
         for (BeanMethod beanMethod : configClass.getBeanMethods()) {
             loadBeanDefinitionsForBeanMethod(beanMethod);
         }
+        loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
     }
 
     private void loadBeanDefinitionsForBeanMethod(BeanMethod beanMethod) {
 
+    }
+
+    private void loadBeanDefinitionsFromRegistrars(Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> registrars) {
+        registrars.forEach((registrar, metadata) ->
+                registrar.registerBeanDefinitions(metadata, this.registry));
     }
 
 

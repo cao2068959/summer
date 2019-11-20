@@ -1,5 +1,6 @@
 package com.chy.summer.framework.context.annotation;
 
+import com.chy.summer.framework.beans.BeanUtils;
 import com.chy.summer.framework.beans.config.AnnotatedBeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
@@ -17,6 +18,7 @@ import com.chy.summer.framework.core.type.StandardAnnotationMetadata;
 import com.chy.summer.framework.core.type.classreading.MetadataReader;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
+import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ConfigurationClassUtils;
 import lombok.Getter;
 
@@ -243,8 +245,18 @@ public class ConfigurationClassParser {
         try {
             //循环把 @Import 上的类都给初始化了
             for (SourceClass candidate : importCandidates) {
-                this.importStack.registerImport(candidate.getMetadata().getClassName() , currentSourceClass.getMetadata());
-                processConfigurationClass(candidate.asConfigClass(configClass));
+                //判断类是否实现了ImportBeanDefinitionRegistrar
+                if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)){
+                    Class<?> candidateClass = candidate.loadClass();
+                    ImportBeanDefinitionRegistrar registrar =
+                            BeanUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class);
+                    ParserStrategyUtils.invokeAwareMethods(
+                            registrar, this.environment, this.resourceLoader, this.registry);
+                    configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());
+                }else {
+                    this.importStack.registerImport(candidate.getMetadata().getClassName(), currentSourceClass.getMetadata());
+                    processConfigurationClass(candidate.asConfigClass(configClass));
+                }
             }
         }finally {
             //执行结束后推出栈
@@ -409,6 +421,22 @@ public class ConfigurationClassParser {
                 return asSourceClass(((Class<?>) this.source).getSuperclass());
             }
             return asSourceClass(((MetadataReader) this.source).getClassMetadata().getSuperClassName());
+        }
+
+        public boolean isAssignable(Class<?> clazz) {
+            if (this.source instanceof Class) {
+                return clazz.isAssignableFrom((Class<?>) this.source);
+            }
+            return false;
+//            return new AssignableTypeFilter(clazz).match((MetadataReader) this.source, metadataReaderFactory);
+        }
+
+        public Class<?> loadClass() throws ClassNotFoundException {
+            if (this.source instanceof Class) {
+                return (Class<?>) this.source;
+            }
+            String className = ((MetadataReader) this.source).getClassMetadata().getClassName();
+            return ClassUtils.forName(className, resourceLoader.getClassLoader());
         }
     }
 

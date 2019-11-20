@@ -180,6 +180,7 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
         this.instanceSupplier = instanceSupplier;
     }
 
+    @Override
     public MutablePropertyValues getPropertyValues() {
         if (this.propertyValues == null) {
             this.propertyValues = new MutablePropertyValues();

@@ -8,7 +8,9 @@ import com.chy.summer.framework.util.Assert;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class ConfigurationClass {
@@ -22,6 +24,12 @@ public class ConfigurationClass {
 
     @Getter
     private final Set<BeanMethod> beanMethods = new LinkedHashSet<>();
+
+    /**
+     * 被委托对象和委托注解的关系
+     */
+    private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
+            new LinkedHashMap<>();
 
 
     //这个 类被多个 @Import 指明要注入
@@ -54,5 +62,13 @@ public class ConfigurationClass {
 
     public boolean isImported() {
         return false;
+    }
+
+    public void addImportBeanDefinitionRegistrar(ImportBeanDefinitionRegistrar registrar, AnnotationMetadata importingClassMetadata) {
+        this.importBeanDefinitionRegistrars.put(registrar, importingClassMetadata);
+    }
+
+    public Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> getImportBeanDefinitionRegistrars() {
+        return this.importBeanDefinitionRegistrars;
     }
 }

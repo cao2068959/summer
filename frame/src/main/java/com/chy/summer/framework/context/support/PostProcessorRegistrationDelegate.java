@@ -3,6 +3,7 @@ package com.chy.summer.framework.context.support;
 
 import com.chy.summer.framework.beans.config.*;
 import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
+import com.chy.summer.framework.beans.support.MergedBeanDefinitionPostProcessor;
 import com.chy.summer.framework.core.PriorityOrdered;
 import com.chy.summer.framework.core.ordered.OrderComparator;
 import com.chy.summer.framework.core.ordered.Ordered;
@@ -229,6 +230,7 @@ public class PostProcessorRegistrationDelegate {
 
         //实现了 priorityOrdered 接口的
         List<BeanPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
+        List<BeanPostProcessor> internalPostProcessors = new ArrayList<>();
         //实现了 ordered 接口的
         List<String> orderedPostProcessorNames = new ArrayList<>();
         //什么都没实现的
@@ -237,6 +239,9 @@ public class PostProcessorRegistrationDelegate {
             if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
                 BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);
                 priorityOrderedPostProcessors.add(pp);
+                if (pp instanceof MergedBeanDefinitionPostProcessor) {
+                    internalPostProcessors.add(pp);
+                }
             }
             else if (beanFactory.isTypeMatch(ppName, Ordered.class)) {
                 orderedPostProcessorNames.add(ppName);
@@ -255,6 +260,9 @@ public class PostProcessorRegistrationDelegate {
         for (String ppName : orderedPostProcessorNames) {
             BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);
             orderedPostProcessors.add(pp);
+            if (pp instanceof MergedBeanDefinitionPostProcessor) {
+                internalPostProcessors.add(pp);
+            }
         }
 
         //  排序ordered 的然后 注册进去
@@ -266,11 +274,15 @@ public class PostProcessorRegistrationDelegate {
         for (String ppName : nonOrderedPostProcessorNames) {
             BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);
             nonOrderedPostProcessors.add(pp);
+            if (pp instanceof MergedBeanDefinitionPostProcessor) {
+                internalPostProcessors.add(pp);
+            }
         }
 
         //屌丝什么都没的注册
         registerBeanPostProcessors(beanFactory, nonOrderedPostProcessors);
-
+        sortPostProcessors(internalPostProcessors, beanFactory);
+        registerBeanPostProcessors(beanFactory, internalPostProcessors);
     }
 
 

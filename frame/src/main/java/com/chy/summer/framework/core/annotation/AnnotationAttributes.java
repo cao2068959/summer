@@ -2,6 +2,7 @@ package com.chy.summer.framework.core.annotation;
 
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
+import com.sun.istack.internal.Nullable;
 import javafx.beans.binding.ObjectExpression;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,13 +34,18 @@ public class AnnotationAttributes {
         this.level = level;
     }
 
+    public AnnotationAttributes(AnnotationAttributes original) {
+        this.className = original.getClassName();
+        this.level = original.getLevel();
+        this.datas = original.getDatas();
+    }
 
 
     public void put(String key,Object data,Object defaultValue){
         AnnotationAttribute annotationAttribute = new AnnotationAttribute();
         annotationAttribute.value = data;
         annotationAttribute.defaultValue = defaultValue;
-        this.datas.put(key,annotationAttribute);
+        datas.put(key,annotationAttribute);
     }
 
 
@@ -151,4 +157,15 @@ public class AnnotationAttributes {
         Object defaultValue;
     }
 
+    public String getClassName() {
+        return className;
+    }
+
+    public Map<String, AnnotationAttribute> getDatas() {
+        return datas;
+    }
+
+    public void setDatas(Map<String, AnnotationAttribute> datas) {
+        this.datas = datas;
+    }
 }

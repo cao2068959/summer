@@ -8,8 +8,10 @@ import com.chy.summer.framework.context.annotation.Lazy;
 import com.chy.summer.framework.context.annotation.ScopeMetadata;
 import com.chy.summer.framework.context.annotation.constant.ScopedProxyMode;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
+import com.chy.summer.framework.core.type.AnnotatedTypeMetadata;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 import com.chy.summer.framework.core.type.ClassMetadata;
+import com.sun.istack.internal.Nullable;
 
 import java.util.Set;
 
@@ -53,5 +55,4 @@ public class AnnotationConfigUtils {
         //TODO 如果真设置了代理模式的，先留一个坑，后面慢慢填
         return beanDefinitionHolder;
     }
-
 }

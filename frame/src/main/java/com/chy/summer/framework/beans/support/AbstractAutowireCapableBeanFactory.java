@@ -138,8 +138,33 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
         //执行对应的 Aware 接口
         invokeAwareMethods(beanName, bean);
+        Object wrappedBean = bean;
+        //对BeanPostProcessor后置处理器的postProcessAfterInitialization
+        //回调方法的调用，为Bean实例初始化之后做一些处理
+        if (mbd == null || !mbd.isSynthetic()) {
+            wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
+        }
+        return wrappedBean;
+    }
 
-        return bean;
+    /**
+     * 调用BeanPostProcessor后置处理器实例对象初始化之后的处理方法
+     */
+    public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName)
+            throws BeansException {
+
+        Object result = existingBean;
+        //遍历容器为所创建的Bean添加的所有BeanPostProcessor后置处理器
+        for (BeanPostProcessor beanProcessor : getBeanPostProcessors()) {
+            //调用Bean实例所有的后置处理中的初始化后处理方法，为Bean实例对象在
+            //初始化之后做一些自定义的处理操作
+            Object current = beanProcessor.postProcessAfterInitialization(result, beanName);
+            if (current == null) {
+                return result;
+            }
+            result = current;
+        }
+        return result;
     }
 
     protected Object resolveBeforeInstantiation(String beanName, RootBeanDefinition mbd) {
