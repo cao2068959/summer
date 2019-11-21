@@ -234,7 +234,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
 
     @Override
     public String getSuperClassName() {
-        return null;
+        return superClassName;
     }
 
     @Override

@@ -125,23 +125,22 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
                 this.resourceLoader, this.componentScanBeanNameGenerator, registry);
 
         Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
-        Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 
-        //这里就把所有的class给扫描了,然后放入 parser的configurationClasses对象里
+        //这里就把所有的配置类给扫描了,然后放入 parser的configurationClasses对象里
+        //这里如果扫描到的class有 @ComponentScan 注解,会扫描对应的目录,并且生成对应的bd放入 IOC容器里
         parser.parse(candidates);
         //这边又迭代了一次,去检查扫描到的类里面有没有  @Configuration 并且这个类是 final 类型的有的话报错,这里先忽略
         //parser.validate();
+        //把上面的解析结果给全部转成 set 集合
         Set<ConfigurationClass> configClasses = new LinkedHashSet(parser.getConfigurationClasses().keySet());
-        configClasses.removeAll(alreadyParsed);
 
         //初始化 configurationClass 解析器
         if (this.reader == null) {
-            this.reader = new ConfigurationClassBeanDefinitionReader(
-                    registry, this.resourceLoader, this.environment,
+            this.reader = new ConfigurationClassBeanDefinitionReader(registry, this.resourceLoader, this.environment,
                     this.importBeanNameGenerator);
         }
+        //开始解析处理上面扫描出来的配置类, @bean注解 等配置的处理就在这里面
         this.reader.loadBeanDefinitions(configClasses);
-        alreadyParsed.addAll(configClasses);
         candidates.clear();
     }
 

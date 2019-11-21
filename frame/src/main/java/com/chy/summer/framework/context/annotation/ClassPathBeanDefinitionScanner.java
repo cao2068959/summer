@@ -158,6 +158,7 @@ public class ClassPathBeanDefinitionScanner{
             if(isCandidateComponent(metadataReader)){
                 ScannedGenericBeanDefinition scannedGenericBeanDefinition = new ScannedGenericBeanDefinition(metadataReader);
                 scannedGenericBeanDefinition.setResource(resource);
+                //接口和抽象类剔除
                 if(isCandidateComponent(scannedGenericBeanDefinition)){
                     result.add(scannedGenericBeanDefinition);
                 }
