@@ -42,6 +42,9 @@ public abstract class AnnotationUtils {
     private static final Map<Class<? extends Annotation>, Map<String, List<String>>> attributeAliasesCache =
             new ConcurrentReferenceHashMap<>(256);
 
+    private static final Map<Class<?>, Boolean> annotatedInterfaceCache =
+            new ConcurrentReferenceHashMap<>(256);
+
 
     /**
      * 注解与注解类的参数的映射关系
@@ -389,7 +392,121 @@ public abstract class AnnotationUtils {
      */
     @Nullable
     public static <A extends Annotation> A findAnnotation(Method method, @Nullable Class<A> annotationType) {
-        //TODO GYX 尚未实现
+        Assert.notNull(method, "Method不可为空");
+        if (annotationType == null) {
+            return null;
+        }
+        //生成注解的缓存，持有注解的对象信息和注解的类型
+        AnnotationCacheKey cacheKey = new AnnotationCacheKey(method, annotationType);
+        A result = (A) findAnnotationCache.get(cacheKey);
+
+        if (result == null) {
+            Method resolvedMethod = BridgeMethodResolver.findBridgedMethod(method);
+            result = findAnnotation((AnnotatedElement) resolvedMethod, annotationType);
+
+            if (result == null) {
+                result = searchOnInterfaces(method, annotationType, method.getDeclaringClass().getInterfaces());
+            }
+
+            Class<?> clazz = method.getDeclaringClass();
+            while (result == null) {
+                clazz = clazz.getSuperclass();
+                if (clazz == null || Object.class == clazz) {
+                    break;
+                }
+                try {
+                    Method equivalentMethod = clazz.getDeclaredMethod(method.getName(), method.getParameterTypes());
+                    Method resolvedEquivalentMethod = BridgeMethodResolver.findBridgedMethod(equivalentMethod);
+                    result = findAnnotation((AnnotatedElement) resolvedEquivalentMethod, annotationType);
+                }
+                catch (NoSuchMethodException ex) {
+                    // No equivalent method found
+                }
+                if (result == null) {
+                    result = searchOnInterfaces(method, annotationType, clazz.getInterfaces());
+                }
+            }
+
+            if (result != null) {
+                result = synthesizeAnnotation(result, method);
+                findAnnotationCache.put(cacheKey, result);
+            }
+        }
+
+        return result;
+    }
+
+    @Nullable
+    private static <A extends Annotation> A searchOnInterfaces(Method method, Class<A> annotationType, Class<?>... ifcs) {
+        A annotation = null;
+        for (Class<?> iface : ifcs) {
+            if (isInterfaceWithAnnotatedMethods(iface)) {
+                try {
+                    Method equivalentMethod = iface.getMethod(method.getName(), method.getParameterTypes());
+                    annotation = getAnnotation(equivalentMethod, annotationType);
+                }
+                catch (NoSuchMethodException ex) {
+                    // Skip this interface - it doesn't have the method...
+                }
+                if (annotation != null) {
+                    break;
+                }
+            }
+        }
+        return annotation;
+    }
+
+    public static boolean isInterfaceWithAnnotatedMethods(Class<?> iface) {
+        Boolean found = annotatedInterfaceCache.get(iface);
+        if (found != null) {
+            return found;
+        }
+        found = Boolean.FALSE;
+        for (Method ifcMethod : iface.getMethods()) {
+            try {
+                if (ifcMethod.getAnnotations().length > 0) {
+                    found = Boolean.TRUE;
+                    break;
+                }
+            }
+            catch (Throwable ex) {
+                ////记录日志展示不要
+//                handleIntrospectionFailure(ifcMethod, ex);
+            }
+        }
+        annotatedInterfaceCache.put(iface, found);
+        return found;
+    }
+
+    @Nullable
+    public static <A extends Annotation> A findAnnotation(AnnotatedElement annotatedElement, Class<A> annotationType) {
+        Assert.notNull(annotatedElement, "AnnotatedElement不可为空");
+        A ann = findAnnotation(annotatedElement, annotationType, new HashSet<>());
+        return (ann != null ? synthesizeAnnotation(ann, annotatedElement) : null);
+    }
+
+    @Nullable
+    private static <A extends Annotation> A findAnnotation(
+            AnnotatedElement annotatedElement, Class<A> annotationType, Set<Annotation> visited) {
+        try {
+            A annotation = annotatedElement.getDeclaredAnnotation(annotationType);
+            if (annotation != null) {
+                return annotation;
+            }
+            for (Annotation declaredAnn : annotatedElement.getDeclaredAnnotations()) {
+                Class<? extends Annotation> declaredType = declaredAnn.annotationType();
+                if (!isInJavaLangAnnotationPackage(declaredType) && visited.add(declaredAnn)) {
+                    annotation = findAnnotation((AnnotatedElement) declaredType, annotationType, visited);
+                    if (annotation != null) {
+                        return annotation;
+                    }
+                }
+            }
+        }
+        catch (Throwable ex) {
+            //记录日志展示不要
+//            handleIntrospectionFailure(annotatedElement, ex);
+        }
         return null;
     }
 

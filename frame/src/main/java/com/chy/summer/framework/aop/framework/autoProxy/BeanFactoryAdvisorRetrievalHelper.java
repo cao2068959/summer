@@ -41,7 +41,7 @@ public class BeanFactoryAdvisorRetrievalHelper {
 		String[] advisorNames = null;
 		synchronized (this) {
 			//从缓存中获取
-			advisorNames = this.cachedAdvisorBeanNames;
+//			advisorNames = this.cachedAdvisorBeanNames;
 			if (advisorNames == null) {
 				//获取Advisor类型的所有bean名称
 				advisorNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
