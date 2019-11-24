@@ -8,7 +8,7 @@ public abstract class ConfigurationMethod {
     @Getter
     protected final MethodMetadata metadata;
 
-
+    @Getter
     protected final ConfigurationClass configurationClass;
 
 

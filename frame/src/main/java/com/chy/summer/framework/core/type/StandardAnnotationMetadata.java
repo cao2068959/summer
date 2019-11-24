@@ -63,4 +63,14 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
     public boolean isAnnotated(String name) {
         return false;
     }
+
+    @Override
+    public AnnotationAttributes getAnnotationAttributes(String annotationName) {
+        return null;
+    }
+
+    @Override
+    public AnnotationAttributes getAnnotationAttributes(String annotationName, boolean classValuesAsString) {
+        return null;
+    }
 }

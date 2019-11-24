@@ -8,4 +8,7 @@ public interface BeanNameGenerator {
 
     String generateBeanName(BeanDefinition definition, BeanDefinitionRegistry registry);
 
+
+
+
 }

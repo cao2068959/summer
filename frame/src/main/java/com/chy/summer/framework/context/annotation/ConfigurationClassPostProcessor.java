@@ -2,6 +2,7 @@ package com.chy.summer.framework.context.annotation;
 
 import com.chy.summer.framework.beans.config.*;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
+import com.chy.summer.framework.beans.support.DefaultBeanNameGenerator;
 import com.chy.summer.framework.core.PriorityOrdered;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.core.io.DefaultResourceLoader;
@@ -37,14 +38,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
     private BeanNameGenerator componentScanBeanNameGenerator = new AnnotationBeanNameGenerator();
 
-    private BeanNameGenerator importBeanNameGenerator = new AnnotationBeanNameGenerator() {
-        @Override
-        protected String buildDefaultBeanName(BeanDefinition definition) {
-            String beanClassName = definition.getBeanClassName();
-            Assert.state(beanClassName != null, "No bean class name set");
-            return beanClassName;
-        }
-    };
+    private BeanNameGenerator importBeanNameGenerator = new DefaultBeanNameGenerator();
 
 
     //用了记录 registry 的hashcode ,对应的 registry已经执行过就会存入对应的 code,防止重复注册

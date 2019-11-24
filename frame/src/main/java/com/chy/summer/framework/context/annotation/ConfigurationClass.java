@@ -61,7 +61,7 @@ public class ConfigurationClass {
     }
 
     public boolean isImported() {
-        return false;
+         return !this.importedBy.isEmpty();
     }
 
     public void addImportBeanDefinitionRegistrar(ImportBeanDefinitionRegistrar registrar, AnnotationMetadata importingClassMetadata) {

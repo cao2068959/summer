@@ -48,6 +48,9 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 
     boolean postProcessed = false;
 
+    public RootBeanDefinition() {
+    }
+
 
     protected RootBeanDefinition(BeanDefinition original) {
         super(original);
@@ -118,11 +121,6 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     }
 
     @Override
-    public void setFactoryMethodName(String factoryMethodName) {
-
-    }
-
-    @Override
     public String getFactoryMethodName() {
         return null;
     }
@@ -160,6 +158,11 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 
     public void setDecoratedDefinition(@Nullable BeanDefinitionHolder decoratedDefinition) {
         this.decoratedDefinition = decoratedDefinition;
+    }
+
+    public void setUniqueFactoryMethodName(String name) {
+        setFactoryMethodName(name);
+        this.isFactoryMethodUnique = true;
     }
 
 }

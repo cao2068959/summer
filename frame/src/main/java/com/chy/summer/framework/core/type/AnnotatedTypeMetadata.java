@@ -1,7 +1,9 @@
 package com.chy.summer.framework.core.type;
 
+import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.sun.istack.internal.Nullable;
 
+import java.lang.annotation.Annotation;
 import java.util.Map;
 
 public interface AnnotatedTypeMetadata {
@@ -11,17 +13,29 @@ public interface AnnotatedTypeMetadata {
 
 
     @Nullable
-    Map<String, Object> getAnnotationAttributes(String annotationName);
+    AnnotationAttributes getAnnotationAttributes(String annotationName);
 
 
     @Nullable
-    Map<String, Object> getAnnotationAttributes(String annotationName, boolean classValuesAsString);
+    AnnotationAttributes getAnnotationAttributes(String annotationName, boolean classValuesAsString);
 
 
-    @Nullable
-    Map<String, Object> getAllAnnotationAttributes(String annotationName);
+    /**
+     * 获取 类中指定注解类型的 所有属性
+     * @param type
+     * @return
+     */
+    AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type);
 
 
-    @Nullable
-    Map<String, Object> getAllAnnotationAttributes(String annotationName, boolean classValuesAsString);
+    /**
+     * 判断是否有某一个注解,这里会把 派生注解和继承注解也算进去
+     */
+    boolean hasMetaAnnotation(String annotationName);
+
+    /**
+     * 判断是否有某一个注解,这里只会判断 当前类上面的注解
+     */
+    boolean hasAnnotation(String metaAnnotationName);
+
 }

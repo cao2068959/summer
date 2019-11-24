@@ -17,10 +17,10 @@ import java.util.Set;
 
 
 /**
- *  ASM 的访问器
- *  这里注解数据和类数据都放一起,用2个接口来区分隔离
+ * ASM 的访问器
+ * 这里注解数据和类数据都放一起,用2个接口来区分隔离
  */
-public class ClassMetadataReadingVisitor extends ClassVisitor implements AnnotationMetadata,ClassMetadata {
+public class ClassMetadataReadingVisitor extends ClassVisitor implements AnnotationMetadata, ClassMetadata {
     private String className = "";
 
     private boolean isInterface;
@@ -68,7 +68,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
 
 
     /**
-     *  通过asm获取一些基本的 class信息
+     * 通过asm获取一些基本的 class信息
      */
     @Override
     public void visit(
@@ -112,8 +112,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
             if (this.className.equals(fqName)) {
                 this.enclosingClassName = fqOuterName;
                 this.independentInnerClass = ((access & Opcodes.ACC_STATIC) != 0);
-            }
-            else if (this.className.equals(fqOuterName)) {
+            } else if (this.className.equals(fqOuterName)) {
                 this.memberClassNames.add(fqName);
             }
         }
@@ -125,13 +124,13 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
      */
     @Override
     public AnnotationVisitor visitAnnotation(final String desc, boolean visible) {
-        if(isAnnotation && desc.startsWith("Ljava/lang/annotation") ){
+        if (isAnnotation && desc.startsWith("Ljava/lang/annotation")) {
             //如果这个source本身就是annotion就跳过
             return null;
         }
         String className = Type.getType(desc).getClassName();
         this.annotationSet.add(className);
-        return new MetadataAnnotationVisitorHandle(className,annotationAttributes,metaAnnotationMap);
+        return new MetadataAnnotationVisitorHandle(className, annotationAttributes, metaAnnotationMap);
     }
 
 
@@ -185,6 +184,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
 
     /**
      * 获取类里面打了某个注解的 所有方法
+     *
      * @param annotationName
      * @return
      */
@@ -229,7 +229,6 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     public String getEnclosingClassName() {
         return null;
     }
-
 
 
     @Override
@@ -306,5 +305,20 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
         public EmptyFieldVisitor() {
             super(Opcodes.ASM5);
         }
+    }
+
+    @Override
+    public boolean isAnnotated(String annotationName) {
+        return false;
+    }
+
+    @Override
+    public AnnotationAttributes getAnnotationAttributes(String annotationName) {
+        return null;
+    }
+
+    @Override
+    public AnnotationAttributes getAnnotationAttributes(String annotationName, boolean classValuesAsString) {
+        return null;
     }
 }

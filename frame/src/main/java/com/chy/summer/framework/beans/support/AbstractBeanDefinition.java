@@ -9,6 +9,7 @@ import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ObjectUtils;
 import com.sun.istack.internal.Nullable;
+import lombok.Setter;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,10 +30,15 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
 
     private Supplier<?> instanceSupplier;
 
+    @Setter
+    private String factoryMethodName;
+
     /** 代表了 这个beanDefinition 里的所有属性 */
     private MutablePropertyValues propertyValues;
 
 //    private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>(0);
+
+
 
 
 

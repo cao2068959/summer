@@ -26,7 +26,7 @@ public class AnnotationConfigUtils {
      *  TODO 这里只会先实现 @Lazy 后面留坑
      */
     public static void processCommonDefinitionAnnotations(AnnotatedBeanDefinition definition,
-                                                          AnnotationMetadata metadata) {
+                                                          AnnotatedTypeMetadata metadata) {
 
         //如果存在 @Lazy 注解就做对应的操作
         AnnotationAttributes lazyAttributes = metadata.getAnnotationAttributes(Lazy.class);

@@ -7,6 +7,7 @@ import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -118,25 +119,29 @@ public class MethodMetadataReadingVisitorHandle extends MethodVisitor implements
 
 
     @Override
-    public Map<String, Object> getAnnotationAttributes(String annotationName) {
+    public AnnotationAttributes getAnnotationAttributes(String annotationName) {
+        return annotationAttributesMap.get(annotationName);
+    }
+
+    @Override
+    public AnnotationAttributes getAnnotationAttributes(String annotationName, boolean classValuesAsString) {
         return null;
     }
 
     @Override
-    public Map<String, Object> getAnnotationAttributes(String annotationName, boolean classValuesAsString) {
+    public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
         return null;
     }
 
     @Override
-    public Map<String, Object> getAllAnnotationAttributes(String annotationName) {
-        return null;
+    public boolean hasMetaAnnotation(String annotationName) {
+        return false;
     }
 
     @Override
-    public Map<String, Object> getAllAnnotationAttributes(String annotationName, boolean classValuesAsString) {
-        return null;
+    public boolean hasAnnotation(String metaAnnotationName) {
+        return false;
     }
-
 
 
 }
