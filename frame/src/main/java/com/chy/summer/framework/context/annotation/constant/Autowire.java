@@ -7,4 +7,8 @@ public enum Autowire {
     BY_NAME,
 
     BY_TYPE;
+
+    public boolean isAutowire() {
+        return (this == BY_NAME || this == BY_TYPE);
+    }
 }

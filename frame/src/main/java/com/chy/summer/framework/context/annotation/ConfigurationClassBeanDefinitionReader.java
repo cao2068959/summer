@@ -1,6 +1,7 @@
 package com.chy.summer.framework.context.annotation;
 
 import com.chy.summer.framework.beans.config.AnnotatedBeanDefinition;
+import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
@@ -16,10 +17,12 @@ import com.chy.summer.framework.core.type.MethodMetadata;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
 import java.util.*;
 
+@Slf4j
 public class ConfigurationClassBeanDefinitionReader {
 
     private static final ScopeMetadataResolver scopeMetadataResolver = new AnnotationScopeMetadataResolver();
@@ -51,6 +54,7 @@ public class ConfigurationClassBeanDefinitionReader {
     /**
      * 根据配置类里面的信息,把一些需要的bean 注册进入 ioc里面
      * 说白点就是把 配置类里面 @Bean 标注的方法生成的类注册进 ioc 里面,当然 @Bean 只是其中一种方式
+     *
      * @param configClass
      */
     private void loadBeanDefinitionsForConfigurationClass(
@@ -69,6 +73,7 @@ public class ConfigurationClassBeanDefinitionReader {
 
     /**
      * 解析 @Bean 标记的方法, 执行这个方法,把返回值给放入 Ioc 容器
+     *
      * @param beanMethod
      */
     private void loadBeanDefinitionsForBeanMethod(BeanMethod beanMethod) {
@@ -110,8 +115,7 @@ public class ConfigurationClassBeanDefinitionReader {
             // static @Bean method
             beanDef.setBeanClassName(configClass.getMetadata().getClassName());
             beanDef.setFactoryMethodName(methodName);
-        }
-        else {
+        } else {
             // instance @Bean method
             beanDef.setFactoryBeanName(configClass.getBeanName());
             beanDef.setUniqueFactoryMethodName(methodName);
@@ -120,48 +124,22 @@ public class ConfigurationClassBeanDefinitionReader {
         //解析@Lazy @Primary @DependsOn @Role  @Description 注解
         AnnotationConfigUtils.processCommonDefinitionAnnotations(beanDef, metadata);
 
-        Autowire autowire = beanAnnotationAttributes.getRequiredAttribute("autowire",Autowire.class);
+        Autowire autowire = beanAnnotationAttributes.getRequiredAttribute("autowire", Autowire.class);
         if (autowire.isAutowire()) {
-            beanDef.setAutowireMode(autowire.value());
+            beanDef.setAutowireMode(autowire);
         }
 
-        String initMethodName = bean.getString("initMethod");
+        String initMethodName = beanAnnotationAttributes.getRequiredAttribute("initMethod", String.class);
         if (StringUtils.hasText(initMethodName)) {
             beanDef.setInitMethodName(initMethodName);
         }
 
-        String destroyMethodName = bean.getString("destroyMethod");
+        String destroyMethodName = beanAnnotationAttributes.getRequiredAttribute("destroyMethod", String.class);
         beanDef.setDestroyMethodName(destroyMethodName);
 
-        // Consider scoping
-        ScopedProxyMode proxyMode = ScopedProxyMode.NO;
-        AnnotationAttributes attributes = AnnotationConfigUtils.attributesFor(metadata, Scope.class);
-        if (attributes != null) {
-            beanDef.setScope(attributes.getString("value"));
-            proxyMode = attributes.getEnum("proxyMode");
-            if (proxyMode == ScopedProxyMode.DEFAULT) {
-                proxyMode = ScopedProxyMode.NO;
-            }
-        }
-
-        // Replace the original bean definition with the target one, if necessary
-        BeanDefinition beanDefToRegister = beanDef;
-        if (proxyMode != ScopedProxyMode.NO) {
-            BeanDefinitionHolder proxyDef = ScopedProxyCreator.createScopedProxy(
-                    new BeanDefinitionHolder(beanDef, beanName), this.registry,
-                    proxyMode == ScopedProxyMode.TARGET_CLASS);
-            beanDefToRegister = new ConfigurationClassBeanDefinition(
-                    (RootBeanDefinition) proxyDef.getBeanDefinition(), configClass, metadata);
-        }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Registering bean definition for @Bean method %s.%s()",
-                    configClass.getMetadata().getClassName(), beanName));
-        }
-
-        this.registry.registerBeanDefinition(beanName, beanDefToRegister);
+        log.debug("准备注册 来自 @Bean 的 beanDefinition ---> [{}].[{}] ", configClass.getMetadata().getClassName(), beanName);
+        this.registry.registerBeanDefinition(beanName, beanDef);
     }
-
 
 
     private void loadBeanDefinitionsFromRegistrars(Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> registrars) {
@@ -172,6 +150,7 @@ public class ConfigurationClassBeanDefinitionReader {
 
     /**
      * 把 @Import 上标注过的类 解析 并且 注册进入 ioc 容器,成为 beanDefinition
+     *
      * @param configClass
      */
     private void registerBeanDefinitionForImportedConfigurationClass(ConfigurationClass configClass) {

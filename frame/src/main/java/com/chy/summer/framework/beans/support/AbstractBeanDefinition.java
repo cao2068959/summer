@@ -3,12 +3,14 @@ package com.chy.summer.framework.beans.support;
 import com.chy.summer.framework.beans.MutablePropertyValues;
 import com.chy.summer.framework.beans.PropertyValue;
 import com.chy.summer.framework.beans.config.BeanDefinition;
+import com.chy.summer.framework.context.annotation.constant.Autowire;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ObjectUtils;
 import com.sun.istack.internal.Nullable;
+import lombok.Getter;
 import lombok.Setter;
 
 import java.util.LinkedHashMap;
@@ -27,6 +29,19 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
     private boolean abstractFlag = false;
 
     private volatile Object beanClass;
+
+    @Setter
+    @Getter
+    private Autowire autowireMode = Autowire.NO;
+
+    @Getter
+    @Setter
+    private String initMethodName;
+
+    @Setter
+    @Getter
+    private String destroyMethodName;
+
 
     private Supplier<?> instanceSupplier;
 

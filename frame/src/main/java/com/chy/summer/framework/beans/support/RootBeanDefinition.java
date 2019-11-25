@@ -3,6 +3,7 @@ package com.chy.summer.framework.beans.support;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcessor;
+import com.chy.summer.framework.context.annotation.constant.Autowire;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.util.ClassUtils;
 import com.sun.istack.internal.Nullable;
@@ -21,6 +22,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     boolean allowCaching = true;
 
     boolean isFactoryMethodUnique = false;
+
 
     /**
      * 前置处理或者后置处理是否开启
