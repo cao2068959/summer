@@ -14,9 +14,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +45,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     /**
      * 创建对象
+     *
      * @param beanName
      * @param mbd
      * @param args
@@ -50,7 +53,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      */
     @Override
     protected Object createBean(String beanName, RootBeanDefinition mbd, Object[] args) {
-        log.debug("开始生成实例 {}",beanName);
+        log.debug("开始生成实例 {}", beanName);
         RootBeanDefinition mbdToUse = mbd;
         Class<?> resolvedClass = resolveBeanClass(mbdToUse);
         if (resolvedClass != null && !mbd.hasBeanClass() && mbd.getBeanClassName() != null) {
@@ -67,7 +70,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
         //这里正真去创建对象了
         Object beanInstance = doCreateBean(beanName, mbdToUse, args);
-        log.debug("实例 {} 创建完成",beanName);
+        log.debug("实例 {} 创建完成", beanName);
         return beanInstance;
     }
 
@@ -95,8 +98,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             try {
                 // 执行了bean的前置处理器 也就是 BeanPostProcessor ,这里先只执行 MergedBeanDefinitionPostProcessor 类型
                 applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
-            }
-            catch (Throwable ex) {
+            } catch (Throwable ex) {
                 throw new BeanCreationException(mbd.getResourceDescription(), beanName,
                         "执行 MergedBeanDefinitionPostProcessor 处理器失败", ex);
             }
@@ -105,7 +107,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
         //是否面临了循环依赖的问题
         //如果是正在创建中的单例对象，可能会有循环依赖问题
-        boolean earlySingletonExposure = (mbd.isSingleton()  && isSingletonCurrentlyInCreation(beanName));
+        boolean earlySingletonExposure = (mbd.isSingleton() && isSingletonCurrentlyInCreation(beanName));
         //如果会面临循环依赖的问题,那么 把这个半成品的bean 给放入单例容器里面
         if (earlySingletonExposure) {
             //getEarlyBeanReference 这个其实就是直接返回入参的bean对象,只是在返回的时候会执行一下 半成品的后置处理器(如果存在的话)
@@ -120,12 +122,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             //这里也是 BeanPostProcessor执行器 ,但是这次是真的执行了所有 BeanPostProcessor 接口
             //同时也执行了所有的 Aware 接口
             exposedObject = initializeBean(beanName, exposedObject, mbd);
-        }
-        catch (Throwable ex) {
+        } catch (Throwable ex) {
             if (ex instanceof BeanCreationException && beanName.equals(((BeanCreationException) ex).getBeanName())) {
                 throw (BeanCreationException) ex;
-            }
-            else {
+            } else {
                 throw new BeanCreationException(
                         mbd.getResourceDescription(), beanName, "Initialization of bean failed", ex);
             }
@@ -167,16 +167,28 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         return result;
     }
 
+
+    /**
+     * 1. 帮 RootBeanDefinition 选择出来谁才是真正需要实例化的类
+     * 2. 执行了 bean 初始化前的前置处理器,这里如果是 aop的对象就会在这个前置过滤器执行的时候生成代理对象
+     * 3. 如果 第2步所说的前置处理器已经生成了 实例对象,那么执行 bean 创建后的后置处理器
+     *
+     * @param beanName
+     * @param mbd
+     * @return
+     */
     protected Object resolveBeforeInstantiation(String beanName, RootBeanDefinition mbd) {
         Object bean = null;
         if (!Boolean.FALSE.equals(mbd.beforeInstantiationResolved)) {
-            // Make sure bean class is actually resolved at this point.
             if (!mbd.isSynthetic()) {
+                //决定出谁才是真正要实例化的类
                 Class<?> targetType = determineTargetType(beanName, mbd);
                 if (targetType != null) {
+                    //执行创建bean之前的 前置处理器,这里aop会在这里去创建 代理对象
                     bean = applyBeanPostProcessorsBeforeInstantiation(targetType, beanName);
                     if (bean != null) {
-//                        bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
+                        //如果前置处理器已经生成实例化对象,那么执行 bean创建完成后的 后置处理器
+                        bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
                     }
                 }
             }
@@ -185,19 +197,144 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         return bean;
     }
 
+    /**
+     * 去确定 一下 在 bd里面真正的目标类是什么(目标类:会真正实例化的类型)
+     * 普通的 bean 确实目标类直接拿 targetType 就行了
+     * 有普通就有特殊 比如 factoryBean 以及 @bean 标注过的 这些 bean的类型需要计算后才能获得
+     * @param beanName
+     * @param mbd
+     * @param typesToMatch
+     * @return
+     */
     @Nullable
     protected Class<?> determineTargetType(String beanName, RootBeanDefinition mbd, Class<?>... typesToMatch) {
         Class<?> targetType = mbd.getTargetType();
-        if (targetType == null) {
+        if (targetType != null) {
+            return targetType;
+        }
+
+        //如果这个 bd里设置有了 工厂方法 那么就准备
+        if (mbd.getFactoryMethodName() != null) {
+            targetType = getTypeForFactoryMethod(beanName, mbd, typesToMatch);
+        } else {
             targetType = resolveBeanClass(mbd);
-            if (ObjectUtils.isEmpty(typesToMatch)) {
-                mbd.resolvedTargetType = targetType;
-            }
+        }
+
+        if (ObjectUtils.isEmpty(typesToMatch)) {
+            mbd.resolvedTargetType = targetType;
         }
         return targetType;
     }
 
-    //调用BeanPostProcessor后置处理器实例对象初始化之前的处理方法
+    protected Class<?> getTypeForFactoryMethod(String beanName, RootBeanDefinition mbd, Class<?>... typesToMatch) {
+        ResolvableType cachedReturnType = mbd.factoryMethodReturnType;
+        if (cachedReturnType != null) {
+            return cachedReturnType.resolve();
+        }
+
+        Class<?> factoryClass;
+        boolean isStatic = true;
+
+        String factoryBeanName = mbd.getFactoryBeanName();
+        if (factoryBeanName != null) {
+            if (factoryBeanName.equals(beanName)) {
+                throw new BeanDefinitionStoreException(mbd.getResourceDescription(), beanName,
+                        "factory-bean reference points back to the same bean definition");
+            }
+            // Check declared factory method return type on factory class.
+            factoryClass = getType(factoryBeanName);
+            isStatic = false;
+        }
+        else {
+            // Check declared factory method return type on bean class.
+            factoryClass = resolveBeanClass(mbd, beanName, typesToMatch);
+        }
+
+        if (factoryClass == null) {
+            return null;
+        }
+        factoryClass = ClassUtils.getUserClass(factoryClass);
+
+        // If all factory methods have the same return type, return that type.
+        // Can't clearly figure out exact method due to type converting / autowiring!
+        Class<?> commonType = null;
+        Method uniqueCandidate = null;
+        int minNrOfArgs =
+                (mbd.hasConstructorArgumentValues() ? mbd.getConstructorArgumentValues().getArgumentCount() : 0);
+        Method[] candidates = ReflectionUtils.getUniqueDeclaredMethods(factoryClass);
+        for (Method candidate : candidates) {
+            if (Modifier.isStatic(candidate.getModifiers()) == isStatic && mbd.isFactoryMethod(candidate) &&
+                    candidate.getParameterCount() >= minNrOfArgs) {
+                // Declared type variables to inspect?
+                if (candidate.getTypeParameters().length > 0) {
+                    try {
+                        // Fully resolve parameter names and argument values.
+                        Class<?>[] paramTypes = candidate.getParameterTypes();
+                        String[] paramNames = null;
+                        ParameterNameDiscoverer pnd = getParameterNameDiscoverer();
+                        if (pnd != null) {
+                            paramNames = pnd.getParameterNames(candidate);
+                        }
+                        ConstructorArgumentValues cav = mbd.getConstructorArgumentValues();
+                        Set<ConstructorArgumentValues.ValueHolder> usedValueHolders = new HashSet<>(paramTypes.length);
+                        Object[] args = new Object[paramTypes.length];
+                        for (int i = 0; i < args.length; i++) {
+                            ConstructorArgumentValues.ValueHolder valueHolder = cav.getArgumentValue(
+                                    i, paramTypes[i], (paramNames != null ? paramNames[i] : null), usedValueHolders);
+                            if (valueHolder == null) {
+                                valueHolder = cav.getGenericArgumentValue(null, null, usedValueHolders);
+                            }
+                            if (valueHolder != null) {
+                                args[i] = valueHolder.getValue();
+                                usedValueHolders.add(valueHolder);
+                            }
+                        }
+                        Class<?> returnType = AutowireUtils.resolveReturnTypeForFactoryMethod(
+                                candidate, args, getBeanClassLoader());
+                        uniqueCandidate = (commonType == null && returnType == candidate.getReturnType() ?
+                                candidate : null);
+                        commonType = ClassUtils.determineCommonAncestor(returnType, commonType);
+                        if (commonType == null) {
+                            // Ambiguous return types found: return null to indicate "not determinable".
+                            return null;
+                        }
+                    }
+                    catch (Throwable ex) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Failed to resolve generic return type for factory method: " + ex);
+                        }
+                    }
+                }
+                else {
+                    uniqueCandidate = (commonType == null ? candidate : null);
+                    commonType = ClassUtils.determineCommonAncestor(candidate.getReturnType(), commonType);
+                    if (commonType == null) {
+                        // Ambiguous return types found: return null to indicate "not determinable".
+                        return null;
+                    }
+                }
+            }
+        }
+
+        if (commonType == null) {
+            return null;
+        }
+        // Common return type found: all factory methods return same type. For a non-parameterized
+        // unique candidate, cache the full type declaration context of the target factory method.
+        cachedReturnType = (uniqueCandidate != null ?
+                ResolvableType.forMethodReturnType(uniqueCandidate) : ResolvableType.forClass(commonType));
+        mbd.factoryMethodReturnType = cachedReturnType;
+        return cachedReturnType.resolve();
+    }
+
+
+    /**
+     * 在 bean 在创建之前 调用的后置处理器 ,后置处理器的类型是 InstantiationAwareBeanPostProcessor
+     *
+     * @param beanClass
+     * @param beanName
+     * @return
+     */
     protected Object applyBeanPostProcessorsBeforeInstantiation(Class<?> beanClass, String beanName) {
         for (BeanPostProcessor bp : getBeanPostProcessors()) {
             if (bp instanceof InstantiationAwareBeanPostProcessor) {
@@ -213,6 +350,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     /**
      * 执行对应的 Aware 接口
+     *
      * @param beanName
      * @param bean
      */
@@ -264,15 +402,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     /**
      * 获取半成品的单例对象,并且执行了半成品的后置处理器,这是方法是
      *
-     * @see #doCreateBean(String, RootBeanDefinition, Object[])  在这方法上设置进入这个方法
-     *
-     * @see DefaultSingletonBeanRegistry#getSingleton(String beanName, boolean allowEarlyReference)
-     * 当第二个参数是true的时候会调用这个方法来获取单例对象
-     *
      * @param beanName
      * @param mbd
      * @param bean
      * @return
+     * @see #doCreateBean(String, RootBeanDefinition, Object[])  在这方法上设置进入这个方法
+     * @see DefaultSingletonBeanRegistry#getSingleton(String beanName, boolean allowEarlyReference)
+     * 当第二个参数是true的时候会调用这个方法来获取单例对象
      */
     protected Object getEarlyBeanReference(String beanName, RootBeanDefinition mbd, Object bean) {
         Object exposedObject = bean;
@@ -287,12 +423,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     /**
      * 实例化对象
+     *
      * @param beanName
      * @param mbd
      * @param args
      * @return
      */
-    protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd,  Object[] args) {
+    protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, Object[] args) {
 
         Class<?> beanClass = resolveBeanClass(mbd);
 
@@ -310,6 +447,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     /**
      * 无参数的构造器初始化
+     *
      * @param beanName
      * @param mbd
      * @return
@@ -324,8 +462,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             //初始化一些属性编辑器的东西,这里先忽略
             initBeanWrapper(bw);
             return bw;
-        }
-        catch (Throwable ex) {
+        } catch (Throwable ex) {
             throw new BeanCreationException(
                     mbd.getResourceDescription(), beanName, "实例化bean失败", ex);
         }
