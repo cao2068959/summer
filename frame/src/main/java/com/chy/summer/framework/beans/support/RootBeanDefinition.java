@@ -7,9 +7,12 @@ import com.chy.summer.framework.context.annotation.constant.Autowire;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.util.ClassUtils;
 import com.sun.istack.internal.Nullable;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 
 
 public class RootBeanDefinition extends AbstractBeanDefinition {
@@ -29,6 +32,14 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
      */
     @Nullable
     volatile Boolean beforeInstantiationResolved = true;
+
+    @Getter
+    @Setter
+    private String factoryBeanName;
+
+    @Getter
+    @Setter
+    private String factoryMethodName;
 
     volatile ResolvableType targetType;
 
@@ -113,21 +124,6 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     }
 
     @Override
-    public void setFactoryBeanName(String factoryBeanName) {
-
-    }
-
-    @Override
-    public String getFactoryBeanName() {
-        return null;
-    }
-
-    @Override
-    public String getFactoryMethodName() {
-        return null;
-    }
-
-    @Override
     public boolean isPrototype() {
         return false;
     }
@@ -165,6 +161,15 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     public void setUniqueFactoryMethodName(String name) {
         setFactoryMethodName(name);
         this.isFactoryMethodUnique = true;
+    }
+
+    /**
+     * 判断传进来的方法 是否是 工厂方法
+     * @param candidate
+     * @return
+     */
+    public boolean isFactoryMethod(Method candidate) {
+        return (candidate != null && candidate.getName().equals(getFactoryMethodName()));
     }
 
 }

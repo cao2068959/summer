@@ -4,10 +4,13 @@ import com.chy.summer.framework.beans.*;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.beans.config.InstantiationAwareBeanPostProcessor;
 import com.chy.summer.framework.beans.config.SmartInstantiationAwareBeanPostProcessor;
+import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.exception.BeanCreationException;
+import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ObjectUtils;
+import com.chy.summer.framework.util.ReflectionUtils;
 import com.chy.summer.framework.util.StringUtils;
 import com.sun.istack.internal.Nullable;
 import lombok.extern.slf4j.Slf4j;
@@ -232,88 +235,98 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             return cachedReturnType.resolve();
         }
 
-        Class<?> factoryClass;
+        Class<?> factoryClass = null;
         boolean isStatic = true;
 
         String factoryBeanName = mbd.getFactoryBeanName();
         if (factoryBeanName != null) {
             if (factoryBeanName.equals(beanName)) {
-                throw new BeanDefinitionStoreException(mbd.getResourceDescription(), beanName,
-                        "factory-bean reference points back to the same bean definition");
+                throw new BeanDefinitionStoreException("factoryBean 的name不能和 持有者的name 一致");
             }
-            // Check declared factory method return type on factory class.
             factoryClass = getType(factoryBeanName);
             isStatic = false;
         }
-        else {
-            // Check declared factory method return type on bean class.
-            factoryClass = resolveBeanClass(mbd, beanName, typesToMatch);
-        }
 
+        //这里还是 null那走不下去 直接返回null吧
         if (factoryClass == null) {
             return null;
         }
+
+        //如果被 动态代理了就拿被代理的class出来
         factoryClass = ClassUtils.getUserClass(factoryClass);
 
-        // If all factory methods have the same return type, return that type.
-        // Can't clearly figure out exact method due to type converting / autowiring!
+
         Class<?> commonType = null;
         Method uniqueCandidate = null;
-        int minNrOfArgs =
-                (mbd.hasConstructorArgumentValues() ? mbd.getConstructorArgumentValues().getArgumentCount() : 0);
+
+        //获取目标类的最少构造参数 的数量
+        int minNrOfArgs = (mbd.hasConstructorArgumentValues() ?
+                mbd.getConstructorArgumentValues().getArgumentCount() : 0);
+        //反射拿到目标类里面所有的方法
         Method[] candidates = ReflectionUtils.getUniqueDeclaredMethods(factoryClass);
         for (Method candidate : candidates) {
-            if (Modifier.isStatic(candidate.getModifiers()) == isStatic && mbd.isFactoryMethod(candidate) &&
-                    candidate.getParameterCount() >= minNrOfArgs) {
-                // Declared type variables to inspect?
-                if (candidate.getTypeParameters().length > 0) {
-                    try {
-                        // Fully resolve parameter names and argument values.
-                        Class<?>[] paramTypes = candidate.getParameterTypes();
-                        String[] paramNames = null;
-                        ParameterNameDiscoverer pnd = getParameterNameDiscoverer();
-                        if (pnd != null) {
-                            paramNames = pnd.getParameterNames(candidate);
+            //如果这个方法的 方法类型(对象方法/静态方法) 和 工厂方法的不同，就直接下一个
+            if(Modifier.isStatic(candidate.getModifiers()) != isStatic){
+                continue;
+            }
+            //这里比较了 工厂方法的名字，和 目标方法是否一致
+            if(!mbd.isFactoryMethod(candidate)){
+                continue;
+            }
+            //这里比较了方法参数的个数是否一致（因为可能会存在 可变参数的参数 所以 工厂方法的实际参数 少于 目标方法也是可以接受的）
+            if(candidate.getParameterCount() < minNrOfArgs){
+                continue;
+            }
+
+            //如果有泛型
+            if (candidate.getTypeParameters().length > 0) {
+                try {
+                    // Fully resolve parameter names and argument values.
+                    Class<?>[] paramTypes = candidate.getParameterTypes();
+                    String[] paramNames = null;
+                    ParameterNameDiscoverer pnd = getParameterNameDiscoverer();
+                    if (pnd != null) {
+                        paramNames = pnd.getParameterNames(candidate);
+                    }
+                    ConstructorArgumentValues cav = mbd.getConstructorArgumentValues();
+                    Set<ConstructorArgumentValues.ValueHolder> usedValueHolders = new HashSet<>(paramTypes.length);
+                    Object[] args = new Object[paramTypes.length];
+                    for (int i = 0; i < args.length; i++) {
+                        ConstructorArgumentValues.ValueHolder valueHolder = cav.getArgumentValue(
+                                i, paramTypes[i], (paramNames != null ? paramNames[i] : null), usedValueHolders);
+                        if (valueHolder == null) {
+                            valueHolder = cav.getGenericArgumentValue(null, null, usedValueHolders);
                         }
-                        ConstructorArgumentValues cav = mbd.getConstructorArgumentValues();
-                        Set<ConstructorArgumentValues.ValueHolder> usedValueHolders = new HashSet<>(paramTypes.length);
-                        Object[] args = new Object[paramTypes.length];
-                        for (int i = 0; i < args.length; i++) {
-                            ConstructorArgumentValues.ValueHolder valueHolder = cav.getArgumentValue(
-                                    i, paramTypes[i], (paramNames != null ? paramNames[i] : null), usedValueHolders);
-                            if (valueHolder == null) {
-                                valueHolder = cav.getGenericArgumentValue(null, null, usedValueHolders);
-                            }
-                            if (valueHolder != null) {
-                                args[i] = valueHolder.getValue();
-                                usedValueHolders.add(valueHolder);
-                            }
-                        }
-                        Class<?> returnType = AutowireUtils.resolveReturnTypeForFactoryMethod(
-                                candidate, args, getBeanClassLoader());
-                        uniqueCandidate = (commonType == null && returnType == candidate.getReturnType() ?
-                                candidate : null);
-                        commonType = ClassUtils.determineCommonAncestor(returnType, commonType);
-                        if (commonType == null) {
-                            // Ambiguous return types found: return null to indicate "not determinable".
-                            return null;
+                        if (valueHolder != null) {
+                            args[i] = valueHolder.getValue();
+                            usedValueHolders.add(valueHolder);
                         }
                     }
-                    catch (Throwable ex) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Failed to resolve generic return type for factory method: " + ex);
-                        }
-                    }
-                }
-                else {
-                    uniqueCandidate = (commonType == null ? candidate : null);
-                    commonType = ClassUtils.determineCommonAncestor(candidate.getReturnType(), commonType);
+                    Class<?> returnType = AutowireUtils.resolveReturnTypeForFactoryMethod(
+                            candidate, args, getBeanClassLoader());
+                    uniqueCandidate = (commonType == null && returnType == candidate.getReturnType() ?
+                            candidate : null);
+                    commonType = ClassUtils.determineCommonAncestor(returnType, commonType);
                     if (commonType == null) {
                         // Ambiguous return types found: return null to indicate "not determinable".
                         return null;
                     }
                 }
+                catch (Throwable ex) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Failed to resolve generic return type for factory method: " + ex);
+                    }
+                }
             }
+            else {
+                uniqueCandidate = (commonType == null ? candidate : null);
+                commonType = ClassUtils.determineCommonAncestor(candidate.getReturnType(), commonType);
+                //返回了Null,说明 方法的返回值类型，不匹配
+                if (commonType == null) {
+                    return null;
+                }
+            }
+
         }
 
         if (commonType == null) {

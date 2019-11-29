@@ -1,6 +1,7 @@
 package com.chy.summer.framework.beans.config;
 
 import com.chy.summer.framework.beans.MutablePropertyValues;
+import com.chy.summer.framework.beans.factory.ConstructorArgumentValues;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 import com.sun.istack.internal.Nullable;
 
@@ -79,4 +80,6 @@ public interface BeanDefinition extends AttributeAccessor {
      Class<?> getBeanClass() throws IllegalStateException;
 
      MutablePropertyValues getPropertyValues();
+
+     ConstructorArgumentValues getConstructorArgumentValues();
 }
