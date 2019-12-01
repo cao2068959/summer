@@ -110,8 +110,25 @@ public abstract class AnnotationUtils {
         if (shouldSuper) {
             result = doGetAnnotationInfoByClassAll(clazz, aliasForTaskList, attributesMap);
         } else {
-            result = doGetAnnotationInfoByClass(clazz, aliasForTaskList, attributesMap);
+            result = doGetAnnotationInfoByAnnotatedElement(clazz, aliasForTaskList, attributesMap);
         }
+        doAliasForTask(aliasForTaskList, attributesMap);
+        return result;
+    }
+
+
+    /**
+     * 同上但是这个用来解析 方法上面的注解
+     * @param method
+     * @param attributesMap
+     * @return
+     */
+    public static Map<String, Set<String>> getAnnotationInfoByMethod(Method method,
+                                                                     Map<String, AnnotationAttributes> attributesMap) {
+
+        List<AliasForTask> aliasForTaskList = new LinkedList<>();
+        Map<String, Set<String>> result = null;
+        doGetAnnotationInfoByAnnotatedElement(method, aliasForTaskList, attributesMap);
         doAliasForTask(aliasForTaskList, attributesMap);
         return result;
     }
@@ -123,7 +140,7 @@ public abstract class AnnotationUtils {
 
         //开始解析,拿到这个类的注解 树状图
         Map<String, Set<String>> classAnnotationTree =
-                doGetAnnotationInfoByClass(clazz, aliasForTaskList, attributesMap);
+                doGetAnnotationInfoByAnnotatedElement(clazz, aliasForTaskList, attributesMap);
 
 
         Class superclass = clazz.getSuperclass();
@@ -147,15 +164,15 @@ public abstract class AnnotationUtils {
 
 
     /**
-     * 解析 class 获取这个类上所有注解的关系,以及属性,这个方法只会扫描当前类上面的,父类和接口上面的注解不会处理
+     * 解析 annotatedElement 获取上面所有注解的关系,以及属性,这个方法只会扫描当前类上面的,父类和接口上面的注解不会处理
      *
      * @return key:这个类上的注解的名称 value:这个注解上面继承的所有注解的名称
      */
-    public static Map<String, Set<String>> doGetAnnotationInfoByClass(Class clazz,
-                                                                      List<AliasForTask> aliasForTaskList,
-                                                                      Map<String, AnnotationAttributes> attributesMap) {
+    public static Map<String, Set<String>> doGetAnnotationInfoByAnnotatedElement(AnnotatedElement annotatedElement,
+                                                                                 List<AliasForTask> aliasForTaskList,
+                                                                                 Map<String, AnnotationAttributes> attributesMap) {
         Map<String, Set<String>> result = new HashMap();
-        for (Annotation annotation : clazz.getAnnotations()) {
+        for (Annotation annotation : annotatedElement.getAnnotations()) {
             //解析注解,返回值是 这个注解后面还继承的所有注解的名字
             Set<String> annotationTree = metaAnnotationMapHandle(annotation.annotationType(),
                     annotation, aliasForTaskList, attributesMap, null, 0);
@@ -270,9 +287,9 @@ public abstract class AnnotationUtils {
             e.printStackTrace();
         }
         //如果这里是class[] 类型,就转成string[] 类型
-        if(annotationValue instanceof Class[]){
+        if (annotationValue instanceof Class[]) {
             annotationValue = ObjectUtils.classArryToPathArry((Class[]) annotationValue);
-        }else if(annotationValue instanceof  Class){
+        } else if (annotationValue instanceof Class) {
             Class clazz = (Class) annotationValue;
             annotationValue = clazz.getName();
         }
@@ -418,8 +435,7 @@ public abstract class AnnotationUtils {
                     Method equivalentMethod = clazz.getDeclaredMethod(method.getName(), method.getParameterTypes());
                     Method resolvedEquivalentMethod = BridgeMethodResolver.findBridgedMethod(equivalentMethod);
                     result = findAnnotation((AnnotatedElement) resolvedEquivalentMethod, annotationType);
-                }
-                catch (NoSuchMethodException ex) {
+                } catch (NoSuchMethodException ex) {
                     // No equivalent method found
                 }
                 if (result == null) {
@@ -444,8 +460,7 @@ public abstract class AnnotationUtils {
                 try {
                     Method equivalentMethod = iface.getMethod(method.getName(), method.getParameterTypes());
                     annotation = getAnnotation(equivalentMethod, annotationType);
-                }
-                catch (NoSuchMethodException ex) {
+                } catch (NoSuchMethodException ex) {
                     // Skip this interface - it doesn't have the method...
                 }
                 if (annotation != null) {
@@ -468,8 +483,7 @@ public abstract class AnnotationUtils {
                     found = Boolean.TRUE;
                     break;
                 }
-            }
-            catch (Throwable ex) {
+            } catch (Throwable ex) {
                 ////记录日志展示不要
 //                handleIntrospectionFailure(ifcMethod, ex);
             }
@@ -502,8 +516,7 @@ public abstract class AnnotationUtils {
                     }
                 }
             }
-        }
-        catch (Throwable ex) {
+        } catch (Throwable ex) {
             //记录日志展示不要
 //            handleIntrospectionFailure(annotatedElement, ex);
         }

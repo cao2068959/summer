@@ -8,7 +8,9 @@ public class BeanDemo {
 
     @Bean
     public BeanDemo2 beanDemo2(){
-        return new BeanDemo2();
+        BeanDemo2 beanDemo2 = new BeanDemo2();
+        beanDemo2.setName("小明");
+        return beanDemo2;
     }
 
 }

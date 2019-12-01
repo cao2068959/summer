@@ -2,9 +2,12 @@ package com.chy.summer.framework.core.type;
 
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.annotation.AnnotationUtils;
+import com.chy.summer.framework.util.AnnotatedElementUtils;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -55,9 +58,27 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
         return annotationTree.keySet();
     }
 
+    /**
+     * 这里是用反射直接获取的
+     * @param annotationName
+     * @return
+     */
     @Override
-    public Set<MethodMetadata> getAnnotatedMethods(String name) {
-        return null;
+    public Set<MethodMetadata> getAnnotatedMethods(String annotationName) {
+        try {
+            Method[] methods = getIntrospectedClass().getDeclaredMethods();
+            Set<MethodMetadata> annotatedMethods = new LinkedHashSet<>(4);
+            for (Method method : methods) {
+                if (!method.isBridge() && method.getAnnotations().length > 0 &&
+                        AnnotatedElementUtils.hasAnnotation(method, annotationName)) {
+                    annotatedMethods.add(new StandardMethodMetadata(method, this.nestedAnnotationsAsMap));
+                }
+            }
+            return annotatedMethods;
+        }
+        catch (Throwable ex) {
+            throw new IllegalStateException("Failed to introspect annotated methods on " + getIntrospectedClass(), ex);
+        }
     }
 
     public boolean isAnnotated(String name) {

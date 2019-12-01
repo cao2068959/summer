@@ -4,6 +4,9 @@ import com.chy.summer.framework.beans.*;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.beans.config.InstantiationAwareBeanPostProcessor;
 import com.chy.summer.framework.beans.config.SmartInstantiationAwareBeanPostProcessor;
+import com.chy.summer.framework.beans.factory.DependencyDescriptor;
+import com.chy.summer.framework.core.DefaultParameterNameDiscoverer;
+import com.chy.summer.framework.core.ParameterNameDiscoverer;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.exception.BeanCreationException;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
@@ -13,6 +16,8 @@ import com.chy.summer.framework.util.ObjectUtils;
 import com.chy.summer.framework.util.ReflectionUtils;
 import com.chy.summer.framework.util.StringUtils;
 import com.sun.istack.internal.Nullable;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.beans.PropertyDescriptor;
@@ -41,6 +46,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     private InstantiationStrategy instantiationStrategy = new SimpleInstantiationStrategy();
 
+    @Getter
+    @Setter
+    private ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
+
 
     protected InstantiationStrategy getInstantiationStrategy() {
         return this.instantiationStrategy;
@@ -65,7 +74,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             mbdToUse.setBeanClass(resolvedClass);
         }
 
-        //aop 替换
+        //执行了 bean 初始化前的前置处理器,这里如果是 aop的对象就会在这个前置过滤器执行的时候生成代理对象
+        //这里如果是 factoryBean 还会计算出 真正的 工厂方法的返回类型,不过又塞入 bd里面了
         Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
         if (bean != null) {
             return bean;
@@ -229,6 +239,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         return targetType;
     }
 
+
+    /**
+     * 获取工厂类的返回值的类型,主要针对 @bean 的方法
+     * @param beanName
+     * @param mbd
+     * @param typesToMatch
+     * @return
+     */
     protected Class<?> getTypeForFactoryMethod(String beanName, RootBeanDefinition mbd, Class<?>... typesToMatch) {
         ResolvableType cachedReturnType = mbd.factoryMethodReturnType;
         if (cachedReturnType != null) {
@@ -280,46 +298,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
             //如果有泛型
             if (candidate.getTypeParameters().length > 0) {
-                try {
-                    // Fully resolve parameter names and argument values.
-                    Class<?>[] paramTypes = candidate.getParameterTypes();
-                    String[] paramNames = null;
-                    ParameterNameDiscoverer pnd = getParameterNameDiscoverer();
-                    if (pnd != null) {
-                        paramNames = pnd.getParameterNames(candidate);
-                    }
-                    ConstructorArgumentValues cav = mbd.getConstructorArgumentValues();
-                    Set<ConstructorArgumentValues.ValueHolder> usedValueHolders = new HashSet<>(paramTypes.length);
-                    Object[] args = new Object[paramTypes.length];
-                    for (int i = 0; i < args.length; i++) {
-                        ConstructorArgumentValues.ValueHolder valueHolder = cav.getArgumentValue(
-                                i, paramTypes[i], (paramNames != null ? paramNames[i] : null), usedValueHolders);
-                        if (valueHolder == null) {
-                            valueHolder = cav.getGenericArgumentValue(null, null, usedValueHolders);
-                        }
-                        if (valueHolder != null) {
-                            args[i] = valueHolder.getValue();
-                            usedValueHolders.add(valueHolder);
-                        }
-                    }
-                    Class<?> returnType = AutowireUtils.resolveReturnTypeForFactoryMethod(
-                            candidate, args, getBeanClassLoader());
-                    uniqueCandidate = (commonType == null && returnType == candidate.getReturnType() ?
-                            candidate : null);
-                    commonType = ClassUtils.determineCommonAncestor(returnType, commonType);
-                    if (commonType == null) {
-                        // Ambiguous return types found: return null to indicate "not determinable".
-                        return null;
-                    }
-                }
-                catch (Throwable ex) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Failed to resolve generic return type for factory method: " + ex);
-                    }
-                }
-            }
-            else {
+            //TODO 如果方法的返回值是 泛型,这里先留一个坑
+            }else {
+                //如果遍历的时候找到了 多个方法(方法名字相同,但是参数不同的),这个参数就会变成
                 uniqueCandidate = (commonType == null ? candidate : null);
+                //获取 bean方法返回值的类型,如果找到了多个 同名的方法,那么比较后取子类 子类,如果多个方法的返回值类型都不同,那么直接返回null
                 commonType = ClassUtils.determineCommonAncestor(candidate.getReturnType(), commonType);
                 //返回了Null,说明 方法的返回值类型，不匹配
                 if (commonType == null) {
@@ -332,10 +315,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         if (commonType == null) {
             return null;
         }
-        // Common return type found: all factory methods return same type. For a non-parameterized
-        // unique candidate, cache the full type declaration context of the target factory method.
-        cachedReturnType = (uniqueCandidate != null ?
-                ResolvableType.forMethodReturnType(uniqueCandidate) : ResolvableType.forClass(commonType));
+
+        //在spring 里这里可能还会用 uniqueCandidate 去解析出返回值类型,而这里直接使用上面返回出来的返回值类型
+        cachedReturnType = ResolvableType.forClass(commonType);
         mbd.factoryMethodReturnType = cachedReturnType;
         return cachedReturnType.resolve();
     }
@@ -454,8 +436,27 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
         //TODO 这里还有使用 jdk8的 Supplier 去创建对象,这里先留坑
 
+        //如果是 用工厂方法区创建 instantiate 的话走这里
+        if (mbd.getFactoryMethodName() != null)  {
+            return instantiateUsingFactoryMethod(beanName, mbd, args);
+        }
+
+
         //这里直接用无参构造器去初始化 对象,同时用 BeanWrapper 给包装了
         return instantiateBean(beanName, mbd);
+    }
+
+    /**
+     * 通过 工厂方法来实例化 bean 对象的
+     * @param beanName
+     * @param mbd
+     * @param explicitArgs
+     * @return
+     */
+    protected BeanWrapper instantiateUsingFactoryMethod(
+            String beanName, RootBeanDefinition mbd, @Nullable Object[] explicitArgs) {
+
+        return new ConstructorResolver(this).instantiateUsingFactoryMethod(beanName, mbd);
     }
 
     /**
@@ -481,7 +482,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         }
     }
 
-    private void initBeanWrapper(BeanWrapper bw) {
+    protected void initBeanWrapper(BeanWrapper bw) {
     }
+
+    public abstract Object resolveDependency(DependencyDescriptor descriptor, String requestingBeanName,
+                                    Set<String> autowiredBeanNames) throws BeansException;
+
+    public abstract void registerDependentBean(String beanName, String dependentBeanName);
 
 }

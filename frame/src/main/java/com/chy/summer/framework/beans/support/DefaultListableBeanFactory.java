@@ -25,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 import static com.chy.summer.framework.util.BeanFactoryUtils.transformedBeanName;
+import static sun.awt.datatransfer.DataTransferer.canonicalName;
 
 @Slf4j
 public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory implements ConfigurableListableBeanFactory, BeanDefinitionRegistry {
@@ -65,12 +66,42 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     private final Map<Class<?>, String[]> singletonBeanNamesByType = new ConcurrentHashMap<>(64);
 
 
+    /** 正向的依赖  A 依赖 <B,C,D> */
+    private final Map<String, Set<String>> dependentBeanMap = new ConcurrentHashMap<>(64);
+
+    /** 这里面存  B 被什么bean给依赖了 <A,C>  */
+    private final Map<String, Set<String>> dependenciesForBeanMap = new ConcurrentHashMap<>(64);
+
     private volatile boolean configurationFrozen = false;
 
     private AutowireCandidateResolver autowireCandidateResolver = null;
 
 
     private Comparator<Object> dependencyComparator;
+
+
+    /**
+     * 把bean之间的依赖关系存入
+     * @param beanName
+     * @param dependentBeanName
+     */
+    public void registerDependentBean(String beanName, String dependentBeanName) {
+        String canonicalName = canonicalName(beanName);
+        synchronized (this.dependentBeanMap) {
+            Set<String> dependentBeans =
+                    this.dependentBeanMap.computeIfAbsent(canonicalName, k -> new LinkedHashSet<>(8));
+            //添加失败,说明已经有对应的值了 后面就不执行了
+            if (!dependentBeans.add(dependentBeanName)) {
+                return;
+            }
+        }
+
+        synchronized (this.dependenciesForBeanMap) {
+            Set<String> dependenciesForBean =
+                    this.dependenciesForBeanMap.computeIfAbsent(dependentBeanName, k -> new LinkedHashSet<>(8));
+            dependenciesForBean.add(canonicalName);
+        }
+    }
 
 
     /**

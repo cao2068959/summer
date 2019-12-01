@@ -6,6 +6,7 @@ import com.chy.summer.framework.exception.BeanInstantiationException;
 import com.chy.summer.framework.exception.BeansException;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class SimpleInstantiationStrategy implements InstantiationStrategy {
@@ -40,9 +41,36 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
         return null;
     }
 
+
+    /**
+     * 使用 工厂方法来实例化对象
+     * @param bd
+     * @param beanName
+     * @param owner
+     * @param factoryBean
+     * @param factoryMethod
+     * @param args
+     * @return
+     * @throws BeansException
+     */
     @Override
     public Object instantiate(RootBeanDefinition bd, String beanName, BeanFactory owner, Object factoryBean, Method factoryMethod, Object... args) throws BeansException {
-        return null;
+
+        factoryMethod.setAccessible(true);
+
+        Object result = null;
+        try {
+            result = factoryMethod.invoke(factoryBean, args);
+
+        } catch (IllegalAccessException e) {
+            throw new BeanInstantiationException("执行factory 方法失败  原因 : [%s]",e.getMessage());
+        } catch (InvocationTargetException e) {
+            throw new BeanInstantiationException("执行factory 方法失败  原因 : [%s]",e.getMessage());
+        } catch (Exception e){
+            throw new BeanInstantiationException("执行factory 方法失败  原因 : [%s]",e.getMessage());
+        }
+
+        return result;
     }
 
 }

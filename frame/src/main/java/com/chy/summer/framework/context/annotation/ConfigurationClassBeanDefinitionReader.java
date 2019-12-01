@@ -208,6 +208,11 @@ public class ConfigurationClassBeanDefinitionReader {
         public ConfigurationClassBeanDefinition cloneBeanDefinition() {
             return new ConfigurationClassBeanDefinition(this);
         }
+
+        public boolean isFactoryMethod(Method candidate) {
+            return (super.isFactoryMethod(candidate) && BeanAnnotationHelper.isBeanAnnotated(candidate));
+        }
+
     }
 
 

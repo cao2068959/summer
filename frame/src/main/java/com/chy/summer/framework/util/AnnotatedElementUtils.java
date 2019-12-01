@@ -5,6 +5,7 @@ import com.chy.summer.framework.core.annotation.AnnotationUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,6 +36,25 @@ public abstract class AnnotatedElementUtils {
     }
 
 
+    /**
+     * 判断 方法 类上有没有某个注解
+     * @param element
+     * @param annotationType
+     * @return
+     */
+    public static boolean hasAnnotation(AnnotatedElement element, Class<? extends Annotation> annotationType) {
+        if (element.isAnnotationPresent(annotationType)) {
+            return true;
+        }
+        return false;
+    }
+
+
+    public static boolean hasAnnotation(AnnotatedElement element, String annotationType) {
+        return Arrays.stream(element.getDeclaredAnnotations())
+                .anyMatch(annotation -> annotation.annotationType().getName().equals(annotationType));
+
+    }
 
 
 }

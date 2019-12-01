@@ -17,4 +17,8 @@ public class InjectionPoint {
         this.field = field;
     }
 
+    public InjectionPoint(MethodParameter methodParameter) {
+        this.methodParameter = methodParameter;
+    }
+
 }

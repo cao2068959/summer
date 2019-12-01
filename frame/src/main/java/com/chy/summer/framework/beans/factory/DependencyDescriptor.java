@@ -2,6 +2,7 @@ package com.chy.summer.framework.beans.factory;
 
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
+import com.chy.summer.framework.core.MethodParameter;
 import com.chy.summer.framework.exception.BeansException;
 import lombok.Getter;
 
@@ -11,14 +12,14 @@ import java.lang.reflect.Field;
 public class DependencyDescriptor extends InjectionPoint {
 
     //要注入字段的类型
-    private final Class<?> declaringClass;
+    private  Class<?> declaringClass;
     //要注入 字段的名字
-    private final String fieldName;
+    private  String fieldName;
     //是否一定要注入 也就是 @Autowired 注解的那个属性
     @Getter
-    private final boolean required;
+    private  boolean required;
 
-    private final boolean eager;
+    private  boolean eager;
 
     //要注入的字段所在的类
     private Class<?> containingClass;
@@ -34,6 +35,20 @@ public class DependencyDescriptor extends InjectionPoint {
         this.required = required;
         this.eager = eager;
     }
+
+    public DependencyDescriptor(MethodParameter methodParameter, boolean required) {
+        this(methodParameter, required, true);
+    }
+
+
+    public DependencyDescriptor(MethodParameter methodParameter, boolean required, boolean eager) {
+        super(methodParameter);
+        this.declaringClass = methodParameter.getDeclaringClass();
+        this.containingClass = methodParameter.getContainingClass();
+        this.required = required;
+        this.eager = eager;
+    }
+
 
     public void setContainingClass(Class<?> containingClass) {
         this.containingClass = containingClass;

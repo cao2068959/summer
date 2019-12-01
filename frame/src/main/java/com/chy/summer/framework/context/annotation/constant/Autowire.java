@@ -6,7 +6,9 @@ public enum Autowire {
 
     BY_NAME,
 
-    BY_TYPE;
+    BY_TYPE,
+
+    CONSTRUCTOR;
 
     public boolean isAutowire() {
         return (this == BY_NAME || this == BY_TYPE);

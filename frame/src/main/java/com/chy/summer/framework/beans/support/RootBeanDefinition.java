@@ -31,7 +31,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
      * 前置处理或者后置处理是否开启
      */
     @Nullable
-    volatile Boolean beforeInstantiationResolved = true;
+    volatile Boolean beforeInstantiationResolved;
 
     @Getter
     @Setter
