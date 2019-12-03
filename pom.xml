@@ -23,6 +23,7 @@
     <modules>
         <module>frame</module>
         <module>test</module>
+        <module>link</module>
     </modules>
 
 
@@ -94,6 +95,12 @@
                 <groupId>com.jamonapi</groupId>
                 <artifactId>jamon</artifactId>
                 <version>2.81</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-core</artifactId>
+                <version>3.8.4</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
