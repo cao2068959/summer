@@ -7,7 +7,7 @@ import com.chy.summer.framework.context.annotation.Configuration;
 public class BeanDemo {
 
     @Bean
-    public BeanDemo2 beanDemo2(){
+    public BeanDemo2 beanDemo2(Abc2 abc2){
         BeanDemo2 beanDemo2 = new BeanDemo2();
         beanDemo2.setName("小明");
         return beanDemo2;

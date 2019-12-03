@@ -1,6 +1,5 @@
 package com.chy.summer.framework.core;
 
-import com.chy.summer.framework.util.Assert;
 
 public abstract class GenericTypeResolver {
 

@@ -55,7 +55,10 @@ public class DependencyDescriptor extends InjectionPoint {
     }
 
     public Class<?> getDependencyType() {
-        return this.field.getType();
+        if (this.field != null) {
+            return field.getType();
+        }
+        return methodParameter.getParameterType();
     }
 
     public boolean isEager() {
