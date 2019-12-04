@@ -59,6 +59,10 @@ public class MethodParameter {
         this.nestingLevel = nestingLevel;
     }
 
+    public Class<?> getParameterType() {
+        return this.parameterType;
+    }
+
 
     public MethodParameter(Constructor<?> constructor, int parameterIndex) {
         this(constructor, parameterIndex, 1);
