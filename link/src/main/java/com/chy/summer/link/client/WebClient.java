@@ -1,14 +1,30 @@
 //package com.chy.summer.link.client;
 //
 //import io.vertx.core.Vertx;
+//import io.vertx.core.buffer.Buffer;
+//import io.vertx.core.http.HttpClient;
+//import io.vertx.core.http.HttpMethod;
+//import io.vertx.core.http.RequestOptions;
+//import io.vertx.core.http.impl.HttpClientImpl;
+//import io.vertx.core.net.SocketAddress;
 //
+///**
+// * 异步的HTTP和HTTP 2.0客户端
+// * WebClient会使得Web服务器的HTTP请求/响应交互变得容易，并提供一些高级功能，例如：
+// * json类型的body编码与解码
+// * 请求/响应的泵（pump）
+// * 错误处理
+// *
+// * WebClient并不是弃用HttpClient，事实上它基于HttpClient，继承了其配置和强大的功能。
+// * 如果需要对HTTP请求/响应进行精细的控制，还应当使用HttpClient
+// */
 //public interface WebClient {
 //
 //  /**
-//   * Create a web client using the provided {@code vertx} instance and default options.
+//   * 使用提供的vertx实例和默认选项创建一个Web客户端
 //   *
-//   * @param vertx the vertx instance
-//   * @return the created web client
+//   * @param vertx vertx实例
+//   * @return 返回创建的Web客户端实例
 //   */
 //  static WebClient create(Vertx vertx) {
 //    WebClientOptions options = new WebClientOptions();
@@ -16,35 +32,34 @@
 //  }
 //
 //  /**
-//   * Create a web client using the provided {@code vertx} instance.
+//   * 使用提供的vertx实例创建一个Web客户端
 //   *
-//   * @param vertx   the vertx instance
-//   * @param options the Web Client options
-//   * @return the created web client
+//   * @param vertx   vertx实例
+//   * @param options 客户端的WebClientOptions
+//   * @return 返回创建的Web客户端实例
 //   */
 //  static WebClient create(Vertx vertx, WebClientOptions options) {
 //    return new WebClientBase(vertx.createHttpClient(options), options);
 //  }
 //
 //  /**
-//   * Wrap an {@code httpClient} with a web client and default options.
+//   * 使用提供的httpClient封装数据，创建Web客户端
 //   *
-//   * @param httpClient the {@link HttpClient} to wrap
-//   * @return the web client
+//   * @param httpClient {@link HttpClient}的封装
+//   * @return 返回创建的Web客户端实例
 //   */
 //  static WebClient wrap(HttpClient httpClient) {
 //    return wrap(httpClient, new WebClientOptions());
 //  }
 //
 //  /**
-//   * Wrap an {@code httpClient} with a web client and default options.
-//   * <p>
-//   * Only the specific web client portion of the {@code options} is used, the {@link io.vertx.core.http.HttpClientOptions}
-//   * of the {@code httpClient} is reused.
+//   * 使用提供的httpClient封装数据和WebClientOptions，创建Web客户端
 //   *
-//   * @param httpClient the {@link HttpClient} to wrap
-//   * @param options    the Web Client options
-//   * @return the web client
+//   * 仅使用WebClientOptions的Web客户端的部分，其他配置采用httpClient的配置
+//   *
+//   * @param httpClient {@link HttpClient}的封装
+//   * @param options    客户端的WebClientOptions
+//   * @return 返回创建的Web客户端实例
 //   */
 //  static WebClient wrap(HttpClient httpClient, WebClientOptions options) {
 //    WebClientOptions actualOptions = new WebClientOptions(((HttpClientImpl) httpClient).getOptions());
@@ -53,31 +68,29 @@
 //  }
 //
 //  /**
-//   * Create an HTTP request to send to the server at the specified host and port.
-//   * @param method  the HTTP method
-//   * @param port  the port
-//   * @param host  the host
-//   * @param requestURI  the relative URI
-//   * @return  an HTTP client request object
+//   * 创建一个HTTP请求以发送到指定主机和端口上的服务器
+//   * @param method  HTTP的method
+//   * @param port  端口号
+//   * @param host  主机地址
+//   * @param requestURI  相对的URI
+//   * @return  HTTP的请求对象
 //   */
 //  HttpRequest<Buffer> request(HttpMethod method, int port, String host, String requestURI);
 //
 //  /**
-//   * Like {@link #request(HttpMethod, int, String, String)} using the {@code serverAddress} parameter to connect to the
-//   * server instead of the {@code port} and {@code host} parameters.
-//   * <p>
-//   * The request host header will still be created from the {@code port} and {@code host} parameters.
-//   * <p>
-//   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+//   * 与request(HttpMethod，int，String，String)一样，
+//   * 但使用serverAddress参数而不是port和host参数连接到服务器
+//   *
+//   * 但我们仍需要通过port和host参数创建请求header
 //   */
 //  HttpRequest<Buffer> request(HttpMethod method, SocketAddress serverAddress, int port, String host, String requestURI);
 //
 //  /**
-//   * Create an HTTP request to send to the server at the specified host and default port.
-//   * @param method  the HTTP method
-//   * @param host  the host
-//   * @param requestURI  the relative URI
-//   * @return  an HTTP client request object
+//   * 创建一个HTTP请求以发送到指定主机和默认端口的服务器
+//   * @param method  HTTP的method
+//   * @param host  端口号
+//   * @param requestURI  相对的URI
+//   * @return  HTTP的请求对象
 //   */
 //  HttpRequest<Buffer> request(HttpMethod method, String host, String requestURI);
 //
