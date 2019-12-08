@@ -1,5 +1,7 @@
 package com.chy.summer.framework.util;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -11,7 +13,7 @@ public class AutowireUtils {
      * 工厂方法排序 排序顺序是 public优先  参数多的优先
      * @param factoryMethods
      */
-    public static void sortFactoryMethods(Method[] factoryMethods) {
+    public static void sortFactoryMethods(Executable[] factoryMethods) {
         Arrays.sort(factoryMethods, (fm1, fm2) -> {
             boolean p1 = Modifier.isPublic(fm1.getModifiers());
             boolean p2 = Modifier.isPublic(fm2.getModifiers());

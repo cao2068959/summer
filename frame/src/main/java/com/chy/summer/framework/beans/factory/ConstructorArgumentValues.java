@@ -21,6 +21,9 @@ public class ConstructorArgumentValues {
         addArgumentValues(original);
     }
 
+    public ConstructorArgumentValues() {
+    }
+
 
     public void addArgumentValues(ConstructorArgumentValues other) {
         if (other != null) {

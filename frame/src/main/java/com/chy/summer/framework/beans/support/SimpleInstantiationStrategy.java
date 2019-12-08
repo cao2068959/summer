@@ -37,9 +37,17 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
     }
 
     @Override
-    public Object instantiate(RootBeanDefinition bd, String beanName, BeanFactory owner, Constructor<?> ctor, Object... args) throws BeansException {
-        return null;
+    public Object instantiate(RootBeanDefinition bd,  String beanName, BeanFactory owner,
+                              final Constructor<?> ctor, Object... args) {
+
+        if(args != null){
+          return   BeanUtils.instantiateClass(ctor, args);
+        }else {
+            return BeanUtils.instantiateClass(ctor);
+        }
+
     }
+
 
 
     /**
