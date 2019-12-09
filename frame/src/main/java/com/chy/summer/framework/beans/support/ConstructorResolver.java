@@ -15,13 +15,16 @@ import com.chy.summer.framework.util.AutowireUtils;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ReflectionUtils;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 
 /**
- * 用于解析工厂方法的
+ * 用于解析工厂方法,以及构造器方法的
  */
 public class ConstructorResolver {
 
@@ -204,8 +207,6 @@ public class ConstructorResolver {
             // Try to find matching constructor argument value, either indexed or generic.
             ConstructorArgumentValues.ValueHolder valueHolder = null;
 
-            //TODO 有构造器入参的情况
-
             MethodParameter methodParam = MethodParameter.forExecutable(executable, paramIndex);
 
             //去ioc 容器里把依赖的 参数对象给拉出来
@@ -237,6 +238,104 @@ public class ConstructorResolver {
     private Method[] getCandidateMethods(Class<?> factoryClass, RootBeanDefinition mbd) {
         //反射拿所有的方法
         return ReflectionUtils.getAllDeclaredMethods(factoryClass);
+    }
+
+
+    /**
+     * 使用构造器去实例化对象
+     *
+     * @param beanName
+     * @param mbd
+     * @param ctors
+     * @param explicitArgs
+     * @return
+     */
+    public BeanWrapper autowireConstructor(String beanName, RootBeanDefinition mbd, Constructor<?>[] ctors, Object[] explicitArgs) {
+
+        BeanWrapperImpl beanWrapper = new BeanWrapperImpl();
+        Constructor<?> constructorToUse = null;
+        ArgumentsHolder argsHolderToUse = null;
+        Object[] argsToUse = null;
+
+        if (explicitArgs != null) {
+            argsToUse = explicitArgs;
+        }
+
+        ConstructorArgumentValues resolvedValues = new ConstructorArgumentValues();
+
+        //排序走一波 也是参数多的放前面
+        AutowireUtils.sortFactoryMethods(ctors);
+
+        Set<Constructor<?>> ambiguousConstructors = null;
+        RuntimeException exception = null;
+
+        for (Constructor<?> candidate : ctors) {
+            Class<?>[] paramTypes = candidate.getParameterTypes();
+            String paramNames[] = null;
+            ArgumentsHolder argsHolder;
+            if (resolvedValues != null) {
+                try {
+                    //处理构造器器里面的参数,并且去Ioc 容器去拿对应参数,如果拿不到就去执行其他参数的构造器
+                    //如果所有的构造器都拿不到,那么就抛出异常
+                    argsHolder = createArgumentArray(beanName, mbd, resolvedValues, beanWrapper, paramTypes, paramNames,
+                            getUserDeclaredConstructor(candidate));
+                    constructorToUse = candidate;
+                    argsHolderToUse = argsHolder;
+                    argsToUse = argsHolderToUse.arguments;
+                    //如果没抛出异常就算成功找到了,结束循环
+                    break;
+                } catch (BeansException e) {
+                    exception = e;
+                    //这里如果异常了,说明参数在ioc中不存在,如果还有其他方法的重载就继续处理
+                    continue;
+                }
+
+            }
+
+        }
+
+
+        //没有找到到底要用哪一个方法,这边直接抛出异常了
+        //在spring里还给了一大段可能的原因,这边先忽略
+        if (constructorToUse == null) {
+            //如果有异常记录就直接返回异常
+            if (exception != null) {
+                throw exception;
+            }
+            throw new BeanCreationException("在类 [%s] 中没有找到合适的构造方法 ", beanName);
+        }
+
+
+        if (explicitArgs == null) {
+            argsHolderToUse.storeCache(mbd, constructorToUse);
+        }
+
+        //下面就是开始 实例化 bean 对象了
+        try {
+            final InstantiationStrategy strategy = beanFactory.getInstantiationStrategy();
+            Object beanInstance;
+            beanInstance = strategy.instantiate(mbd, beanName, this.beanFactory, constructorToUse, argsToUse);
+
+            beanWrapper.setBeanInstance(beanInstance);
+            return beanWrapper;
+        }
+        catch (Throwable ex) {
+            throw new BeanCreationException(mbd.getResourceDescription(), beanName,
+                    "使用构造器实例化bean 失败", ex);
+        }
+
+    }
+
+    protected Constructor<?> getUserDeclaredConstructor(Constructor<?> constructor) {
+        Class<?> declaringClass = constructor.getDeclaringClass();
+        Class<?> userClass = ClassUtils.getUserClass(declaringClass);
+        if (userClass != declaringClass) {
+            try {
+                return userClass.getDeclaredConstructor(constructor.getParameterTypes());
+            } catch (NoSuchMethodException ex) {
+            }
+        }
+        return constructor;
     }
 
 

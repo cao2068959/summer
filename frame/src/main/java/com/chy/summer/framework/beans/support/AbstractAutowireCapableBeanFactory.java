@@ -441,10 +441,57 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             return instantiateUsingFactoryMethod(beanName, mbd, args);
         }
 
+        //去找到目标clss 中的构造方法
+        Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+        if (ctors != null)  {
+            //通过构造器去创建对象
+            return autowireConstructor(beanName, mbd, ctors, args);
+        }
 
-        //这里直接用无参构造器去初始化 对象,同时用 BeanWrapper 给包装了
+
+        //如果没有定义构造函数,那么就直接使用 无参构造器去生成实例对象
         return instantiateBean(beanName, mbd);
     }
+
+    /**
+     * 通过构造器去 创建对象
+     * @param beanName
+     * @param mbd
+     * @param ctors
+     * @param explicitArgs
+     * @return
+     */
+    protected BeanWrapper autowireConstructor(
+            String beanName, RootBeanDefinition mbd, @Nullable Constructor<?>[] ctors, @Nullable Object[] explicitArgs) {
+
+        return new ConstructorResolver(this).autowireConstructor(beanName, mbd, ctors, explicitArgs);
+    }
+
+
+    /**
+     * 通过 BeanPostProcessor 去找到有参构造器,这里默认工作的实际上是 @AutowiredAnnotationBeanPostProcessor
+     * @param beanClass
+     * @param beanName
+     * @return
+     * @throws BeansException
+     */
+    protected Constructor<?>[] determineConstructorsFromBeanPostProcessors(@Nullable Class<?> beanClass, String beanName)
+            throws BeansException {
+
+        if (beanClass != null) {
+            for (BeanPostProcessor bp : getBeanPostProcessors()) {
+                if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
+                    SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
+                    Constructor<?>[] ctors = ibp.determineCandidateConstructors(beanClass, beanName);
+                    if (ctors != null) {
+                        return ctors;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
 
     /**
      * 通过 工厂方法来实例化 bean 对象的
