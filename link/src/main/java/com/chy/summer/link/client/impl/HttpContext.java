@@ -380,27 +380,34 @@ public class HttpContext<T> {
         .setURI
           (requestURI));
     } else {
-      //TODO写到这里
       if (request.protocol != null && !request.protocol.equals("http") && !request.protocol.equals("https")) {
-        // we have to create an abs url again to parse it in HttpClient
+        //不是http协议 也不是https协议
         try {
+          //必须创建一个url才能进行HttpClient解析
           URI uri = new URI(request.protocol, null, host, port, requestURI, null, null);
+          //创建一个请求客户端
           req = client.requestAbs(request.method, request.serverAddress, uri.toString());
         } catch (URISyntaxException ex) {
+          //发送错误
           fail(ex);
           return;
         }
       } else {
+        //http或者https协议，直接创建客户端就可以了
         req = client.request(request.method, request.serverAddress, port, host, requestURI);
       }
     }
     if (request.virtualHost != null) {
+      //处理虚拟地址
       String virtalHost = request.virtualHost;
       if (port != 80) {
+        //拼接端口号
         virtalHost += ":" + port;
       }
+      //覆盖掉原始路径
       req.setHost(virtalHost);
     }
+    //初始化重定向次数
     redirects = 0;
     if (request.headers != null) {
       req.headers().addAll(request.headers);
@@ -408,37 +415,55 @@ public class HttpContext<T> {
     if (request.rawMethod != null) {
       req.setRawMethod(request.rawMethod);
     }
+    //发送请求
     sendRequest(req);
   }
 
+  /**
+   * 已收到HttpClientResponse，并即将创建response的处理器
+   */
   private void handleReceiveResponse() {
+    //获取到响应
     HttpClientResponse resp = clientResponse;
+    //获取上下文
     Context context = Vertx.currentContext();
+    //异步协调
     Promise<HttpResponse<T>> promise = Promise.promise();
+    //设置异步处理器
     promise.future().setHandler(r -> {
-      // We are running on a context (the HTTP client mandates it)
+      //在上下文上运行（HTTP客户端需要），参数r是传入进来的处理器
       context.runOnContext(v -> {
         if (r.succeeded()) {
+          //处理成功，传入结果
           dispatchResponse(r.result());
         } else {
+          //处理失败，传入抛出的异常
           fail(r.cause());
         }
       });
     });
+    //执行异常处理器
     resp.exceptionHandler(err -> {
+      //判断是否已经执行完成
       if (!promise.future().isComplete()) {
         promise.fail(err);
       }
     });
+    //创建一个管道
     Pipe<Buffer> pipe = resp.pipe();
     request.codec.create(ar1 -> {
+      //处理器
       if (ar1.succeeded()) {
         BodyStream<T> stream = ar1.result();
+        //管道处理流,传输流
         pipe.to(stream, ar2 -> {
           if (ar2.succeeded()) {
+            //设置流处理完之后的回调方法
             stream.result().setHandler(ar3 -> {
               if (ar3.succeeded()) {
+                //如果处理成功，设置完成之后的结果，创建HttpResponseImpl
                 promise.complete(new HttpResponseImpl<T>(
+                  //调用构造方法
                   resp.version(),
                   resp.statusCode(),
                   resp.statusMessage(),
@@ -449,6 +474,7 @@ public class HttpContext<T> {
                   redirectedLocations
                 ));
               } else {
+                //处理失败
                 promise.fail(ar3.cause());
               }
             });
@@ -457,44 +483,57 @@ public class HttpContext<T> {
           }
         });
       } else {
+        //关闭流
         pipe.close();
         fail(ar1.cause());
       }
     });
   }
 
+  /**
+   * HttpClientRequest已创建但尚未发送，HTTP方法、URI或请求参数已经无法修改
+   */
   private void handleSendRequest() {
     Promise<HttpClientResponse> responseFuture = Promise.<HttpClientResponse>promise();
     responseFuture.future().setHandler(ar -> {
       if (ar.succeeded()) {
         HttpClientResponse resp = ar.result();
         resp.pause();
+        //接收响应，处理重定向
         receiveResponse(resp);
       } else {
         fail(ar.cause());
       }
     });
+    //基本的HTTP请求
     HttpClientRequest req = clientRequest;
     req.setHandler(ar -> {
       if (ar.succeeded()) {
+        //尝试成功
         responseFuture.tryComplete(ar.result());
       } else {
+        //尝试失败
         responseFuture.tryFail(ar.cause());
       }
     });
     if (request.timeout > 0) {
+      //设置超时时间
       req.setTimeout(request.timeout);
     }
     if (contentType != null) {
+      //获取content_type
       String prev = req.headers().get(HttpHeaders.CONTENT_TYPE);
       if (prev == null) {
+        //如果空的直接设置就好了
         req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
       } else {
+        //如果不是空的就需要更新上下文里的值
         contentType = prev;
       }
     }
     if (body != null || "application/json".equals(contentType)) {
       if (body instanceof MultiMap) {
+        //拼接Form，切片后面的参数
         MultipartForm parts = MultipartForm.create();
         MultiMap attributes = (MultiMap) body;
         for (Map.Entry<String, String> attribute : attributes) {
@@ -502,50 +541,64 @@ public class HttpContext<T> {
         }
         body = parts;
       }
-//      if (body instanceof MultipartForm) {
-//        MultipartFormUpload multipartForm;
-//        try {
-//          boolean multipart = "multipart/form-data".equals(contentType);
-//          HttpPostRequestEncoder.EncoderMode encoderMode = request.multipartMixed ? HttpPostRequestEncoder.EncoderMode.RFC1738 : HttpPostRequestEncoder.EncoderMode.HTML5;
-//          multipartForm = new MultipartFormUpload(context,  (MultipartForm) this.body, multipart, encoderMode);
-//          this.body = multipartForm;
-//        } catch (Exception e) {
-//          responseFuture.tryFail(e);
-//          return;
-//        }
-//        for (String headerName : request.headers().names()) {
-//          req.putHeader(headerName, request.headers().get(headerName));
-//        }
-//        multipartForm.headers().forEach(header -> {
-//          req.putHeader(header.getKey(), header.getValue());
-//        });
-//        multipartForm.run();
-//      }
+      if (body instanceof MultipartForm) {
+        //multipart/form-data方式的请求
+        MultipartFormUpload multipartForm;
+        try {
+          boolean multipart = "multipart/form-data".equals(contentType);
+          //对切片的处理
+          HttpPostRequestEncoder.EncoderMode encoderMode = request.multipartMixed ? HttpPostRequestEncoder.EncoderMode.RFC1738 : HttpPostRequestEncoder.EncoderMode.HTML5;
+          multipartForm = new MultipartFormUpload(context,  (MultipartForm) this.body, multipart, encoderMode);
+          //body赋值
+          this.body = multipartForm;
+        } catch (Exception e) {
+          responseFuture.tryFail(e);
+          return;
+        }
+        for (String headerName : request.headers().names()) {
+          //处理header
+          req.putHeader(headerName, request.headers().get(headerName));
+        }
+        multipartForm.headers().forEach(header -> {
+          //将所有的header放入request
+          req.putHeader(header.getKey(), header.getValue());
+        });
+        multipartForm.run();
+      }
 
       if (body instanceof ReadStream<?>) {
+        //流处理的方式
         ReadStream<Buffer> stream = (ReadStream<Buffer>) body;
         if (request.headers == null || !request.headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+          //启动分块传输
           req.setChunked(true);
         }
         stream.pipeTo(req, ar -> {
+          //管道初始失败的处理
           if (ar.failed()) {
             responseFuture.tryFail(ar.cause());
             req.reset();
           }
         });
       } else {
+        //缓存字符的处理方式
         Buffer buffer;
         if (body instanceof Buffer) {
+          //字符串的处理
           buffer = (Buffer) body;
         } else if (body instanceof JsonObject) {
+          //json的处理
           buffer = Buffer.buffer(((JsonObject)body).encode());
         } else {
           buffer = Buffer.buffer(Json.encode(body));
         }
+        //设置异常处理器
         req.exceptionHandler(responseFuture::tryFail);
+        //结束request请求的设置，并且发送buffer
         req.end(buffer);
       }
     } else {
+      //除了"application/json"之外的处理  主要是text
       req.exceptionHandler(responseFuture::tryFail);
       req.end();
     }
