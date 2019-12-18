@@ -7,6 +7,7 @@ import com.chy.summer.framework.core.PriorityOrdered;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.core.io.DefaultResourceLoader;
 import com.chy.summer.framework.core.io.ResourceLoader;
+import com.chy.summer.framework.core.type.AnnotationMetadata;
 import com.chy.summer.framework.core.type.classreading.DefaultMetadataReaderFactory;
 import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
 import com.chy.summer.framework.exception.BeansException;
@@ -65,6 +66,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
         //真正去解析入口类
         processConfigBeanDefinitions(registry);
     }
+
 
 
     /**

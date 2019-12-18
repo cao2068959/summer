@@ -122,6 +122,17 @@ public abstract class ConfigurationClassUtils {
         return metadata.hasAnnotatedMethods(Bean.class.getName());
     }
 
+
+    /**
+     * 检测 是不是配置类 有注解 @Configuration @Component @ComponentScan @Import 的就是配置类
+     * @param metadata
+     * @return
+     */
+    public static boolean isConfigurationCandidate(AnnotationMetadata metadata) {
+        return (isFullConfigurationCandidate(metadata) || isLiteConfigurationCandidate(metadata));
+    }
+
+
     public static boolean isFullConfigurationClass(BeanDefinition beanDef) {
         return CONFIGURATION_CLASS_FULL.equals(beanDef.getAttribute(CONFIGURATION_CLASS_ATTRIBUTE));
     }

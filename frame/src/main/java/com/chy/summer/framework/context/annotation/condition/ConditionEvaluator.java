@@ -1,19 +1,26 @@
 package com.chy.summer.framework.context.annotation.condition;
 
 
+import com.chy.summer.framework.core.annotation.AnnotationAttributes;
+import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.core.type.AnnotatedTypeMetadata;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 
+import com.chy.summer.framework.context.annotation.condition.ConfigurationCondition.ConfigurationPhase;
+import com.chy.summer.framework.util.ConfigurationClassUtils;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ConditionEvaluator {
 
     public boolean shouldSkip(AnnotatedTypeMetadata metadata, ConfigurationPhase phase) {
+        //既然没打 @Conditional 注解 直接放行了
         if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
             return false;
         }
-
+        //如果没有指定 phase 的就自己去判断 这到底是什么类型
         if (phase == null) {
             if (metadata instanceof AnnotationMetadata &&
                     ConfigurationClassUtils.isConfigurationCandidate((AnnotationMetadata) metadata)) {
@@ -30,6 +37,7 @@ public class ConditionEvaluator {
             }
         }
 
+        //排序
         AnnotationAwareOrderComparator.sort(conditions);
 
         for (Condition condition : conditions) {
@@ -46,5 +54,15 @@ public class ConditionEvaluator {
 
         return false;
     }
+
+
+    private List<String[]> getConditionClasses(AnnotatedTypeMetadata metadata) {
+        AnnotationAttributes conditionalAttributes = metadata.getAnnotationAttributes(Conditional.class);
+        Class[] value = conditionalAttributes.getRequiredAttribute("value", Class[].class);
+        metadata.getAnnotationAttributes("value");
+        Object values = (attributes != null ? attributes.get("value") : null);
+        return (List<String[]>) (values != null ? values : Collections.emptyList());
+    }
+
 
 }
