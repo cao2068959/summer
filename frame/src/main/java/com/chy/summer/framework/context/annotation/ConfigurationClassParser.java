@@ -44,6 +44,11 @@ public class ConfigurationClassParser {
 
     private final ComponentScanAnnotationParser componentScanParser;
 
+    /**
+     *  Condition 注解的解析器
+     */
+    private final ConditionEvaluator conditionEvaluator;
+
     @Getter
     private final Map<ConfigurationClass, ConfigurationClass> configurationClasses = new LinkedHashMap<>();
 
@@ -65,6 +70,7 @@ public class ConfigurationClassParser {
         this.resourceLoader = resourceLoader;
         this.registry = registry;
         this.componentScanParser = new ComponentScanAnnotationParser(environment, resourceLoader, componentScanBeanNameGenerator, registry);
+        this.conditionEvaluator = new ConditionEvaluator();
     }
 
 
@@ -73,8 +79,6 @@ public class ConfigurationClassParser {
      * @param configCandidates
      */
     public void parse(Set<BeanDefinitionHolder> configCandidates) {
-        //用于 @Import 注解 class容器
-        //this.deferredImportSelectors = new LinkedList<>();
 
         for (BeanDefinitionHolder holder : configCandidates) {
             BeanDefinition bd = holder.getBeanDefinition();
@@ -117,6 +121,11 @@ public class ConfigurationClassParser {
      * @throws Exception
      */
     protected void processConfigurationClass(ConfigurationClass configClass) throws Exception {
+
+        //如果类上打了 @condition 注解，就去判断一下这个类是否应该被注入到容器里
+        if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
+            return;
+        }
 
         ConfigurationClass existingClass = this.configurationClasses.get(configClass);
         if (existingClass != null) {
