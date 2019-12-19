@@ -2,6 +2,7 @@ package chy.test.service;
 
 import com.chy.summer.framework.context.annotation.Bean;
 import com.chy.summer.framework.context.annotation.Configuration;
+import com.chy.summer.framework.context.annotation.condition.Conditional;
 
 @Configuration
 public class BeanDemo {

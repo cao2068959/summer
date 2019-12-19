@@ -81,6 +81,7 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
         }
     }
 
+    @Override
     public boolean isAnnotated(String name) {
         return false;
     }

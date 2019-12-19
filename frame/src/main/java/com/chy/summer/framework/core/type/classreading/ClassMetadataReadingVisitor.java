@@ -1,6 +1,7 @@
 package com.chy.summer.framework.core.type.classreading;
 
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
+import com.chy.summer.framework.core.annotation.AnnotationUtils;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 import com.chy.summer.framework.core.type.ClassMetadata;
 import com.chy.summer.framework.core.type.MethodMetadata;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 /**
@@ -254,6 +256,15 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     @Override
     public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
         return annotationAttributes.get(type.getName());
+    }
+
+    @Override
+    public Map<String,AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type){
+        AnnotationUtils
+
+        return metaAnnotationMap.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(type.getName()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> annotationAttributes.get(entry.getKey())));
     }
 
 
