@@ -49,6 +49,11 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
     }
 
     @Override
+    public Map<String, AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type) {
+        return AnnotationUtils.getAnnotationAttributesAll(type,annotationTree,annotationAttributesMap);
+    }
+
+    @Override
     public boolean hasAnnotatedMethods(String name) {
         return false;
     }

@@ -12,12 +12,13 @@ import com.chy.summer.framework.util.ConfigurationClassUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class ConditionEvaluator {
 
     public boolean shouldSkip(AnnotatedTypeMetadata metadata, ConfigurationPhase phase) {
         //既然没打 @Conditional 注解 直接放行了
-        if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
+        if (metadata == null || !metadata.hasMetaAnnotation(Conditional.class.getName())) {
             return false;
         }
         //如果没有指定 phase 的就自己去判断 这到底是什么类型
@@ -31,13 +32,13 @@ public class ConditionEvaluator {
 
         List<Condition> conditions = new ArrayList<Condition>();
         for (String[] conditionClasses : getConditionClasses(metadata)) {
-            for (String conditionClass : conditionClasses) {
+            /*for (String conditionClass : conditionClasses) {
                 Condition condition = getCondition(conditionClass, this.context.getClassLoader());
                 conditions.add(condition);
-            }
+            }*/
         }
 
-        //排序
+        /*//排序
         AnnotationAwareOrderComparator.sort(conditions);
 
         for (Condition condition : conditions) {
@@ -50,18 +51,15 @@ public class ConditionEvaluator {
                     return true;
                 }
             }
-        }
+        }*/
 
         return false;
     }
 
 
     private List<String[]> getConditionClasses(AnnotatedTypeMetadata metadata) {
-        AnnotationAttributes conditionalAttributes = metadata.getAnnotationAttributes(Conditional.class);
-        Class[] value = conditionalAttributes.getRequiredAttribute("value", Class[].class);
-        metadata.getAnnotationAttributes("value");
-        Object values = (attributes != null ? attributes.get("value") : null);
-        return (List<String[]>) (values != null ? values : Collections.emptyList());
+        Map<String, AnnotationAttributes> annotationAttributesAll = metadata.getAnnotationAttributesAll(Conditional.class);
+        return null;
     }
 
 

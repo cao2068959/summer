@@ -2,19 +2,30 @@ package com.chy.summer.framework.core.annotation;
 
 import com.chy.summer.framework.annotation.core.AliasFor;
 import com.chy.summer.framework.util.StringUtils;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.lang.annotation.Annotation;
 
-public class AliasForTask {
+public class AnnotationAlias {
 
+    @Setter
+    @Getter
+    private  String formName;
 
-    private final String formName;
+    @Setter
+    @Getter
     private  Class<? extends Annotation> formClass;
 
+    @Setter
+    @Getter
     private Class<? extends Annotation> targerClass;
+
+    @Setter
+    @Getter
     private String targerName;
 
-    public AliasForTask(AliasFor aliasFor, String defaultName, Class<? extends Annotation> annotationClass) {
+    public AnnotationAlias(AliasFor aliasFor, String defaultName, Class<? extends Annotation> annotationClass) {
         targerClass =aliasFor.annotation();
         //如果等于Annotation 说明他没有指定要继承到哪一个注解上面,那么就指向他自己
         if(targerClass == Annotation.class){
@@ -33,31 +44,4 @@ public class AliasForTask {
     }
 
 
-    public String getFormName() {
-        return formName;
-    }
-
-    public Class<? extends Annotation> getFormClass() {
-        return formClass;
-    }
-
-    public void setFormClass(Class<? extends Annotation> formClass) {
-        this.formClass = formClass;
-    }
-
-    public Class<? extends Annotation> getTargerClass() {
-        return targerClass;
-    }
-
-    public void setTargerClass(Class<? extends Annotation> targerClass) {
-        this.targerClass = targerClass;
-    }
-
-    public String getTargerName() {
-        return targerName;
-    }
-
-    public void setTargerName(String targerName) {
-        this.targerName = targerName;
-    }
 }

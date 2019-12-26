@@ -208,6 +208,10 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
 
     @Override
     public boolean hasMetaAnnotation(String metaAnnotationName) {
+        if(metaAnnotationMap.containsKey(metaAnnotationName)){
+            return true;
+        }
+
         return metaAnnotationMap.values().stream()
                 .anyMatch(metaAnnotationSet -> metaAnnotationSet.contains(metaAnnotationName));
     }
@@ -260,11 +264,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
 
     @Override
     public Map<String,AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type){
-        AnnotationUtils
-
-        return metaAnnotationMap.entrySet().stream()
-                .filter(entry -> entry.getValue().contains(type.getName()))
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> annotationAttributes.get(entry.getKey())));
+       return AnnotationUtils.getAnnotationAttributesAll(type,metaAnnotationMap,annotationAttributes);
     }
 
 

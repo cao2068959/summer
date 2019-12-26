@@ -16,7 +16,7 @@ public class StandardMethodMetadata implements MethodMetadata {
     private final boolean nestedAnnotationsAsMap;
     private Method method;
 
-    private final Map<String,AnnotationAttributes> annotationAttributesMap;
+    private final Map<String, AnnotationAttributes> annotationAttributesMap;
 
     //注解的继承关系
     private final Map<String, Set<String>> annotationTree;
@@ -25,7 +25,7 @@ public class StandardMethodMetadata implements MethodMetadata {
         this.method = method;
         this.nestedAnnotationsAsMap = nestedAnnotationsAsMap;
         annotationAttributesMap = new HashMap<>();
-        annotationTree = AnnotationUtils.getAnnotationInfoByMethod(method,annotationAttributesMap);
+        annotationTree = AnnotationUtils.getAnnotationInfoByMethod(method, annotationAttributesMap);
     }
 
     @Override
@@ -81,6 +81,11 @@ public class StandardMethodMetadata implements MethodMetadata {
     @Override
     public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
         return getAnnotationAttributes(type.getName());
+    }
+
+    @Override
+    public Map<String, AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type) {
+        return AnnotationUtils.getAnnotationAttributesAll(type, annotationTree, annotationAttributesMap);
     }
 
     @Override

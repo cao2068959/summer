@@ -7,6 +7,8 @@ import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.context.ComponentScanAnnotationParser;
+import com.chy.summer.framework.context.annotation.condition.ConditionEvaluator;
+import com.chy.summer.framework.context.annotation.condition.ConfigurationCondition;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.core.io.ResourceLoader;
@@ -26,6 +28,8 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.chy.summer.framework.context.annotation.condition.ConfigurationCondition.ConfigurationPhase.PARSE_CONFIGURATION;
 
 /**
  * 配置类 的解析器
@@ -123,7 +127,7 @@ public class ConfigurationClassParser {
     protected void processConfigurationClass(ConfigurationClass configClass) throws Exception {
 
         //如果类上打了 @condition 注解，就去判断一下这个类是否应该被注入到容器里
-        if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
+        if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), PARSE_CONFIGURATION)) {
             return;
         }
 

@@ -2,15 +2,11 @@ package com.chy.summer.framework.core.annotation;
 
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
-import com.sun.istack.internal.Nullable;
-import javafx.beans.binding.ObjectExpression;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 一个注解里的所有属性值都会放入这个类
@@ -22,24 +18,17 @@ public class AnnotationAttributes {
 
     private String classSuffix = "#class";
 
-    //用来记录这个属性整体的等级 数字越小等级越大 . 等级小的属性不能覆盖等级大的属性
-    //直接挂在解析类上面等级最高,每被派生一次就降一级
-    @Setter
-    @Getter
-    private Integer level;
 
 
-    public AnnotationAttributes(String name , Integer level) {
+
+    public AnnotationAttributes(String name) {
         this.className = name;
-        this.level = level;
     }
 
     public AnnotationAttributes(AnnotationAttributes original) {
         this.className = original.getClassName();
-        this.level = original.getLevel();
         this.datas = original.getDatas();
     }
-
 
     public void put(String key,Object data,Object defaultValue){
         AnnotationAttribute annotationAttribute = new AnnotationAttribute();

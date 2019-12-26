@@ -2,6 +2,7 @@ package com.chy.summer.framework.core.type.classreading;
 
 import aj.org.objectweb.asm.Opcodes;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
+import com.chy.summer.framework.core.annotation.AnnotationUtils;
 import com.chy.summer.framework.core.type.MethodMetadata;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -124,6 +125,11 @@ public class MethodMetadataReadingVisitorHandle extends MethodVisitor implements
     }
 
     @Override
+    public Map<String, AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type) {
+        return AnnotationUtils.getAnnotationAttributesAll(type,metaAnnotationMap,annotationAttributesMap);
+    }
+
+    @Override
     public AnnotationAttributes getAnnotationAttributes(String annotationName, boolean classValuesAsString) {
         return null;
     }
@@ -132,6 +138,8 @@ public class MethodMetadataReadingVisitorHandle extends MethodVisitor implements
     public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
         return null;
     }
+
+
 
     @Override
     public boolean hasMetaAnnotation(String annotationName) {
