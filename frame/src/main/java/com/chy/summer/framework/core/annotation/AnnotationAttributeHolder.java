@@ -40,8 +40,10 @@ public class AnnotationAttributeHolder {
     @Getter
     private Set<String> contain = new HashSet<>();
 
+    @Getter
     private Map<String, AnnotationAttributeHolder> child = new HashMap<>();
 
+    @Getter
     private List<AnnotationAlias> annotationAliasList;
 
     public AnnotationAttributeHolder(String name, AnnotationAttributes annotationAttributes) {
@@ -97,6 +99,17 @@ public class AnnotationAttributeHolder {
         } while (point != null);
 
         return defaultResult;
+    }
+
+    /**
+     * 判断是否有 @Alias 注解的属性
+     * @return
+     */
+    public boolean hasAlias(){
+        if(annotationAliasList == null || annotationAliasList.size() == 0){
+            return false;
+        }
+        return true;
     }
 
 
