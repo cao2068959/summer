@@ -22,6 +22,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public abstract class AnnotationUtils {
@@ -67,10 +68,12 @@ public abstract class AnnotationUtils {
      * @param annotationClass 要解析的注解的类型
      */
     public static AnnotationAttributeHolder pareAnnotationToAttributes(Object value,
-                                                                  Class<? extends Annotation> annotationClass) {
+                                                                       Class<? extends Annotation> annotationClass) {
 
         AnnotationAttributes attributes = new AnnotationAttributes(annotationClass.getName());
-        AnnotationAttributeHolder result = new AnnotationAttributeHolder(annotationClass.getName(),attributes);
+        AnnotationAttributeHolder result = new AnnotationAttributeHolder(annotationClass.getName(), attributes);
+
+
         //获取注解上面的所有方法
         List<Method> methodsByCache = getMethodsByCache(annotationClass);
         methodsByCache.stream().forEach(method -> {
@@ -86,7 +89,16 @@ public abstract class AnnotationUtils {
             if (aliasFor == null) {
                 return;
             }
-            result.addAlias(new AnnotationAlias(aliasFor, method.getName(), annotationClass));
+            AnnotationAlias alias = new AnnotationAlias(aliasFor, method.getName(), annotationClass);
+            //如果注解 @AliasFor 上的 目标class 指向的是他自己,那么 等下就直接把属性值给互换了
+            if (alias.getTargerClass().equals(annotationClass.getName())) {
+                if (attributes.getAttributeValue(alias.getFormName()) != null) {
+                    attributes.update(alias.getTargerName(), attributes.getAttributeValue(alias.getFormName()));
+                }
+            } else {
+                result.addAlias(alias);
+            }
+
         });
         return result;
     }
@@ -114,57 +126,82 @@ public abstract class AnnotationUtils {
         return result;
     }
 
-
-    /**
-     *  执行注解属性继承关系的任务
-     *  比如 @A 注解上 标注了 @B 注解, 同时 @A 注解有一个属性 a 上标注了 @AliasFor 那么 a属性会传递给 @B 里的对应属性上面
-     */
-    public static void doAliasForTask(AnnotationAttributeHolder holder) {
-        List<AnnotationAlias> parentTask = new LinkedList<>();
-
-        holder
-
-        //有属性 被标记了 @Alias 注解
-        if(!holder.hasAlias()){
-            List<AnnotationAlias> annotationAliasList = holder.getAnnotationAliasList();
-        }
-
-        for (AliasForTask aliasForTask : aliasForTaskList) {
-            AnnotationAttributes targetAttributes = attributesMap.get(aliasForTask.getTargerClass().getName());
-            AnnotationAttributes formAttributes = attributesMap.get(aliasForTask.getFormClass().getName());
-
-            targetAttributes.update(aliasForTask.getTargerName(),
-                    formAttributes.getAttributeValue(aliasForTask.getFormName()));
-        }
-
-    }
-
-
-
-
-
-
-
-
     /**
      * 同上但是这个用来解析 方法上面的注解
+     *
      * @param method
-     * @param attributesMap
      * @return
      */
-    public static Map<String, Set<String>> getAnnotationInfoByMethod(Method method,
-                                                                     Map<String, AnnotationAttributes> attributesMap) {
+    public static Map<String, AnnotationAttributeHolder> getAnnotationInfoByMethod(Method method) {
 
-        List<AliasForTask> aliasForTaskList = new LinkedList<>();
-        Map<String, Set<String>> result = null;
-        doGetAnnotationInfoByAnnotatedElement(method, aliasForTaskList, attributesMap);
-        doAliasForTask(aliasForTaskList, attributesMap);
+
+        Map<String, AnnotationAttributeHolder> result = doGetAnnotationInfoByAnnotatedElement(method);
+        result.values().stream().forEach(holder -> {
+            doAliasForTask(holder);
+        });
+
         return result;
     }
 
 
     /**
+     * 执行注解属性继承关系的任务
+     * 比如 @A 注解上 标注了 @B 注解, 同时 @A 注解有一个属性 a 上标注了 @AliasFor 那么 a属性会传递给 @B 里的对应属性上面
+     */
+    public static void doAliasForTask(AnnotationAttributeHolder holder) {
+
+        //有属性 被标记了 @Alias 注解
+        if (holder.hasAlias()) {
+            for (AnnotationAlias annotationAlias : holder.getAnnotationAliasList()) {
+                String targerClassName = annotationAlias.getTargerClass().getName();
+                //去查找这个注解下面 的哪些子注解 包含了目标注解
+                List<AnnotationAttributeHolder> childAnntationHolder = holder.getChildAnntationHolder(targerClassName);
+                setAttributesToChilder(childAnntationHolder, holder.getAnnotationAttributes(), annotationAlias);
+            }
+        }
+
+        //递归去执行 下面每一个的 子注解,都去检查他有没 继承任务,然后赋值
+        holder.getChild().values().stream().forEach(child -> {
+            doAliasForTask(holder);
+        });
+
+    }
+
+
+    /**
+     * 去设置 注解继承关系的值
+     *
+     * @param holders
+     * @param parent
+     * @param alias
+     */
+    private static void setAttributesToChilder(List<AnnotationAttributeHolder> holders,
+                                               AnnotationAttributes parent,
+                                               AnnotationAlias alias) {
+
+        holders.stream().filter(holder -> {
+            //如果直接就找到了,那么开始换值
+            if (holder.getName().equals(alias.getTargerClass())) {
+                holder.getAnnotationAttributes()
+                        .update(alias.getTargerName(), parent.getAttributeValue(alias.getFormName()));
+                //如果这个子注解也有类似的赋值任务,就直接删除对应的赋值任务了
+                holder.removeAlias(alias);
+            }
+            //把这次没换到值的兄弟给保留下来,已经换过值的 就直接排除了
+            return true;
+        }).forEach(holder -> {
+            //还有兄弟没有执行赋值任务,那么说明 可能是他还继续有嵌套,继续去拿子注解,然后递归解析
+            List<AnnotationAttributeHolder> childAnntationHolder =
+                    holder.getChildAnntationHolder(alias.getTargerClass().getName());
+            setAttributesToChilder(childAnntationHolder, parent, alias);
+        });
+
+    }
+
+
+    /**
      * 用了 解析一个 class 上面的所有 注解属性,包括class 的父类, 接口上面的所有注解
+     *
      * @param clazz
      * @return
      */
@@ -208,8 +245,6 @@ public abstract class AnnotationUtils {
     }
 
 
-
-
     /**
      * 解析注解的继承关系，把他的继承关系存入 metaAnnotationMap
      *
@@ -218,11 +253,11 @@ public abstract class AnnotationUtils {
      * @param parent               解析的当前注解的父注解
      */
     public static AnnotationAttributeHolder metaAnnotationMapHandle(Class<? extends Annotation> annotationType,
-                                                      Object annotationAttributes,
-                                                      AnnotationAttributeHolder parent) {
+                                                                    Object annotationAttributes,
+                                                                    AnnotationAttributeHolder parent) {
 
         //顺着一路的父节点上去找有没有循环注解引用
-        if(parent != null && parent.closeLoop(annotationType.getName())){
+        if (parent != null && parent.closeLoop(annotationType.getName())) {
             return parent;
         }
 
@@ -403,11 +438,10 @@ public abstract class AnnotationUtils {
     /**
      * 通过 metaAnnotationMap 和 annotationAttributes 去找 指定了注解的所有属性
      * metaAnnotationMap
-     *
      */
-    public static Map<String,AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type,
-                                           Map<String, Set<String>> metaAnnotationMap,
-                                           Map<String, AnnotationAttributes> annotationAttributes){
+    public static Map<String, AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type,
+                                                                               Map<String, Set<String>> metaAnnotationMap,
+                                                                               Map<String, AnnotationAttributes> annotationAttributes) {
         return metaAnnotationMap.entrySet().stream()
                 .filter(entry -> entry.getValue().contains(type.getName()))
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> annotationAttributes.get(entry.getKey())));

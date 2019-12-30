@@ -1,5 +1,6 @@
 package com.chy.summer.framework.core.type.classreading;
 
+import com.chy.summer.framework.core.annotation.AnnotationAttributeHolder;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.annotation.AnnotationUtils;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
@@ -58,16 +59,16 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
      */
     private final Map<String, AnnotationAttributes> annotationAttributes = new HashMap<>();
 
-    /**
-     * 存放 注解的父类有哪些
-     */
-    private final Map<String, Set<String>> metaAnnotationMap = new HashMap<>();
-
 
     public ClassMetadataReadingVisitor() {
         super(Opcodes.ASM5);
     }
 
+
+    /**
+     * 这个类里所有的注解都放这里面
+     */
+    Map<String, AnnotationAttributeHolder> attributeHolders = new HashMap<>();
 
     /**
      * 通过asm获取一些基本的 class信息
@@ -132,7 +133,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
         }
         String className = Type.getType(desc).getClassName();
         this.annotationSet.add(className);
-        return new MetadataAnnotationVisitorHandle(className, annotationAttributes, metaAnnotationMap);
+        return new MetadataAnnotationVisitorHandle(className, attributeHolders);
     }
 
 
@@ -202,21 +203,6 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     }
 
     @Override
-    public boolean isAnnotation() {
-        return false;
-    }
-
-    @Override
-    public boolean hasMetaAnnotation(String metaAnnotationName) {
-        if(metaAnnotationMap.containsKey(metaAnnotationName)){
-            return true;
-        }
-
-        return metaAnnotationMap.values().stream()
-                .anyMatch(metaAnnotationSet -> metaAnnotationSet.contains(metaAnnotationName));
-    }
-
-    @Override
     public boolean isIndependent() {
         return (this.enclosingClassName == null || this.independentInnerClass);
     }
@@ -264,7 +250,22 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
 
     @Override
     public Map<String,AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type){
-       return AnnotationUtils.getAnnotationAttributesAll(type,metaAnnotationMap,annotationAttributes);
+       return null;
+    }
+
+    @Override
+    public boolean isAnnotation() {
+        return false;
+    }
+
+    @Override
+    public boolean hasMetaAnnotation(String metaAnnotationName) {
+        if(metaAnnotationMap.containsKey(metaAnnotationName)){
+            return true;
+        }
+
+        return metaAnnotationMap.values().stream()
+                .anyMatch(metaAnnotationSet -> metaAnnotationSet.contains(metaAnnotationName));
     }
 
 

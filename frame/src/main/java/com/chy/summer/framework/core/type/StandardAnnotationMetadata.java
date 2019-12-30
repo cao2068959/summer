@@ -1,15 +1,13 @@
 package com.chy.summer.framework.core.type;
 
+import com.chy.summer.framework.core.annotation.AnnotationAttributeHolder;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.annotation.AnnotationUtils;
 import com.chy.summer.framework.util.AnnotatedElementUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class StandardAnnotationMetadata extends StandardClassMetadata implements AnnotationMetadata {
 
@@ -17,23 +15,31 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
 
     private final boolean nestedAnnotationsAsMap;
 
-    private final Map<String,AnnotationAttributes> annotationAttributesMap;
-
     //注解的继承关系
-    private final Map<String, Set<String>> annotationTree;
+    private final Map<String, AnnotationAttributeHolder> annotationAttributes;
+
+    //拥有的全部的注解的类型
+    private final Set<String> annotationType = new HashSet<>();
+
 
     public StandardAnnotationMetadata(Class<?> introspectedClass, boolean nestedAnnotationsAsMap) {
         super(introspectedClass);
         this.annotations = introspectedClass.getAnnotations();
         this.nestedAnnotationsAsMap = nestedAnnotationsAsMap;
-        annotationAttributesMap = new HashMap<>();
         //解析类上的注解
-        annotationTree = AnnotationUtils.getAnnotationInfoByClass(introspectedClass,annotationAttributesMap,true);
+        annotationAttributes = AnnotationUtils.getAnnotationInfoByClass(introspectedClass, true);
+
+        annotationAttributes.values().stream().forEach(holder -> {
+            annotationType.add(holder.getName());
+            annotationType.addAll(holder.getContain());
+        });
+
+
     }
 
     @Override
     public boolean hasMetaAnnotation(String annotationName) {
-        return annotationAttributesMap.containsKey(annotationName);
+        return annotationType.contains(annotationName);
     }
 
     @Override
@@ -42,15 +48,31 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
     }
 
 
-
     @Override
     public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
-        return annotationAttributesMap.get(type.getName());
+        String annotationName = type.getName();
+        if(!hasMetaAnnotation(annotationName)){
+            return null;
+        }
+
+        if (annotationAttributes.containsKey(annotationName)) {
+            return annotationAttributes.get(annotationName).getAnnotationAttributes();
+        }
+        for (AnnotationAttributeHolder holder : annotationAttributes.values()) {
+
+            if (holder.getContain().contains(annotationName)) {
+                List<AnnotationAttributeHolder> childAnntationHolder = holder.getChildAnntationHolder(annotationName);
+                if (childAnntationHolder.size() > 0) {
+                    return childAnntationHolder.get(1).getAnnotationAttributes();
+                }
+            }
+        }
+        return null;
     }
 
     @Override
     public Map<String, AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type) {
-        return AnnotationUtils.getAnnotationAttributesAll(type,annotationTree,annotationAttributesMap);
+        return null;
     }
 
     @Override
@@ -60,11 +82,12 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
 
     @Override
     public Set<String> getAnnotationTypes() {
-        return annotationTree.keySet();
+        return annotationType;
     }
 
     /**
      * 这里是用反射直接获取的
+     *
      * @param annotationName
      * @return
      */
@@ -80,8 +103,7 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
                 }
             }
             return annotatedMethods;
-        }
-        catch (Throwable ex) {
+        } catch (Throwable ex) {
             throw new IllegalStateException("Failed to introspect annotated methods on " + getIntrospectedClass(), ex);
         }
     }

@@ -13,9 +13,6 @@ public class AnnotationAlias {
     @Getter
     private  String formName;
 
-    @Setter
-    @Getter
-    private  Class<? extends Annotation> formClass;
 
     @Setter
     @Getter
@@ -38,7 +35,6 @@ public class AnnotationAlias {
             targerName = defaultName;
         }
 
-        formClass = annotationClass;
         formName = defaultName;
 
     }

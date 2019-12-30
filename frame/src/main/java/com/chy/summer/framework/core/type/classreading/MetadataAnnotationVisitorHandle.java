@@ -1,7 +1,6 @@
 package com.chy.summer.framework.core.type.classreading;
 
-import com.chy.summer.framework.annotation.constant.AnnotationConstant;
-import com.chy.summer.framework.core.annotation.AliasForTask;
+import com.chy.summer.framework.core.annotation.AnnotationAttributeHolder;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.annotation.AnnotationUtils;
 import com.chy.summer.framework.exception.AsmException;
@@ -23,12 +22,6 @@ import java.util.*;
  * 用来解析注解的一些数据,以及注解的所有继承信息
  */
 public class MetadataAnnotationVisitorHandle extends AnnotationVisitor {
-    /**
-     * 这2个属性同 ClassMetadataReadingVisitor 中的,只是传过来设置值而已
-     */
-    private final Map<String, AnnotationAttributes> attributesMap;
-
-    private final Map<String, Set<String>> metaAnnotationMap;
 
     private final String className;
 
@@ -41,25 +34,19 @@ public class MetadataAnnotationVisitorHandle extends AnnotationVisitor {
     @Setter
     private String arraykey;
 
-
-    /**
-     * 如果注解的属性有继承关系,会把任务放这里面,全部初始化完成后,会执行继承任务,来把子注解的属性值传递给父注解
-     */
-    List<AliasForTask> aliasForTaskList = new LinkedList<>();
-
     /**
      * 这个注解上的属性
      */
     @Setter
     private  Map<String, Object> annotationAttributes = new HashMap<>();
 
-    public MetadataAnnotationVisitorHandle(String className, Map<String, AnnotationAttributes> attributesMap
-            , Map<String, Set<String>> metaAnnotationMap) {
+    private Map<String, AnnotationAttributeHolder> attributeHolders;
+
+    public MetadataAnnotationVisitorHandle(String className ,Map<String, AnnotationAttributeHolder> attributeHolders) {
 
         super(Opcodes.ASM5);
-        this.attributesMap = attributesMap;
-        this.metaAnnotationMap = metaAnnotationMap;
         this.className = className;
+        this.attributeHolders = attributeHolders;
     }
 
 
@@ -127,14 +114,12 @@ public class MetadataAnnotationVisitorHandle extends AnnotationVisitor {
         if (arraykey != null) {
             return;
         }
-
         annotationType = getAnnotationType();
         //这个注解上面还有哪一些继承上去的注解
-        Set<String> allAnnotation = AnnotationUtils
-                .metaAnnotationMapHandle(annotationType, annotationAttributes, aliasForTaskList, attributesMap, null, 0);
-        metaAnnotationMap.put(annotationType.getName(), allAnnotation);
+        AnnotationAttributeHolder holder = AnnotationUtils.metaAnnotationMapHandle(annotationType, annotationAttributes, null);
+        attributeHolders.put(holder.getName(), holder);
         //执行注解上的继承任务,把所有的继承属性给赋值过去
-        AnnotationUtils.doAliasForTask(aliasForTaskList, attributesMap);
+        AnnotationUtils.doAliasForTask(holder);
     }
 
 

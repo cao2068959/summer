@@ -200,9 +200,6 @@ public class ConfigurationClassParser {
             configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
         }
 
-        // TODO 这里是把 jdk8里面的 接口上的默认方法 也注册进去,当然前提是打了 @Bean 注解
-        //processInterfaces(configClass, sourceClass);
-
         //去解析配置类上的父类,
         if (sourceClass.getMetadata().hasSuperClass()) {
             String superclass = sourceClass.getMetadata().getSuperClassName();
