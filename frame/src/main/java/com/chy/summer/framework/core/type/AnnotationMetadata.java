@@ -1,30 +1,28 @@
 package com.chy.summer.framework.core.type;
 
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
+import com.sun.istack.internal.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.util.Map;
 import java.util.Set;
 
-public interface AnnotationMetadata extends ClassMetadata,AnnotatedTypeMetadata {
+/**
+ *
+ *  抽象出来的 注解 行为接口
+ *  代表了 metaData(类/方法/属性) 具有可以标注注解的能力
+ *
+ */
+public interface AnnotationMetadata {
 
 
-    String getClassName();
 
-    /**
-     * 判断是不是一个封闭的内部类
-     */
-    boolean isIndependent();
 
-    boolean isConcrete();
-
-    boolean isAbstract();
-
-    boolean isInterface();
 
     boolean hasAnnotatedMethods(String name);
 
 
-    Set<String> getAnnotationTypes();
+     Set<String> getAnnotationTypes();
 
     /**
      * 获取打了某个注解的所有方法
@@ -32,4 +30,40 @@ public interface AnnotationMetadata extends ClassMetadata,AnnotatedTypeMetadata 
      * @return
      */
     Set<MethodMetadata> getAnnotatedMethods(String name);
+
+
+    @Nullable
+    AnnotationAttributes getAnnotationAttributes(String annotationName);
+
+
+    @Nullable
+    AnnotationAttributes getAnnotationAttributes(String annotationName, boolean classValuesAsString);
+
+
+    /**
+     * 获取 类、方法 中指定注解类型的 所有属性
+     * @param type
+     * @return
+     */
+    AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type);
+
+
+    /**
+     * 获取 类、方法 中指定注解类型的 所有属性，这个方法可以拿包括是派生的注解
+     * 比如： 入参是 @A 注解，在一个类上有 @B , @C 注解 这2个注解 里面都标注上了 @A 注解，那么就会返回 @B,@C 注解的对应属性
+     *
+     * @return key: 真正类上注解的全路径，以上面例子就是 B,C 注解的全路径 , value 对应的注解的值
+     */
+    Map<String,AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type);
+
+
+    /**
+     * 判断是否有某一个注解,这里会把 派生注解和继承注解也算进去
+     */
+    boolean hasMetaAnnotation(String annotationName);
+
+    /**
+     * 判断是否有某一个注解,这里只会判断 当前类上面的注解
+     */
+    boolean hasAnnotation(String metaAnnotationName);
 }
