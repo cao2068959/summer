@@ -162,7 +162,7 @@ public abstract class AnnotationUtils {
 
         //递归去执行 下面每一个的 子注解,都去检查他有没 继承任务,然后赋值
         holder.getChild().values().stream().forEach(child -> {
-            doAliasForTask(holder);
+            doAliasForTask(child);
         });
 
     }
@@ -181,7 +181,7 @@ public abstract class AnnotationUtils {
 
         holders.stream().filter(holder -> {
             //如果直接就找到了,那么开始换值
-            if (holder.getName().equals(alias.getTargerClass())) {
+            if (holder.getName().equals(alias.getTargerClass().getName())) {
                 holder.getAnnotationAttributes()
                         .update(alias.getTargerName(), parent.getAttributeValue(alias.getFormName()));
                 //如果这个子注解也有类似的赋值任务,就直接删除对应的赋值任务了

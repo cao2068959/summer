@@ -1,6 +1,6 @@
 package com.chy.summer.framework.core.type;
 
-public interface MethodMetadata extends AnnotatedTypeMetadata {
+public interface MethodMetadata extends AnnotationBehavior {
 
 
     String getMethodName();

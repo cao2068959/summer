@@ -2,28 +2,21 @@ package com.chy.summer.framework.core.type.classreading;
 
 import com.chy.summer.framework.core.annotation.AnnotationAttributeHolder;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
-import com.chy.summer.framework.core.annotation.AnnotationUtils;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
-import com.chy.summer.framework.core.type.ClassMetadata;
+import com.chy.summer.framework.core.type.DefaultAnnotationBehavior;
 import com.chy.summer.framework.core.type.MethodMetadata;
 import com.chy.summer.framework.util.ClassUtils;
-import com.chy.summer.framework.util.StringUtils;
 import com.sun.istack.internal.Nullable;
 import jdk.internal.org.objectweb.asm.*;
 
-import java.lang.annotation.Annotation;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 
 /**
  * ASM 的访问器
  * 这里注解数据和类数据都放一起,用2个接口来区分隔离
  */
-public class ClassMetadataReadingVisitor extends ClassVisitor implements AnnotationMetadata, ClassMetadata {
+public class ClassMetadataReadingVisitor extends ClassVisitor implements DefaultAnnotationBehavior,AnnotationMetadata {
     private String className = "";
 
     private boolean isInterface;
@@ -46,6 +39,10 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
 
     private Set<String> memberClassNames = new LinkedHashSet<>(4);
 
+
+    /**
+     * 这个类里面所有的 方法都在这里
+     */
     protected final Set<MethodMetadata> methodMetadataSet = new LinkedHashSet<>(4);
 
     /**
@@ -68,7 +65,9 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     /**
      * 这个类里所有的注解都放这里面
      */
-    Map<String, AnnotationAttributeHolder> attributeHolders = new HashMap<>();
+    Map<String, AnnotationAttributeHolder> ownAllAnnotated = new HashMap<>();
+
+    Set<String> ownAllAnnotatedType = new HashSet();
 
     /**
      * 通过asm获取一些基本的 class信息
@@ -133,7 +132,7 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
         }
         String className = Type.getType(desc).getClassName();
         this.annotationSet.add(className);
-        return new MetadataAnnotationVisitorHandle(className, attributeHolders);
+        return new MetadataAnnotationVisitorHandle(className, ownAllAnnotated, ownAllAnnotatedType);
     }
 
 
@@ -153,12 +152,31 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     }
 
 
-    //================================下面是AnnotationMetadata接口的实现======================================
+    //================================DefaultAnnotationMetadata 接口的实现方法======================================
 
     @Override
-    public boolean hasAnnotation(String annotationName) {
-        return annotationSet.contains(annotationName);
+    public Set<String> getOwnAllAnnotatedType() {
+        return ownAllAnnotatedType;
     }
+
+    @Override
+    public Map<String, AnnotationAttributeHolder> getOwnAllAnnotated() {
+        return ownAllAnnotated;
+    }
+
+    //================================AnnotationMetadata 接口的实现方法======================================
+
+    @Override
+    public Set<MethodMetadata> getAnnotatedMethods(String name) {
+        return null;
+    }
+
+    @Override
+    public boolean hasAnnotatedMethods(String name) {
+        return false;
+    }
+
+    //================================ClassMetadata 接口的实现方法======================================
 
     @Override
     public String getClassName() {
@@ -168,38 +186,6 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     @Override
     public boolean isInterface() {
         return isInterface;
-    }
-
-    @Override
-    public boolean hasAnnotatedMethods(String annotationName) {
-        for (MethodMetadata methodMetadata : this.methodMetadataSet) {
-            if (methodMetadata.isAnnotated(annotationName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public Set<String> getAnnotationTypes() {
-        return annotationSet;
-    }
-
-    /**
-     * 获取类里面打了某个注解的 所有方法
-     *
-     * @param annotationName
-     * @return
-     */
-    @Override
-    public Set<MethodMetadata> getAnnotatedMethods(String annotationName) {
-        Set<MethodMetadata> annotatedMethods = new LinkedHashSet<>(4);
-        for (MethodMetadata methodMetadata : this.methodMetadataSet) {
-            if (methodMetadata.isAnnotated(annotationName)) {
-                annotatedMethods.add(methodMetadata);
-            }
-        }
-        return annotatedMethods;
     }
 
     @Override
@@ -243,29 +229,10 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
         return this.isAbstract;
     }
 
-    @Override
-    public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
-        return annotationAttributes.get(type.getName());
-    }
-
-    @Override
-    public Map<String,AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type){
-       return null;
-    }
 
     @Override
     public boolean isAnnotation() {
         return false;
-    }
-
-    @Override
-    public boolean hasMetaAnnotation(String metaAnnotationName) {
-        if(metaAnnotationMap.containsKey(metaAnnotationName)){
-            return true;
-        }
-
-        return metaAnnotationMap.values().stream()
-                .anyMatch(metaAnnotationSet -> metaAnnotationSet.contains(metaAnnotationName));
     }
 
 
@@ -304,6 +271,8 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
     }
 
 
+
+
     private static class EmptyMethodVisitor extends MethodVisitor {
 
         public EmptyMethodVisitor() {
@@ -317,20 +286,9 @@ public class ClassMetadataReadingVisitor extends ClassVisitor implements Annotat
         public EmptyFieldVisitor() {
             super(Opcodes.ASM5);
         }
+
+
     }
 
-    @Override
-    public boolean isAnnotated(String annotationName) {
-        return false;
-    }
 
-    @Override
-    public AnnotationAttributes getAnnotationAttributes(String annotationName) {
-        return null;
-    }
-
-    @Override
-    public AnnotationAttributes getAnnotationAttributes(String annotationName, boolean classValuesAsString) {
-        return null;
-    }
 }

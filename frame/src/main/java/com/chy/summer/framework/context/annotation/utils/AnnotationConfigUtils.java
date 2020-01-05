@@ -3,17 +3,13 @@ package com.chy.summer.framework.context.annotation.utils;
 import com.chy.summer.framework.beans.config.AnnotatedBeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
-import com.chy.summer.framework.context.annotation.ComponentScan;
 import com.chy.summer.framework.context.annotation.Lazy;
 import com.chy.summer.framework.context.annotation.ScopeMetadata;
 import com.chy.summer.framework.context.annotation.constant.ScopedProxyMode;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
-import com.chy.summer.framework.core.type.AnnotatedTypeMetadata;
+import com.chy.summer.framework.core.type.AnnotationBehavior;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
-import com.chy.summer.framework.core.type.ClassMetadata;
-import com.sun.istack.internal.Nullable;
 
-import java.util.Set;
 
 /**
  * 用了解析annotation 的一个公用的工具类
@@ -26,10 +22,10 @@ public class AnnotationConfigUtils {
      *  TODO 这里只会先实现 @Lazy 后面留坑
      */
     public static void processCommonDefinitionAnnotations(AnnotatedBeanDefinition definition,
-                                                          AnnotatedTypeMetadata metadata) {
+                                                          AnnotationBehavior annotationBehavior) {
 
         //如果存在 @Lazy 注解就做对应的操作
-        AnnotationAttributes lazyAttributes = metadata.getAnnotationAttributes(Lazy.class);
+        AnnotationAttributes lazyAttributes = annotationBehavior.getAnnotationAttributes(Lazy.class);
         if(lazyAttributes != null){
             Boolean isLazy = lazyAttributes.getRequiredAttribute("value", Boolean.class);
             definition.setLazyInit(isLazy);

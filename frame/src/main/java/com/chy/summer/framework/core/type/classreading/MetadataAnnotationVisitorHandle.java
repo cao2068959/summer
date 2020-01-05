@@ -1,7 +1,6 @@
 package com.chy.summer.framework.core.type.classreading;
 
 import com.chy.summer.framework.core.annotation.AnnotationAttributeHolder;
-import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.annotation.AnnotationUtils;
 import com.chy.summer.framework.exception.AsmException;
 import com.chy.summer.framework.util.ClassUtils;
@@ -40,13 +39,18 @@ public class MetadataAnnotationVisitorHandle extends AnnotationVisitor {
     @Setter
     private  Map<String, Object> annotationAttributes = new HashMap<>();
 
-    private Map<String, AnnotationAttributeHolder> attributeHolders;
+    private Map<String, AnnotationAttributeHolder> ownAllAnnotated;
 
-    public MetadataAnnotationVisitorHandle(String className ,Map<String, AnnotationAttributeHolder> attributeHolders) {
+    private Set<String> ownAllAnnotatedType;
+
+
+    public MetadataAnnotationVisitorHandle(String className, Map<String, AnnotationAttributeHolder> ownAllAnnotated,
+                                           Set<String> ownAllAnnotatedType) {
 
         super(Opcodes.ASM5);
         this.className = className;
-        this.attributeHolders = attributeHolders;
+        this.ownAllAnnotated = ownAllAnnotated;
+        this.ownAllAnnotatedType = ownAllAnnotatedType;
     }
 
 
@@ -80,7 +84,7 @@ public class MetadataAnnotationVisitorHandle extends AnnotationVisitor {
      */
     @Override
     public AnnotationVisitor visitArray(String key) {
-        MetadataAnnotationVisitorHandle visitorHandle = new MetadataAnnotationVisitorHandle(className, attributesMap, metaAnnotationMap);
+        MetadataAnnotationVisitorHandle visitorHandle = new MetadataAnnotationVisitorHandle(className, ownAllAnnotated, ownAllAnnotatedType);
         visitorHandle.setArraykey(key);
         visitorHandle.setAnnotationAttributes(annotationAttributes);
         return visitorHandle;
@@ -117,7 +121,8 @@ public class MetadataAnnotationVisitorHandle extends AnnotationVisitor {
         annotationType = getAnnotationType();
         //这个注解上面还有哪一些继承上去的注解
         AnnotationAttributeHolder holder = AnnotationUtils.metaAnnotationMapHandle(annotationType, annotationAttributes, null);
-        attributeHolders.put(holder.getName(), holder);
+        ownAllAnnotated.put(holder.getName(), holder);
+        ownAllAnnotatedType.addAll(holder.getContain());
         //执行注解上的继承任务,把所有的继承属性给赋值过去
         AnnotationUtils.doAliasForTask(holder);
     }

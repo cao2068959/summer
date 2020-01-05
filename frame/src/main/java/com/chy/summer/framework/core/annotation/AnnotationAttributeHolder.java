@@ -61,11 +61,12 @@ public class AnnotationAttributeHolder {
 
     public void addChild(AnnotationAttributeHolder annotationAttributeHolder) {
         child.put(annotationAttributeHolder.getName(), annotationAttributeHolder);
+        contain.add(annotationAttributeHolder.getName());
         annotationAttributeHolder.setParent(this);
 
         //给所有的父节点 把新加入的 子节点的 name 给加上去
         forParent((parent) -> {
-            contain.add(annotationAttributeHolder.getName());
+            parent.contain.add(annotationAttributeHolder.getName());
             return null;
         }, null);
 

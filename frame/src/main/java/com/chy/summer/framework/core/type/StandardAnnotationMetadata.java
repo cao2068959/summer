@@ -9,7 +9,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public class StandardAnnotationMetadata extends StandardClassMetadata implements AnnotationMetadata {
+public class StandardAnnotationMetadata extends StandardClassMetadata implements AnnotationMetadata, DefaultAnnotationBehavior {
 
     private final Annotation[] annotations;
 
@@ -37,53 +37,17 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
 
     }
 
-    @Override
-    public boolean hasMetaAnnotation(String annotationName) {
-        return annotationType.contains(annotationName);
-    }
 
     @Override
-    public boolean hasAnnotation(String metaAnnotationName) {
-        return false;
-    }
-
-
-    @Override
-    public AnnotationAttributes getAnnotationAttributes(Class<? extends Annotation> type) {
-        String annotationName = type.getName();
-        if(!hasMetaAnnotation(annotationName)){
-            return null;
-        }
-
-        if (annotationAttributes.containsKey(annotationName)) {
-            return annotationAttributes.get(annotationName).getAnnotationAttributes();
-        }
-        for (AnnotationAttributeHolder holder : annotationAttributes.values()) {
-
-            if (holder.getContain().contains(annotationName)) {
-                List<AnnotationAttributeHolder> childAnntationHolder = holder.getChildAnntationHolder(annotationName);
-                if (childAnntationHolder.size() > 0) {
-                    return childAnntationHolder.get(1).getAnnotationAttributes();
-                }
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Map<String, AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type) {
-        return null;
-    }
-
-    @Override
-    public boolean hasAnnotatedMethods(String name) {
-        return false;
-    }
-
-    @Override
-    public Set<String> getAnnotationTypes() {
+    public Set<String> getOwnAllAnnotatedType() {
         return annotationType;
     }
+
+    @Override
+    public Map<String, AnnotationAttributeHolder> getOwnAllAnnotated() {
+        return annotationAttributes;
+    }
+
 
     /**
      * 这里是用反射直接获取的
@@ -109,17 +73,8 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
     }
 
     @Override
-    public boolean isAnnotated(String name) {
-        return false;
+    public boolean hasAnnotatedMethods(String name) {
+       return !getAnnotatedMethods(name).isEmpty();
     }
 
-    @Override
-    public AnnotationAttributes getAnnotationAttributes(String annotationName) {
-        return null;
-    }
-
-    @Override
-    public AnnotationAttributes getAnnotationAttributes(String annotationName, boolean classValuesAsString) {
-        return null;
-    }
 }

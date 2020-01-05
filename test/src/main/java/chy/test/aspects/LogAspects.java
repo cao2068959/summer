@@ -1,11 +1,12 @@
 package chy.test.aspects;
 
 import chy.test.annotation.ChyService;
+import com.chy.summer.framework.annotation.stereotype.Service;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.*;
 
 @Aspect
-@ChyService
+@Service
 public class LogAspects {
     @Pointcut("execution(* chy.test.service.Abc.*(..))")
     public void pointCut() { }

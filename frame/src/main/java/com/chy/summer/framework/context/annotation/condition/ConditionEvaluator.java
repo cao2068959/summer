@@ -3,7 +3,6 @@ package com.chy.summer.framework.context.annotation.condition;
 
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
-import com.chy.summer.framework.core.type.AnnotatedTypeMetadata;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 
 import com.chy.summer.framework.context.annotation.condition.ConfigurationCondition.ConfigurationPhase;
@@ -14,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/*
 public class ConditionEvaluator {
 
     public boolean shouldSkip(AnnotatedTypeMetadata metadata, ConfigurationPhase phase) {
@@ -32,13 +32,17 @@ public class ConditionEvaluator {
 
         List<Condition> conditions = new ArrayList<Condition>();
         for (String[] conditionClasses : getConditionClasses(metadata)) {
-            /*for (String conditionClass : conditionClasses) {
+            */
+/*for (String conditionClass : conditionClasses) {
                 Condition condition = getCondition(conditionClass, this.context.getClassLoader());
                 conditions.add(condition);
-            }*/
+            }*//*
+
         }
 
-        /*//排序
+        */
+/*//*
+/排序
         AnnotationAwareOrderComparator.sort(conditions);
 
         for (Condition condition : conditions) {
@@ -51,7 +55,8 @@ public class ConditionEvaluator {
                     return true;
                 }
             }
-        }*/
+        }*//*
+
 
         return false;
     }
@@ -64,3 +69,4 @@ public class ConditionEvaluator {
 
 
 }
+*/
