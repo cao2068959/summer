@@ -49,7 +49,7 @@ public class ConfigurationClassParser {
     /**
      *  Condition 注解的解析器
      */
-   // private final ConditionEvaluator conditionEvaluator;
+    private final ConditionEvaluator conditionEvaluator;
 
     @Getter
     private final Map<ConfigurationClass, ConfigurationClass> configurationClasses = new LinkedHashMap<>();
