@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 public class ConditionEvaluator {
@@ -57,15 +58,14 @@ public class ConditionEvaluator {
             }
         }
 
-
         return false;
     }
 
 
     private List<String[]> getConditionClasses(AnnotationBehavior annotationBehavior) {
-        annotationBehavior.getAnnotationAttributesAll(Conditional.class);
-        return null;
+        return annotationBehavior.getAnnotationAttributesAll(Conditional.class).stream()
+                .map(annotationAttributes ->
+                        annotationAttributes.getRequiredAttribute("value", String[].class))
+                .collect(Collectors.toList());
     }
-
-
 }
