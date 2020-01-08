@@ -1,12 +1,17 @@
 package com.chy.summer.framework.context.annotation.condition;
 
 
+import com.chy.summer.framework.beans.BeanUtils;
+import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
+import com.chy.summer.framework.core.evn.Environment;
+import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.core.type.AnnotationBehavior;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 
 import com.chy.summer.framework.context.annotation.condition.ConfigurationCondition.ConfigurationPhase;
+import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ConfigurationClassUtils;
 
 import java.util.ArrayList;
@@ -17,6 +22,15 @@ import java.util.stream.Collectors;
 
 
 public class ConditionEvaluator {
+
+
+    ConditionContext context;
+
+    public ConditionEvaluator(BeanDefinitionRegistry registry,
+                              Environment environment, ResourceLoader resourceLoader) {
+        context = new DefaultConditionContext(registry,environment,resourceLoader);
+
+    }
 
     public boolean shouldSkip(AnnotationBehavior annotationBehavior, ConfigurationPhase phase) {
         //既然没打 @Conditional 注解 直接放行了
@@ -37,11 +51,10 @@ public class ConditionEvaluator {
         //这里会把 这个 类/方法 上所有的 @Conditional 的 value[] 都给找出来,所以是一个 string[注解数][每个注解上的所有value值] 2维数组
         for (String[] conditionClasses : getConditionClasses(annotationBehavior)) {
             for (String conditionClass : conditionClasses) {
-                Condition condition = getCondition(conditionClass, this.context.getClassLoader());
+                Condition condition = getCondition(conditionClass);
                 conditions.add(condition);
             }
         }
-
 
         //排序
         AnnotationAwareOrderComparator.sort(conditions);
@@ -52,13 +65,19 @@ public class ConditionEvaluator {
                 requiredPhase = ((ConfigurationCondition) condition).getConfigurationPhase();
             }
             if (requiredPhase == null || requiredPhase == phase) {
-                if (!condition.matches(this.context, metadata)) {
+                if (!condition.matches(this.context, annotationBehavior)) {
                     return true;
                 }
             }
         }
-
         return false;
+    }
+
+    private Condition getCondition(String conditionClassName) {
+        //通过 类加载器把 类给捞出来
+        Class<?> conditionClass = ClassUtils.resolveClassName(conditionClassName, ClassUtils.getDefaultClassLoader());
+        //通过类生成实例化对象
+        return (Condition) BeanUtils.instantiateClass(conditionClass);
     }
 
 

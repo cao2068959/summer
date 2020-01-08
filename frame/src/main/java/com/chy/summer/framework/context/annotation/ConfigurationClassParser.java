@@ -7,6 +7,7 @@ import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.context.ComponentScanAnnotationParser;
+import com.chy.summer.framework.context.annotation.condition.ConditionEvaluator;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.core.io.ResourceLoader;
@@ -72,7 +73,7 @@ public class ConfigurationClassParser {
         this.resourceLoader = resourceLoader;
         this.registry = registry;
         this.componentScanParser = new ComponentScanAnnotationParser(environment, resourceLoader, componentScanBeanNameGenerator, registry);
-       // this.conditionEvaluator = new ConditionEvaluator();
+        this.conditionEvaluator = new ConditionEvaluator(registry,environment,resourceLoader);
     }
 
 
@@ -125,9 +126,9 @@ public class ConfigurationClassParser {
     protected void processConfigurationClass(ConfigurationClass configClass) throws Exception {
 
         //如果类上打了 @condition 注解，就去判断一下这个类是否应该被注入到容器里
-        //if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), PARSE_CONFIGURATION)) {
-       //     return;
-       // }
+        if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), PARSE_CONFIGURATION)) {
+            return;
+        }
 
         ConfigurationClass existingClass = this.configurationClasses.get(configClass);
         if (existingClass != null) {

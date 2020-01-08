@@ -10,4 +10,7 @@ import com.chy.summer.framework.context.annotation.condition.Conditional;
 @ConditionalB
 public class ConditionDemo1 {
 
+    public ConditionDemo1() {
+        System.out.println("------------初始化了 ConditionDemo1 --------------");
+    }
 }

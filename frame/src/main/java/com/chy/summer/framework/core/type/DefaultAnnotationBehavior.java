@@ -95,7 +95,7 @@ public interface DefaultAnnotationBehavior extends AnnotationBehavior {
     @Override
     default List<AnnotationAttributes> getAnnotationAttributesAll(Class<? extends Annotation> type){
         String annotationName = type.getName();
-        List result = new LinkedList();
+        List<AnnotationAttributes> result = new LinkedList();
         if(!hasMetaAnnotation(annotationName)){
             return result;
         }
@@ -103,15 +103,14 @@ public interface DefaultAnnotationBehavior extends AnnotationBehavior {
         Map<String, AnnotationAttributeHolder> ownAllAnnotated = getOwnAllAnnotated();
 
         if (ownAllAnnotated.containsKey(annotationName)) {
-            result.add(ownAllAnnotated.get(annotationName));
+            result.add(ownAllAnnotated.get(annotationName).getAnnotationAttributes());
         }
 
         for (AnnotationAttributeHolder holder : ownAllAnnotated.values()) {
             if (holder.getContain().contains(annotationName)) {
-                List<AnnotationAttributeHolder> childAnntationHolder = holder.getChildAnntationHolder(annotationName);
-                if (!childAnntationHolder.isEmpty()) {
-                    result.addAll(childAnntationHolder);
-                }
+                holder.getChildAnntationHolder(annotationName).stream().forEach(childHolder->{
+                    result.add(childHolder.getAnnotationAttributes());
+                });
             }
         }
         return result;

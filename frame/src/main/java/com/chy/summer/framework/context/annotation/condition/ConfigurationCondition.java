@@ -3,6 +3,11 @@ package com.chy.summer.framework.context.annotation.condition;
 
 public interface ConfigurationCondition {
 
+    /**
+     * 用了获取 conditional 的作用域的
+     * @return
+     */
+    ConfigurationPhase getConfigurationPhase();
 
     enum ConfigurationPhase {
 
