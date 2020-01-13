@@ -308,9 +308,62 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             //正常的注册逻辑
             registerBeanDefinitionHandle(beanName, beanDefinition);
         }
-
-
     }
+
+    @Override
+    public void removeBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
+        Assert.hasText(beanName, "'beanName' 不能为空");
+        BeanDefinition bd = this.beanDefinitionMap.remove(beanName);
+        if (bd == null) {
+            log.error("没有发现 bean name = [{}] 的 beanDefinition",beanName);
+            throw new NoSuchBeanDefinitionException(beanName);
+        }
+
+        //如果有个其他的线程正在 设置 bd 进入容器,这里就上锁,保证线程安全
+        if (hasBeanCreationStarted()) {
+            synchronized (this.beanDefinitionMap) {
+                List<String> updatedDefinitions = new ArrayList<>(this.beanDefinitionNames);
+                updatedDefinitions.remove(beanName);
+                this.beanDefinitionNames = updatedDefinitions;
+            }
+        }
+        else {
+            this.beanDefinitionNames.remove(beanName);
+        }
+        //除了从容器里删除了 bd 如果这个 bd 已经生成了 单例对象,执行了一些后置处理器,这边都需要全部撤回
+        resetBeanDefinition(beanName);
+    }
+
+
+    protected void resetBeanDefinition(String beanName) {
+        // Remove the merged bean definition for the given bean, if already created.
+        clearMergedBeanDefinition(beanName);
+
+        // Remove corresponding bean from singleton cache, if any. Shouldn't usually
+        // be necessary, rather just meant for overriding a context's default beans
+        // (e.g. the default StaticMessageSource in a StaticApplicationContext).
+        destroySingleton(beanName);
+
+        // Notify all post-processors that the specified bean definition has been reset.
+        for (BeanPostProcessor processor : getBeanPostProcessors()) {
+            if (processor instanceof MergedBeanDefinitionPostProcessor) {
+                ((MergedBeanDefinitionPostProcessor) processor).resetBeanDefinition(beanName);
+            }
+        }
+
+        // Reset all bean definitions that have the given bean as parent (recursively).
+        for (String bdName : this.beanDefinitionNames) {
+            if (!beanName.equals(bdName)) {
+                BeanDefinition bd = this.beanDefinitionMap.get(bdName);
+                // Ensure bd is non-null due to potential concurrent modification
+                // of the beanDefinitionMap.
+                if (bd != null && beanName.equals(bd.getParentName())) {
+                    resetBeanDefinition(bdName);
+                }
+            }
+        }
+    }
+
 
     @Override
     public void registerAlias(String name, String alias) {

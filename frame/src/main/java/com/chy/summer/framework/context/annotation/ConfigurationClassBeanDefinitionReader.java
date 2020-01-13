@@ -7,6 +7,8 @@ import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.beans.support.RootBeanDefinition;
+import com.chy.summer.framework.context.annotation.condition.ConditionEvaluator;
+import com.chy.summer.framework.context.annotation.condition.ConfigurationCondition;
 import com.chy.summer.framework.context.annotation.constant.Autowire;
 import com.chy.summer.framework.context.annotation.utils.AnnotationConfigUtils;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
@@ -35,6 +37,9 @@ public class ConfigurationClassBeanDefinitionReader {
 
     private final BeanNameGenerator importBeanNameGenerator;
 
+    private TrackedConditionEvaluator trackedConditionEvaluator = new TrackedConditionEvaluator();
+
+    private final ConditionEvaluator conditionEvaluator;
 
     ConfigurationClassBeanDefinitionReader(BeanDefinitionRegistry registry,
                                            ResourceLoader resourceLoader, Environment environment, BeanNameGenerator importBeanNameGenerator) {
@@ -43,6 +48,7 @@ public class ConfigurationClassBeanDefinitionReader {
         this.resourceLoader = resourceLoader;
         this.environment = environment;
         this.importBeanNameGenerator = importBeanNameGenerator;
+        this.conditionEvaluator = new ConditionEvaluator(registry, environment, resourceLoader);
     }
 
     public void loadBeanDefinitions(Set<ConfigurationClass> configClasses) {
@@ -59,6 +65,16 @@ public class ConfigurationClassBeanDefinitionReader {
      */
     private void loadBeanDefinitionsForConfigurationClass(
             ConfigurationClass configClass) {
+        //判断这个 bean 是否应该跳过配置,这里其实就是去检查 @conditional 注解,判断里面的逻辑
+        if (trackedConditionEvaluator.shouldSkip(configClass)) {
+            String beanName = configClass.getBeanName();
+            //如果真的要跳过,那么这个beandefinition 可能已经注册进入Ioc里面了,这里需要把他删除
+            if (StringUtils.hasLength(beanName) && this.registry.containsBeanDefinition(beanName)) {
+                this.registry.removeBeanDefinition(beanName);
+            }
+            this.importRegistry.removeImportingClass(configClass.getMetadata().getClassName());
+            return;
+        }
 
         //这里先把 这个类上面的 所有 @Import 标注出来的类先解析了,然后注册进入 IOC
         if (configClass.isImported()) {
@@ -213,6 +229,45 @@ public class ConfigurationClassBeanDefinitionReader {
             return (super.isFactoryMethod(candidate) && BeanAnnotationHelper.isBeanAnnotated(candidate));
         }
 
+    }
+
+    /**
+     * 用了记录 shouldSkip 执行之后的情况,避免 同一个ConfigurationClass重复判断
+     */
+    private class TrackedConditionEvaluator {
+
+        private final Map<ConfigurationClass, Boolean> skipped = new HashMap<>();
+
+        public boolean shouldSkip(ConfigurationClass configClass) {
+            //先看缓存里有没有,有的话就直接给缓存里的结果
+            Boolean skip = this.skipped.get(configClass);
+            if (skip != null) {
+                return skip;
+            }
+            if (configClass.isImported()) {
+                boolean allSkipped = true;
+                //如果这个 configClass 是从@Import 导入进去的,那么找到他所有的持有对象(就是标记了@Import的那个类)
+                //先检查持有类上的 conditional 条件,只要有一个通过,那么就通过
+                for (ConfigurationClass importedBy : configClass.getImportedBy()) {
+                    if (!shouldSkip(importedBy)) {
+                        allSkipped = false;
+                        break;
+                    }
+                }
+                if (allSkipped) {
+                    skip = true;
+                }
+            }
+
+            if (skip == null) {
+                //真正去验证 conditional 的逻辑判断是否应该跳过
+                skip = conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationCondition.ConfigurationPhase.REGISTER_BEAN);
+            }
+            //写入缓存
+            this.skipped.put(configClass, skip);
+
+            return skip;
+        }
     }
 
 

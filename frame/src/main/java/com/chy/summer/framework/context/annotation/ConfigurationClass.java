@@ -33,6 +33,7 @@ public class ConfigurationClass {
 
 
     //这个 类被多个 @Import 指明要注入
+    @Getter
     private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 
     public ConfigurationClass(AnnotationMetadata metadata, String beanName) {

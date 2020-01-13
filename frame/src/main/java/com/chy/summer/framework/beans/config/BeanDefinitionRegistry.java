@@ -44,4 +44,9 @@ public interface BeanDefinitionRegistry {
 
     String[] getBeanDefinitionNames();
 
+    /**
+     * 从ioc 容器里把指定 beanName 的beandefinition 给删除
+     * @param beanName
+     */
+    void removeBeanDefinition(String beanName);
 }
