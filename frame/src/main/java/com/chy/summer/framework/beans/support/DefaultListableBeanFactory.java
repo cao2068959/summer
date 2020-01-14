@@ -1,15 +1,12 @@
 package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.*;
-import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
+import com.chy.summer.framework.beans.config.*;
 import com.chy.summer.framework.beans.factory.AutowireCandidateResolver;
 import com.chy.summer.framework.beans.factory.DependencyDescriptor;
 import com.chy.summer.framework.beans.factory.InjectionPoint;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.exception.*;
-import com.chy.summer.framework.beans.config.BeanDefinition;
-import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
-import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.util.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -336,32 +333,28 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 
     protected void resetBeanDefinition(String beanName) {
-        // Remove the merged bean definition for the given bean, if already created.
-        clearMergedBeanDefinition(beanName);
-
-        // Remove corresponding bean from singleton cache, if any. Shouldn't usually
-        // be necessary, rather just meant for overriding a context's default beans
-        // (e.g. the default StaticMessageSource in a StaticApplicationContext).
+        //销毁单例对象
         destroySingleton(beanName);
-
-        // Notify all post-processors that the specified bean definition has been reset.
+        //执行移除 beanDefinition 的后置处理器
         for (BeanPostProcessor processor : getBeanPostProcessors()) {
             if (processor instanceof MergedBeanDefinitionPostProcessor) {
                 ((MergedBeanDefinitionPostProcessor) processor).resetBeanDefinition(beanName);
             }
         }
+    }
 
-        // Reset all bean definitions that have the given bean as parent (recursively).
-        for (String bdName : this.beanDefinitionNames) {
-            if (!beanName.equals(bdName)) {
-                BeanDefinition bd = this.beanDefinitionMap.get(bdName);
-                // Ensure bd is non-null due to potential concurrent modification
-                // of the beanDefinitionMap.
-                if (bd != null && beanName.equals(bd.getParentName())) {
-                    resetBeanDefinition(bdName);
-                }
-            }
-        }
+    /**
+     * 删除单例对象
+     * @param beanName
+     */
+    public void destroySingleton(String beanName) {
+        super.destroySingleton(beanName);
+        clearByTypeCache();
+    }
+
+    private void clearByTypeCache() {
+        this.allBeanNamesByType.clear();
+        this.singletonBeanNamesByType.clear();
     }
 
 

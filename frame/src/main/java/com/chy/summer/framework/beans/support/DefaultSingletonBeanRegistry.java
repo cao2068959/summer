@@ -245,4 +245,21 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
             this.registeredSingletons.add(beanName);
         }
     }
+
+    /**
+     * 删除单例对象
+     * @param beanName
+     */
+    public void destroySingleton(String beanName) {
+        removeSingleton(beanName);
+    }
+
+    protected void removeSingleton(String beanName) {
+        synchronized (this.singletonObjects) {
+            this.singletonObjects.remove(beanName);
+            this.singletonFactories.remove(beanName);
+            this.earlySingletonObjects.remove(beanName);
+            this.registeredSingletons.remove(beanName);
+        }
+    }
 }

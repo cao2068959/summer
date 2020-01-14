@@ -86,6 +86,11 @@ public class GenericWebApplicationContext extends AbstractApplicationContext imp
     }
 
     @Override
+    public void removeBeanDefinition(String beanName) {
+        beanFactory.removeBeanDefinition(beanName);
+    }
+
+    @Override
     public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
         return   beanFactory.getBeanNamesForType(type,includeNonSingletons,allowEagerInit);
     }
