@@ -102,11 +102,14 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
     }
 
 
+    @Override
+    public Resource getResource(String location) {
+        return resourceLoader.getResource(location);
+    }
 
-
-
-
-
-
+    @Override
+    public ClassLoader getClassLoader() {
+        return resourceLoader.getClassLoader();
+    }
 }
 

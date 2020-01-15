@@ -1,8 +1,10 @@
 package com.chy.summer.framework.core.io.support;
 
+import com.chy.summer.framework.core.io.ResourceLoader;
+
 import java.io.IOException;
 
-public interface ResourcePatternResolver  {
+public interface ResourcePatternResolver extends ResourceLoader {
 
     /**
      * 在根目录所有文件的前缀，带有这个前缀的包路径表示会在所有的jar包的根目录下开始搜索指定文件

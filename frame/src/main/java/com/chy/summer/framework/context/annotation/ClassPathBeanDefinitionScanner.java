@@ -1,6 +1,7 @@
 package com.chy.summer.framework.context.annotation;
 
 import com.chy.summer.framework.beans.BeanNameAware;
+import com.chy.summer.framework.context.annotation.condition.ConditionEvaluator;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.exception.BeanDefinitionCommonException;
 import com.chy.summer.framework.annotation.stereotype.Component;
@@ -68,6 +69,9 @@ public class ClassPathBeanDefinitionScanner{
      * 名字生成器
      */
     private BeanNameGenerator beanNameGenerator = new AnnotationBeanNameGenerator();
+
+    private ConditionEvaluator conditionEvaluator;
+
     /**
      * 根据定义对象创建ClassPathBeanDefinitionScanner
      *
@@ -191,10 +195,18 @@ public class ClassPathBeanDefinitionScanner{
         }
         for (TypeFilter tf : this.includeFilters) {
             if (tf.match(metadataReader, getMetadataReaderFactory())) {
-                return true;
+                //如果有 上了 @Conditional 注解的,还要判断一下是否应该加载
+                return isConditionMatch(metadataReader);
             }
         }
         return false;
+    }
+
+    private boolean isConditionMatch(MetadataReader metadataReader) {
+        if (this.conditionEvaluator == null) {
+            this.conditionEvaluator = new ConditionEvaluator(registry, this.environment, this.resourcePatternResolver);
+        }
+        return !this.conditionEvaluator.shouldSkip(metadataReader.getAnnotationMetadata(),null);
     }
 
     /**
