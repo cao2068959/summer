@@ -7,7 +7,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import java.util.Map;
 
-public class StandardServletEnvironment implements ConfigurableWebEnvironment {
+public class StandardServletEnvironment  implements ConfigurableWebEnvironment {
 
     @Override
     public void initPropertySources(ServletContext servletContext, ServletConfig servletConfig) {

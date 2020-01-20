@@ -16,6 +16,7 @@ import com.chy.summer.framework.context.event.ApplicationListener;
 import com.chy.summer.framework.context.support.AbstractApplicationContext;
 import com.chy.summer.framework.core.GenericTypeResolver;
 import com.chy.summer.framework.core.evn.ConfigurableEnvironment;
+import com.chy.summer.framework.core.evn.MutablePropertySources;
 import com.chy.summer.framework.core.io.DefaultResourceLoader;
 import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.io.support.SummerFactoriesLoader;
@@ -39,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class SummerApplication {
 
-
+    private boolean addConversionService = true;
 
     private final ResourceLoader resourceLoader;
 
@@ -404,11 +405,40 @@ public class SummerApplication {
 
     protected void configureEnvironment(ConfigurableEnvironment environment,
                                         String[] args) {
-        //TODO 这边会把外部传入的命令给放入 环境对象里,这里先留坑
+        if (this.addConversionService) {
+            //TODO 类型转换器后面再补吧
+            /*ConversionService conversionService = ApplicationConversionService
+                    .getSharedInstance();
+            environment.setConversionService(
+                    (ConfigurableConversionService) conversionService);*/
+        }
+        //配置文件的 文件源配置
+        configurePropertySources(environment, args);
+        configureProfiles(environment, args);
     }
 
-
-
+    protected void configurePropertySources(ConfigurableEnvironment environment,
+                                            String[] args) {
+        MutablePropertySources sources = environment.getPropertySources();
+        if (this.defaultProperties != null && !this.defaultProperties.isEmpty()) {
+            sources.addLast(
+                    new MapPropertySource("defaultProperties", this.defaultProperties));
+        }
+        if (this.addCommandLineProperties && args.length > 0) {
+            String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
+            if (sources.contains(name)) {
+                PropertySource<?> source = sources.get(name);
+                CompositePropertySource composite = new CompositePropertySource(name);
+                composite.addPropertySource(new SimpleCommandLinePropertySource(
+                        "springApplicationCommandLineArgs", args));
+                composite.addPropertySource(source);
+                sources.replace(name, composite);
+            }
+            else {
+                sources.addFirst(new SimpleCommandLinePropertySource(args));
+            }
+        }
+    }
 
     private ConfigurableEnvironment getOrCreateEnvironment() {
         if (this.environment != null) {
