@@ -6,5 +6,4 @@ public interface Environment extends PropertyResolver {
 
     String[] getDefaultProfiles();
 
-    boolean acceptsProfiles(String... profiles);
 }

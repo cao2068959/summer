@@ -1,5 +1,6 @@
 package com.chy.summer.framework.core.evn;
 
+import com.chy.summer.framework.core.evn.resolver.ConfigurablePropertyResolver;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ObjectUtils;
 import com.chy.summer.framework.util.StringUtils;
@@ -19,6 +20,8 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment  {
      */
     public static final String ACTIVE_PROFILES_PROPERTY_NAME = "summer.profiles.active";
 
+    public static final String DEFAULT_PROFILES_PROPERTY_NAME = "summer.profiles.default";
+
     protected static final String RESERVED_DEFAULT_PROFILE_NAME = "default";
 
     /**
@@ -28,8 +31,16 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment  {
 
     private final Set<String> defaultProfiles = new LinkedHashSet<>(getReservedDefaultProfiles());
 
+    /**
+     * 真正存放配置属性的容器
+     */
     private final MutablePropertySources propertySources = new MutablePropertySources();
 
+    /**
+     * 属性解析器，数据来源就是上面的 propertySources
+     */
+    private final ConfigurablePropertyResolver propertyResolver =
+            new PropertySourcesPropertyResolver(this.propertySources);
     /**
      * 设置指定配置文件为活跃状态
      */
@@ -107,11 +118,6 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment  {
 
     @Override
     public void merge(ConfigurableEnvironment parent) {
-        for (PropertySource<?> ps : parent.getPropertySources()) {
-            if (!this.propertySources.contains(ps.getName())) {
-                this.propertySources.addLast(ps);
-            }
-        }
         String[] parentActiveProfiles = parent.getActiveProfiles();
         if (!ObjectUtils.isEmpty(parentActiveProfiles)) {
             synchronized (this.activeProfiles) {
@@ -130,6 +136,85 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment  {
             }
         }
     }
+
+
+    @Override
+    public String[] getActiveProfiles() {
+        return StringUtils.toStringArray(doGetActiveProfiles());
+    }
+
+    @Override
+    public String[] getDefaultProfiles() {
+        return StringUtils.toStringArray(doGetDefaultProfiles());
+    }
+
+
+    //---------------------------------------------------------------------
+    // 实现 PropertyResolver interface
+    //---------------------------------------------------------------------
+
+    @Override
+    public boolean containsProperty(String key) {
+        return this.propertyResolver.containsProperty(key);
+    }
+
+    @Override
+    public String getProperty(String key) {
+        return this.propertyResolver.getProperty(key);
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue) {
+        return this.propertyResolver.getProperty(key, defaultValue);
+    }
+
+    @Override
+    public <T> T getProperty(String key, Class<T> targetType) {
+        return this.propertyResolver.getProperty(key, targetType);
+    }
+
+    @Override
+    public <T> T getProperty(String key, Class<T> targetType, T defaultValue) {
+        return this.propertyResolver.getProperty(key, targetType, defaultValue);
+    }
+
+    @Override
+    public String getRequiredProperty(String key) throws IllegalStateException {
+        return this.propertyResolver.getRequiredProperty(key);
+    }
+
+    @Override
+    public <T> T getRequiredProperty(String key, Class<T> targetType) throws IllegalStateException {
+        return this.propertyResolver.getRequiredProperty(key, targetType);
+    }
+
+    @Override
+    public String resolvePlaceholders(String text) {
+        return this.propertyResolver.resolvePlaceholders(text);
+    }
+
+    @Override
+    public String resolveRequiredPlaceholders(String text) throws IllegalArgumentException {
+        return this.propertyResolver.resolveRequiredPlaceholders(text);
+    }
+
+
+
+
+
+    protected Set<String> doGetDefaultProfiles() {
+        synchronized (this.defaultProfiles) {
+            if (this.defaultProfiles.equals(getReservedDefaultProfiles())) {
+                String profiles = getProperty(DEFAULT_PROFILES_PROPERTY_NAME);
+                if (StringUtils.hasText(profiles)) {
+                    setDefaultProfiles(StringUtils.commaDelimitedListToStringArray(
+                            StringUtils.trimAllWhitespace(profiles)));
+                }
+            }
+            return this.defaultProfiles;
+        }
+    }
+
 
     /**
      * 获取已经激活的配置文件，如果是第一次获取，还会去把 summer.profiles.active 配置的值给放进去
