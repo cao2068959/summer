@@ -1,6 +1,8 @@
 package com.chy.summer.framework.core.evn.resolver;
 
 
+import com.chy.summer.framework.core.convert.ConversionService;
+import com.chy.summer.framework.core.convert.support.ConfigurableConversionService;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.PropertyPlaceholderHelper;
 import com.chy.summer.framework.util.SystemPropertyUtils;
@@ -30,9 +32,14 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
     @Setter
     private boolean ignoreUnresolvableNestedPlaceholders = false;
 
+    @Setter
+    private volatile ConfigurableConversionService conversionService;
+
     private final Set<String> requiredProperties = new LinkedHashSet<>();
 
     private PropertyPlaceholderHelper nonStrictHelper;
+
+    private PropertyPlaceholderHelper strictHelper;
 
 
     //==========================================================================================
@@ -175,14 +182,28 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 
     @Override
     public String resolveRequiredPlaceholders(String text) throws IllegalArgumentException {
-        return null;
+        if (this.strictHelper == null) {
+            this.strictHelper = createPlaceholderHelper(false);
+        }
+        return doResolvePlaceholders(text, this.strictHelper);
     }
+
 
 
     //==========================================================================================
     //                    这个类里面本身的方法
     //==========================================================================================
 
+    /**
+     * 去选择 使用哪一个 占位符解析器,根据 ignoreUnresolvableNestedPlaceholders 这个全局变量来决定的
+     * 2个解析器的差别在于 没有解析到值是报错还是忽略
+     * @param value
+     * @return
+     */
+    protected String resolveNestedPlaceholders(String value) {
+        return (this.ignoreUnresolvableNestedPlaceholders ?
+                resolvePlaceholders(value) : resolveRequiredPlaceholders(value));
+    }
 
     private PropertyPlaceholderHelper createPlaceholderHelper(boolean ignoreUnresolvablePlaceholders) {
         return new PropertyPlaceholderHelper(this.placeholderPrefix, this.placeholderSuffix,
@@ -192,5 +213,35 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
     private String doResolvePlaceholders(String text, PropertyPlaceholderHelper helper) {
         return helper.replacePlaceholders(text, this::getPropertyAsRawString);
     }
+
+
+    /**
+     * 把string类型转成对应的数据结构
+     * @param value
+     * @param targetType
+     * @param <T>
+     * @return
+     */
+    protected <T> T convertValueIfNecessary(Object value, Class<T> targetType) {
+        if (targetType == null) {
+            return (T) value;
+        }
+        //获取了转换器
+        ConversionService conversionServiceToUse = this.conversionService;
+        //开始转换
+        return conversionServiceToUse.convert(value, targetType);
+    }
+
+    //==========================================================================================
+    //                    这个抽象类里面的抽象方法,需要子类去重写
+    //==========================================================================================
+
+    /**
+     * 表达式
+     * @param key
+     * @return
+     */
+    protected abstract String getPropertyAsRawString(String key);
+
 
 }

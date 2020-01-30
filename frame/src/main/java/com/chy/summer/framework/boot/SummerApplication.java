@@ -16,24 +16,20 @@ import com.chy.summer.framework.context.event.ApplicationListener;
 import com.chy.summer.framework.context.support.AbstractApplicationContext;
 import com.chy.summer.framework.core.GenericTypeResolver;
 import com.chy.summer.framework.core.evn.ConfigurableEnvironment;
-import com.chy.summer.framework.core.evn.MutablePropertySources;
-import com.chy.summer.framework.core.io.DefaultResourceLoader;
+import com.chy.summer.framework.core.evn.propertysource.*;
 import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.io.support.SummerFactoriesLoader;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.CollectionUtils;
+import com.chy.summer.framework.util.StringUtils;
 import com.chy.summer.framework.web.servlet.context.support.StandardServletEnvironment;
 import com.google.common.base.Stopwatch;
-import javafx.print.Printer;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tools.ant.util.StringUtils;
-import org.slf4j.Marker;
-import org.slf4j.helpers.BasicMarker;
 
 import java.lang.reflect.Constructor;
-import java.security.AccessControlException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -65,6 +61,20 @@ public class SummerApplication {
     //默认的web 容器
     private static final String DEFAULT_WEB_CONTEXT_CLASS = "com.chy.summer.framework.web.servlet.AnnotationConfigServletWebServerApplicationContext";
 
+    /**
+     * 默认的配置文件项
+     * 可以通过设置这个默认的配置项来在启动summer容器的时候来动态改变一些配置文件的值
+     *
+     */
+
+    @Setter
+    private Map<String, Object> defaultProperties;
+
+    /**
+     * 设置是否要把 java 启动时候传入的参数当做配置项
+     */
+    @Setter
+    private boolean addCommandLineProperties = true;
 
 
     public SummerApplication(Class<?>... primarySources) {
@@ -394,7 +404,8 @@ public class SummerApplication {
         ConfigurableEnvironment environment = getOrCreateEnvironment();
         //对刚创建的 环境对象做一些参数的配置
         configureEnvironment(environment, applicationArguments.getSourceArgs());
-        //其实就是给所有的监听器拿到环境对象
+        //监听器触发了 environmentPrepared 事件
+        //就是在这次事件中去加载了 用户自定义的 application.yaml 文件
         listeners.environmentPrepared(environment);
         //绑定环境对象
         //bindToSpringApplication(environment);
@@ -412,34 +423,42 @@ public class SummerApplication {
             environment.setConversionService(
                     (ConfigurableConversionService) conversionService);*/
         }
-        //配置文件的 文件源配置
+        //去设置一些默认的配置属性
         configurePropertySources(environment, args);
-        configureProfiles(environment, args);
+        //TODO configureProfiles(environment, args);
     }
 
+
+    /**
+     * 去设置一些默认的配置属性
+     * 1. 直接调用summer容器设置进去的属性
+     * 2. 启动的时候通过命令行加入的属性
+     *
+     * @param environment
+     * @param args
+     */
     protected void configurePropertySources(ConfigurableEnvironment environment,
                                             String[] args) {
+        //拿到所有的配置文件项
+        //执行到这里的时候 应该只 systemProperties systemEnvironment 以及 servlet 相关的配置项
         MutablePropertySources sources = environment.getPropertySources();
+        //如果设置了默认的属性,那么把手动设置的属性给放进去
         if (this.defaultProperties != null && !this.defaultProperties.isEmpty()) {
-            sources.addLast(
-                    new MapPropertySource("defaultProperties", this.defaultProperties));
+            sources.addLast(new MapPropertySource("defaultProperties", this.defaultProperties));
         }
+
+        //如果从命令行传入了参数,那么从这里给塞进去
         if (this.addCommandLineProperties && args.length > 0) {
-            String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
-            if (sources.contains(name)) {
-                PropertySource<?> source = sources.get(name);
-                CompositePropertySource composite = new CompositePropertySource(name);
-                composite.addPropertySource(new SimpleCommandLinePropertySource(
-                        "springApplicationCommandLineArgs", args));
-                composite.addPropertySource(source);
-                sources.replace(name, composite);
-            }
-            else {
-                sources.addFirst(new SimpleCommandLinePropertySource(args));
-            }
+            sources.addFirst(new SimpleCommandLinePropertySource(args));
         }
     }
 
+
+    /**
+     * 去获取 环境对象
+     * 环境对象是用了存放所有 配置属性的 容器对象
+     * @return
+     */
     private ConfigurableEnvironment getOrCreateEnvironment() {
         if (this.environment != null) {
             return this.environment;

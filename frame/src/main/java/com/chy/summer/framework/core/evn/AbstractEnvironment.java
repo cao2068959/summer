@@ -1,9 +1,12 @@
 package com.chy.summer.framework.core.evn;
 
+import com.chy.summer.framework.core.evn.propertysource.MutablePropertySources;
 import com.chy.summer.framework.core.evn.resolver.ConfigurablePropertyResolver;
+import com.chy.summer.framework.core.evn.resolver.PropertySourcesPropertyResolver;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ObjectUtils;
 import com.chy.summer.framework.util.StringUtils;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.security.AccessControlException;
@@ -34,6 +37,7 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment  {
     /**
      * 真正存放配置属性的容器
      */
+    @Getter
     private final MutablePropertySources propertySources = new MutablePropertySources();
 
     /**
