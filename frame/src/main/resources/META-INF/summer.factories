@@ -1,3 +1,11 @@
 com.chy.summer.framework.context.ApplicationContextInitializer=\
 com.chy.summer.framework.boot.context.config.DelegatingApplicationContextInitializer,\
 com.chy.summer.framework.boot.autoconfigure.SharedMetadataReaderFactoryContextInitializer
+
+
+com.chy.summer.framework.boot.listeners.SummerApplicationRunListener=\
+com.chy.summer.framework.boot.context.event.EventPublishingRunListener
+
+
+com.chy.summer.framework.context.event.ApplicationListener=\
+com.chy.summer.framework.boot.context.config.ConfigFileApplicationListener

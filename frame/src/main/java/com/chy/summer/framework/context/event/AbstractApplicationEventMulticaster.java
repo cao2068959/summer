@@ -30,6 +30,10 @@ public abstract class AbstractApplicationEventMulticaster implements Application
         this.beanFactory = beanFactory;
     }
 
+
+    public AbstractApplicationEventMulticaster() {
+    }
+
     @Override
     public void addApplicationListenerBean(String listenerBeanName) {
 
@@ -83,7 +87,7 @@ public abstract class AbstractApplicationEventMulticaster implements Application
     protected Collection<ApplicationListener<?>> getApplicationListeners(
             ApplicationEvent event, ResolvableType eventType) {
 
-        //获取 事件源
+        //获取 事件的来源
         Object source = event.getSource();
         Class<?> sourceType = (source != null ? source.getClass() : null);
         //缓存 事件的类型+事件来源的类型 来决定key
@@ -171,7 +175,19 @@ public abstract class AbstractApplicationEventMulticaster implements Application
 
         GenericApplicationListener smartListener = (listener instanceof GenericApplicationListener ?
                 (GenericApplicationListener) listener : new GenericApplicationListenerAdapter(listener));
-        return (smartListener.supportsEventType(eventType) && smartListener.supportsSourceType(sourceType));
+
+        //先判断 事件的类型是否相同
+        if(!(smartListener.supportsEventType(eventType))){
+            return false;
+        }
+
+        //判断 事件的来源是否相同
+        if(!(smartListener.supportsSourceType(sourceType))){
+            return false;
+        }
+
+        return true;
+
     }
 
 

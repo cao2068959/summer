@@ -1,5 +1,6 @@
 package com.chy.summer.framework.context.event;
 
+import com.chy.summer.framework.boot.context.event.SmartApplicationListener;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.util.Assert;
 
@@ -49,13 +50,30 @@ public class GenericApplicationListenerAdapter implements GenericApplicationList
 
     @Override
     public boolean supportsEventType(ResolvableType eventType) {
-        return this.declaredEventType.isAssignableFrom(eventType);
+        //如果他是 SmartApplicationListener 类型就直接走 SmartApplicationListener 的判断逻辑
+        if (this.delegate instanceof SmartApplicationListener) {
+            Class<? extends ApplicationEvent> eventClass = (Class<? extends ApplicationEvent>) eventType.resolve();
+            if(eventClass == null){
+                return false;
+            }
+
+            return ((SmartApplicationListener) this.delegate).supportsEventType(eventClass);
+        }
+
+        //如果不是 SmartApplicationListener 类型 就去判断泛型是否相同
+        return (this.declaredEventType == null || this.declaredEventType.isAssignableFrom(eventType));
+
     }
 
     @Override
     public boolean supportsSourceType(Class<?> sourceType) {
-        //TODO 这里用 SmartApplicationListener 类型比较的 先留坑
-        return true;
+        //如果他不是SmartApplicationListener 类型就直接放行了
+        if(!(this.delegate instanceof SmartApplicationListener)){
+            return true;
+        }
+
+        //如果是 SmartApplicationListener 类型是直接走 SmartApplicationListener 的验证逻辑
+        return ((SmartApplicationListener) this.delegate).supportsSourceType(sourceType);
     }
 
     @Override

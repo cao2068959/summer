@@ -1,5 +1,6 @@
 package com.chy.summer.framework.context.event;
 
+import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.core.ResolvableType;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +11,7 @@ import java.util.concurrent.Executor;
 public class SimpleApplicationEventMulticaster extends AbstractApplicationEventMulticaster {
 
 
-    private final ConfigurableListableBeanFactory beanFactory;
+    private  ConfigurableListableBeanFactory beanFactory;
 
     private Executor taskExecutor;
 
@@ -19,6 +20,8 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
         this.beanFactory = beanFactory;
     }
 
+    public SimpleApplicationEventMulticaster() {
+    }
 
     /**
      * 执行广播的事件了
@@ -32,9 +35,9 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
     private void multicastEvent(ApplicationEvent event, ResolvableType eventType) {
         ResolvableType type = (eventType != null ? eventType : ResolvableType.forClass(event.getClass()));
 
+        Executor executor = getTaskExecutor();
         //根据事件类型 来拿到对应事件下面的所有 监听器
         for (final ApplicationListener<?> listener : getApplicationListeners(event, type)) {
-            Executor executor = getTaskExecutor();
             //这里如果有 executor 那么就讲会在线程中执行 监听回调
             if (executor != null) {
                 executor.execute(() -> invokeListener(listener, event));

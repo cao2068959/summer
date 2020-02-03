@@ -23,9 +23,9 @@ import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.CollectionUtils;
-import com.chy.summer.framework.util.StringUtils;
 import com.chy.summer.framework.web.servlet.context.support.StandardServletEnvironment;
 import com.google.common.base.Stopwatch;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +44,7 @@ public class SummerApplication {
     //web容器的类型
     private final WebApplicationType webApplicationType;
 
+    @Getter
     private List<ApplicationListener<?>> listeners;
 
     private ArrayList<ApplicationContextInitializer> initializers;
