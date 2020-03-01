@@ -5,6 +5,7 @@ import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.StringUtils;
+import lombok.Getter;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.net.URL;
 
 public class ClassPathResource extends AbstractFileResolvingResource {
 
+    @Getter
     private final String path;
 
     private ClassLoader classLoader;
@@ -37,10 +39,41 @@ public class ClassPathResource extends AbstractFileResolvingResource {
     }
 
 
+    protected URL resolveURL() {
+        if (this.clazz != null) {
+            return this.clazz.getResource(this.path);
+        }
+        else if (this.classLoader != null) {
+            return this.classLoader.getResource(this.path);
+        }
+        else {
+            return ClassLoader.getSystemResource(this.path);
+        }
+    }
+
+
+    @Override
+    public boolean exists() {
+        return (resolveURL() != null);
+    }
+
+    @Override
+    public Resource createRelative(String relativePath) {
+        String pathToUse = StringUtils.applyRelativePath(this.path, relativePath);
+        return (this.clazz != null ? new ClassPathResource(pathToUse, this.clazz) :
+                new ClassPathResource(pathToUse, this.classLoader));
+    }
+
+
     @Override
     public URL getURL() throws IOException {
-        return null;
+        URL url = resolveURL();
+        if (url == null) {
+            throw new FileNotFoundException(getDescription() + " cannot be resolved to URL because it does not exist");
+        }
+        return url;
     }
+
 
     @Override
     public URI getURI() throws IOException {
@@ -57,19 +90,27 @@ public class ClassPathResource extends AbstractFileResolvingResource {
         return 0;
     }
 
-    @Override
-    public Resource createRelative(String relativePath) throws IOException {
-        return null;
-    }
+
 
     @Override
     public String getFilename() {
-        return null;
+        return StringUtils.getFilename(this.path);
     }
 
     @Override
     public String getDescription() {
-        return null;
+        StringBuilder builder = new StringBuilder("class path resource [");
+        String pathToUse = this.path;
+        if (this.clazz != null && !pathToUse.startsWith("/")) {
+            builder.append(ClassUtils.classPackageAsResourcePath(this.clazz));
+            builder.append('/');
+        }
+        if (pathToUse.startsWith("/")) {
+            pathToUse = pathToUse.substring(1);
+        }
+        builder.append(pathToUse);
+        builder.append(']');
+        return builder.toString();
     }
 
     @Override

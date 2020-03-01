@@ -9,16 +9,13 @@ public class ApplicationEnvironmentPreparedEvent extends SummerApplicationEvent 
 
 
     @Getter
-    private final ConfigurableEnvironment configurableEnvironment;
+    private final ConfigurableEnvironment environment;
 
     public ApplicationEnvironmentPreparedEvent(SummerApplication application, String[] args,
                                                ConfigurableEnvironment configurableEnvironment) {
         super(application, args);
-        this.configurableEnvironment = configurableEnvironment;
+        this.environment = configurableEnvironment;
 
     }
-
-
-
 
 }

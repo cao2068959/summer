@@ -2,10 +2,15 @@ com.chy.summer.framework.context.ApplicationContextInitializer=\
 com.chy.summer.framework.boot.context.config.DelegatingApplicationContextInitializer,\
 com.chy.summer.framework.boot.autoconfigure.SharedMetadataReaderFactoryContextInitializer
 
-
+#summer的监听器
 com.chy.summer.framework.boot.listeners.SummerApplicationRunListener=\
 com.chy.summer.framework.boot.context.event.EventPublishingRunListener
 
-
+#事件监听器
 com.chy.summer.framework.context.event.ApplicationListener=\
 com.chy.summer.framework.boot.context.config.ConfigFileApplicationListener
+
+
+#配置文件的解析器
+com.chy.summer.framework.core.evn.PropertySourceLoader=\
+com.chy.summer.framework.core.evn.PropertiesPropertySourceLoader

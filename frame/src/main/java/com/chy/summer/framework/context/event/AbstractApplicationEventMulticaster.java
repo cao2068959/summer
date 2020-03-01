@@ -100,7 +100,6 @@ public abstract class AbstractApplicationEventMulticaster implements Application
         }
 
         return retrieveApplicationListeners(eventType, sourceType, null);
-
     }
 
 

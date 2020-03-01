@@ -38,6 +38,7 @@ public class SummerApplication {
 
     private boolean addConversionService = true;
 
+    @Getter
     private final ResourceLoader resourceLoader;
 
     private final LinkedHashSet<Class<?>> primarySources;
