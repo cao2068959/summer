@@ -22,8 +22,6 @@ public class InjectionMetadata {
 
     private final Collection<InjectedElement> injectedElements;
 
-    private volatile Set<InjectedElement> checkedElements;
-
     public InjectionMetadata(Class<?> targetClass, Collection<InjectedElement> elements) {
         this.targetClass = targetClass;
         this.injectedElements = elements;
@@ -34,9 +32,7 @@ public class InjectionMetadata {
     }
 
     public void inject(Object target, String beanName,  PropertyValues pvs) throws Throwable {
-        Collection<InjectedElement> checkedElements = this.checkedElements;
-        Collection<InjectedElement> elementsToIterate =
-                (checkedElements != null ? checkedElements : this.injectedElements);
+        Collection<InjectedElement> elementsToIterate = injectedElements;
         if (!elementsToIterate.isEmpty()) {
             for (InjectedElement element : elementsToIterate) {
                 log.debug("执行注入, beanName: {} , 注入属性: {}",beanName,element);

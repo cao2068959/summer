@@ -45,6 +45,16 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment  {
      */
     private final ConfigurablePropertyResolver propertyResolver =
             new PropertySourcesPropertyResolver(this.propertySources);
+
+    public AbstractEnvironment(){
+        customizePropertySources(propertySources);
+    }
+
+    /**
+     * 用来给子类去重写,会在构造函数中去 初始化一些配置
+     */
+    protected abstract void customizePropertySources(MutablePropertySources propertySources);
+
     /**
      * 设置指定配置文件为活跃状态
      */

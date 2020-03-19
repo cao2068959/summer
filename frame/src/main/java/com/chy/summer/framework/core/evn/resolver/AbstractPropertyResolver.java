@@ -223,9 +223,10 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
      * @return
      */
     protected <T> T convertValueIfNecessary(Object value, Class<T> targetType) {
-        if (targetType == null) {
+        if (targetType == null || targetType == String.class) {
             return (T) value;
         }
+
         //获取了转换器
         ConversionService conversionServiceToUse = this.conversionService;
         //开始转换

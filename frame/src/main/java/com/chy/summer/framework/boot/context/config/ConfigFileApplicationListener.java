@@ -22,13 +22,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.xml.bind.Binder;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import static org.aspectj.apache.bcel.generic.Type.STRING_ARRAY;
 
 /**
  * 配置文件的 事件监听处理器, 当响应ApplicationEnvironmentPreparedEvent 事件的时候会去 加载配置文件
@@ -46,6 +44,8 @@ public class ConfigFileApplicationListener implements SmartApplicationListener, 
 
 
     private static final Set<String> NO_SEARCH_NAMES = Collections.singleton(null);
+
+    private static final String DEFAULT_PROPERTIES = "defaultProperties";
     /**
      * 设置配置文件的加载路径,如果是null使用 DEFAULT_SEARCH_LOCATIONS
      */
@@ -98,7 +98,6 @@ public class ConfigFileApplicationListener implements SmartApplicationListener, 
         for (EnvironmentPostProcessor postProcessor : postProcessors) {
             postProcessor.postProcessEnvironment(event.getEnvironment(), event.getSummerApplication());
         }
-
 
     }
 
@@ -191,8 +190,63 @@ public class ConfigFileApplicationListener implements SmartApplicationListener, 
                 load(profile, this::getPositiveProfileFilter, addToLoaded(MutablePropertySources::addLast, false));
                 this.processedProfiles.add(profile);
             }
+
+            //把解析了的配置文件的值(存this.loaded 里的) 放入 env 对象里
+            addLoadedPropertySources();
+
+            //把解析到的配置文件变成 活跃状态
+            applyActiveProfiles();
         }
 
+        /**
+         * 把解析了的配置文件的值(存this.loaded 里的) 放入 env 对象里
+         */
+        private void addLoadedPropertySources() {
+            MutablePropertySources destination = this.environment.getPropertySources();
+            List<MutablePropertySources> loaded = new ArrayList<>(this.loaded.values());
+            Collections.reverse(loaded);
+            String lastAdded = null;
+            Set<String> added = new HashSet<>();
+            for (MutablePropertySources sources : loaded) {
+                for (PropertySource<?> source : sources) {
+                    if (added.add(source.getName())) {
+                        addLoadedPropertySource(destination, lastAdded, source);
+                        lastAdded = source.getName();
+                    }
+                }
+            }
+        }
+
+        /**
+         * 用来控制 配置文件的插入优先级的
+         * @param destination
+         * @param lastAdded
+         * @param source
+         */
+        private void addLoadedPropertySource(MutablePropertySources destination, String lastAdded,
+                                             PropertySource<?> source) {
+            if (lastAdded == null) {
+                if (destination.contains(DEFAULT_PROPERTIES)) {
+                    destination.addBefore(DEFAULT_PROPERTIES, source);
+                    return;
+                }
+                destination.addLast(source);
+                return;
+            }
+
+            destination.addAfter(lastAdded, source);
+        }
+
+        /**
+         * 把解析到的配置文件变成 活跃状态
+         */
+        private void applyActiveProfiles() {
+            List<String> activeProfiles = new ArrayList<>();
+
+            this.processedProfiles.stream().filter(this::isDefaultProfile).map(Profile::getName)
+                    .forEach(activeProfiles::add);
+            this.environment.setActiveProfiles(activeProfiles.toArray(new String[0]));
+        }
 
         private DocumentFilter getPositiveProfileFilter(Profile profile) {
             return (Document document) -> {
@@ -294,6 +348,7 @@ public class ConfigFileApplicationListener implements SmartApplicationListener, 
             Set<String> processed = new HashSet<>();
             //遍历属性文件加载器去加载配置文件,默认 property和yml加载器
             for (PropertySourceLoader loader : this.propertySourceLoaders) {
+                //用这个文件加载器支持的后缀去解析,其实默认一个加载器只支持一个后缀,不过有的可能有多个,比如 yaml和yml 其实是一种
                 for (String fileExtension : loader.getFileExtensions()) {
                     if (processed.add(fileExtension)) {
                         loadForFileExtension(loader, location + name, "." + fileExtension, profile, filterFactory,
@@ -318,22 +373,21 @@ public class ConfigFileApplicationListener implements SmartApplicationListener, 
 
 
             DocumentFilter profileFilter = filterFactory.getDocumentFilter(profile);
-            DocumentFilter defaultFilter = filterFactory.getDocumentFilter(null);
 
             //profile == null 说明是 application.yml 文件 如果 !=null 说明 是 application-xxx 这样的文件
             if (profile != null) {
                 //拼接一下配置文件的名称
                 String profileSpecificFile = prefix + "-" + profile + fileExtension;
-                //加载 application 文件
-                load(loader, profileSpecificFile, profile, defaultFilter, consumer);
                 //加载 application-{prefix} 文件
                 load(loader, profileSpecificFile, profile, profileFilter, consumer);
+                //下面是 如果用户自定义了 profiles 那么走下面
                 for (Profile processedProfile : this.processedProfiles) {
                     if (processedProfile != null) {
                         String previouslyLoaded = prefix + "-" + processedProfile + fileExtension;
                         load(loader, previouslyLoaded, profile, profileFilter, consumer);
                     }
                 }
+                return;
             }
             //加载 application.yml 文件
             load(loader, prefix + fileExtension, profile, profileFilter, consumer);
@@ -343,9 +397,9 @@ public class ConfigFileApplicationListener implements SmartApplicationListener, 
          * 最后一层的 load 了,真的开始加载配置文件了
          *
          * @param loader
-         * @param location
-         * @param profile
-         * @param filter
+         * @param location  要查找的文件的额全路径 file:./config/appliction.properties
+         * @param profile  文件标志位 比如 appliction.properties 就是 null , appliction-dev.properties 就是dev
+         * @param filter  当加载了配置文件后,用来判断这个配置文件应该被加入 spring容器吗,其实也就是去判断他有没被当前激活
          * @param consumer
          */
         private void load(PropertySourceLoader loader, String location, Profile profile, DocumentFilter filter,
@@ -383,7 +437,7 @@ public class ConfigFileApplicationListener implements SmartApplicationListener, 
                 if (!loaded.isEmpty()) {
                     loaded.forEach((document) -> {
                         log.trace("加载了配置文件 [{}] ", document);
-                        //这里其实就是把 document 加入到 外部容器里
+                        //这里其实就是把 document 加入到 this.loaded 里面
                         consumer.accept(profile, document);
                         return;
 
@@ -612,5 +666,6 @@ public class ConfigFileApplicationListener implements SmartApplicationListener, 
         }
 
     }
+
 
 }

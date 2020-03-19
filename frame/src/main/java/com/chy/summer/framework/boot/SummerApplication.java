@@ -216,7 +216,7 @@ public class SummerApplication {
         listeners.starting();
         try {
             ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
-
+            //对整个容器的环境做一些处理(包括读取配置文件,读取jvm参数)
             ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
             //打印 Banner
             printBanner(environment);

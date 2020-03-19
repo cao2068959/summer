@@ -11,6 +11,7 @@ import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.beans.config.SmartInstantiationAwareBeanPostProcessor;
 import com.chy.summer.framework.beans.factory.DependencyDescriptor;
 import com.chy.summer.framework.beans.support.RootBeanDefinition;
+import com.chy.summer.framework.beans.support.annotation.AutowiredFieldElement;
 import com.chy.summer.framework.beans.support.annotation.InjectionMetadata;
 import com.chy.summer.framework.core.BridgeMethodResolver;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
@@ -55,6 +56,16 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
         this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
     }
 
+    /**
+     * 在生成 bean后回调做一些事情
+     * 对于 AutowiredAnnotationBeanPostProcessor 来说,这个方法就是注入 这个bean中打了 @Autowired 等注解的 实现入口
+     *
+     * @param pvs
+     * @param bean
+     * @param beanName
+     * @return
+     * @throws BeansException
+     */
     @Override
     public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) throws BeansException {
         //获取要注入的元数据对象,这里面保存了 那些已经被打了 @Autowired 注解的 元素和方法
@@ -70,6 +81,14 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
     }
 
 
+    /**
+     * 从缓存里去获取 InjectionMetadata 没有就去构造一个
+     *
+     * @param beanName
+     * @param clazz
+     * @param pvs
+     * @return
+     */
     private InjectionMetadata findAutowiringMetadata(String beanName, Class<?> clazz, PropertyValues pvs) {
         String cacheKey = (StringUtils.hasLength(beanName) ? beanName : clazz.getName());
         InjectionMetadata metadata = this.injectionMetadataCache.get(cacheKey);
@@ -88,6 +107,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 
     /**
      * 用class来构造 InjectionMetadata 对象
+     * 会去解析这个class,吧里面打了 @Autowired @Value 注解的 属性/方法 给存在一个List 里,然后塞入 InjectionMetadata对象
      *
      * @param clazz
      * @return
@@ -110,7 +130,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
                     return;
                 }
                 boolean required = determineRequiredStatus(ann);
-                currElements.add(new AutowiredFieldElement(field, required));
+                currElements.add(new AutowiredFieldElement(field, beanFactory, required));
             });
 
             //反射获取 目标class 里的所有方法,然后走这个匿名内部类的自定义方法
@@ -172,42 +192,6 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
         //如果是 @Autowired 注解 就判断一下 required 这个属性的值
         Boolean required = ann.getRequiredAttribute(this.requiredParameterName, Boolean.class);
         return required == this.requiredParameterValue;
-    }
-
-
-    private class AutowiredFieldElement extends InjectionMetadata.InjectedElement {
-
-        private final boolean required;
-
-        private volatile boolean cached = false;
-
-        private volatile Object cachedFieldValue;
-
-        public AutowiredFieldElement(Field field, boolean required) {
-            super(field, null);
-            this.required = required;
-        }
-
-        @Override
-        public void inject(Object bean, String beanName, PropertyValues pvs) throws Throwable {
-            Field field = (Field) this.member;
-            Object value;
-            DependencyDescriptor desc = new DependencyDescriptor(field, this.required);
-            desc.setContainingClass(bean.getClass());
-            Set<String> autowiredBeanNames = new LinkedHashSet<>(1);
-            Assert.state(beanFactory != null, "beanFactory 不能是Null");
-
-            //获取属性上要注入对象的 实例
-            value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames);
-
-            //如果获取到了,就用反射把他设置进去
-            if (value != null) {
-                ReflectionUtils.makeAccessible(field);
-                field.set(bean, value);
-            }
-        }
-
-
     }
 
     private class AutowiredMethodElement extends InjectionMetadata.InjectedElement {
@@ -293,7 +277,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 
             if (!candidates.isEmpty()) {
                 candidateConstructors = candidates.toArray(new Constructor<?>[0]);
-            }else{
+            } else {
                 candidateConstructors = new Constructor<?>[0];
             }
             this.candidateConstructorsCache.put(beanClass, candidateConstructors);
@@ -306,10 +290,11 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
      * 去构造器上检查有没有 @Autowired 注解有的话把他的属性给拉下来
      * 这里 对 findAutowiredAnnotation 方法的一个包装
      * 是因为 可能传入的 constructor 是一个代理对象的方法,如果代理对象上没不到对应的注解,会去拿真实为代理的方法
+     *
      * @param constructor
      * @return
      */
-    private AnnotationAttributes findAutowiredAnnotationByConstructor(Constructor<?> constructor , Class<?> beanClass){
+    private AnnotationAttributes findAutowiredAnnotationByConstructor(Constructor<?> constructor, Class<?> beanClass) {
         AnnotationAttributes autowiredAnnotation = findAutowiredAnnotation(constructor);
         //如果没拿到对应的注解,那么就拨开代理对象这层皮
         if (autowiredAnnotation == null) {
@@ -319,8 +304,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
                     Constructor<?> superCtor =
                             userClass.getDeclaredConstructor(constructor.getParameterTypes());
                     autowiredAnnotation = findAutowiredAnnotation(superCtor);
-                }
-                catch (NoSuchMethodException ex) {
+                } catch (NoSuchMethodException ex) {
                 }
             }
         }
