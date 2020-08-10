@@ -220,7 +220,6 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     }
 
     private ConfigurableListableBeanFactory obtainFreshBeanFactory() {
-
         freshBeanFactory();
         return getBeanFactory();
     }

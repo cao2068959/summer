@@ -6,7 +6,7 @@ import com.chy.summer.framework.annotation.beans.Autowired;
 import com.chy.summer.framework.context.annotation.Scope;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
 
-@ChyService("Abc")
+//@ChyService("Abc")
 public class Abc {
 
     @Autowired

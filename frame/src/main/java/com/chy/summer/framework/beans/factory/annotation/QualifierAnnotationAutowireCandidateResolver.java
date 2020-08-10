@@ -14,7 +14,8 @@ public class QualifierAnnotationAutowireCandidateResolver implements AutowireCan
     @Override
     public boolean isAutowireCandidate(BeanDefinitionHolder bdHolder, DependencyDescriptor descriptor) {
 
-        Boolean match = checkQualifiers(bdHolder, descriptor.getAnnotations());
+        //Boolean match = checkQualifiers(bdHolder, descriptor.getAnnotations());
+        Boolean match = false;
         if (match) {
             /*MethodParameter methodParam = descriptor.getMethodParameter();
             if (methodParam != null) {

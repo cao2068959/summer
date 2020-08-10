@@ -1,14 +1,16 @@
 package com.chy.summer.framework.beans.factory;
 
-import com.chy.summer.framework.beans.BeanFactory;
-import com.chy.summer.framework.beans.support.DefaultListableBeanFactory;
 import com.chy.summer.framework.core.MethodParameter;
-import com.chy.summer.framework.exception.BeansException;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
+
+/**
+ * 依赖注入 的实体类,用来存一些要依赖注入的属性的 一些关键信息
+ */
 public class DependencyDescriptor extends InjectionPoint {
 
     //要注入字段的类型
@@ -19,9 +21,11 @@ public class DependencyDescriptor extends InjectionPoint {
     @Getter
     private  boolean required;
 
+    @Getter
     private  boolean eager;
 
     //要注入的字段所在的类
+    @Setter
     private Class<?> containingClass;
 
     public DependencyDescriptor(Field field, boolean required) {
@@ -49,25 +53,11 @@ public class DependencyDescriptor extends InjectionPoint {
         this.eager = eager;
     }
 
-
-    public void setContainingClass(Class<?> containingClass) {
-        this.containingClass = containingClass;
-    }
-
     public Class<?> getDependencyType() {
         if (this.field != null) {
             return field.getType();
         }
         return methodParameter.getParameterType();
-    }
-
-    public boolean isEager() {
-        return true;
-    }
-
-    public Annotation[] getAnnotations() {
-
-        return null;
     }
 
     @Override

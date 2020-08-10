@@ -35,6 +35,7 @@ public class DefaultApplicationArguments implements ApplicationArguments {
 
     @Override
     public List<String> getNonOptionArgs() {
+        System.out.println(new Object());
         return null;
     }
 

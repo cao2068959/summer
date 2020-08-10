@@ -19,7 +19,6 @@ public class PostProcessorRegistrationDelegate {
      */
     public static void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory,
                                                        List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
-
         Set<String> processedBeans = new HashSet<>();
         List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
 
@@ -44,6 +43,7 @@ public class PostProcessorRegistrationDelegate {
         }else{
             //TODO 暂时没有这个情况,先不考虑
         }
+
         //只处理 BeanFactoryPostProcessor 类型的后置处理器
         beanFactoryPostProcessorHandle(beanFactory,processedBeans,regularPostProcessors);
 

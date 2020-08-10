@@ -8,6 +8,7 @@ import com.chy.summer.framework.beans.factory.InjectionPoint;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.exception.*;
 import com.chy.summer.framework.util.*;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.IllegalStateException;
@@ -71,6 +72,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
     private volatile boolean configurationFrozen = false;
 
+
+    /**
+     *  自动注入解析器,可以通过自定义添加这个解析器来自定义 注入的行为, 比如 @value注解 里面 ${} 表达式的解析
+     */
+    @Getter
     private AutowireCandidateResolver autowireCandidateResolver = null;
 
 
@@ -438,10 +444,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     }
 
 
-    public AutowireCandidateResolver getAutowireCandidateResolver() {
-        return this.autowireCandidateResolver;
-    }
-
     public void setAutowireCandidateResolver(final AutowireCandidateResolver autowireCandidateResolver) {
         Assert.notNull(autowireCandidateResolver, "AutowireCandidateResolver must not be null");
         if (autowireCandidateResolver instanceof BeanFactoryAware) {
@@ -599,7 +601,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     }
 
     /**
-     * 解析 依赖,并且把这个 依赖的 单列对象给拿出来
+     * 解析 依赖描述 对象,并且把这个 依赖的 单列对象给拿出来
      *
      * @param descriptor
      * @param requestingBeanName
@@ -619,7 +621,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public Object doResolveDependency(DependencyDescriptor descriptor, String beanName,
                                       Set<String> autowiredBeanNames) throws BeansException {
 
+        //获取了要注入的对象的类型
         Class<?> type = descriptor.getDependencyType();
+
+        //getAutowireCandidateResolver().isAutowireCandidate()
+
         //去找一找有可能会拿到的注入对象有哪些
         Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
         if (matchingBeans.isEmpty()) {
