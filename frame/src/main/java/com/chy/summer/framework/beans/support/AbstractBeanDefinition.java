@@ -15,15 +15,24 @@ import java.util.function.Supplier;
 
 public abstract class AbstractBeanDefinition extends AttributeAccessorSupport implements BeanDefinition {
 
+    @Getter
+    @Setter
     private ScopeType scope = ScopeType.SINGLETON;
+
+    @Getter
+    @Setter
     private boolean lazyInit = false;
 
+    @Getter
     private boolean synthetic = false;
 
+    @Getter
+    @Setter
     private Resource resource;
 
     private boolean abstractFlag = false;
 
+    @Setter
     private volatile Object beanClass;
 
     @Setter
@@ -38,7 +47,7 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
     @Getter
     private String destroyMethodName;
 
-
+    @Setter
     private Supplier<?> instanceSupplier;
 
     @Setter
@@ -54,88 +63,15 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
     @Setter
     private ConstructorArgumentValues constructorArgumentValues;
 
-//    private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>(0);
-
-
-
-
-
-    @Override
-    public String getBeanClassName() {
-        Object beanClassObject = this.beanClass;
-        if (beanClassObject instanceof Class) {
-            return ((Class<?>) beanClassObject).getName();
-        }
-        else {
-            return (String) beanClassObject;
-        }
-    }
-
-    @Override
-    public void setBeanClassName(String beanClassName) {
-        this.beanClass = beanClassName;
-    }
-
-    @Override
-    public ScopeType getScope() {
-        return scope;
-    }
-
-    @Override
-    public void setScope(ScopeType scope) {
-        this.scope = scope;
-    }
-
-    @Override
-    public boolean isLazyInit() {
-        return lazyInit;
-    }
-
-    @Override
-    public void setLazyInit(boolean lazyInit) {
-        this.lazyInit = lazyInit;
-    }
-
-    public void setResource(Resource resource) {
-        this.resource = resource;
-    }
-
-    @Override
-    public boolean isAbstract() {
-        return this.abstractFlag;
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return ScopeType.SINGLETON == this.scope;
-    }
-
-    public Resource getResource() {
-        return resource;
-    }
-
-    public boolean isAbstractFlag() {
-        return abstractFlag;
-    }
-
-    public void setAbstractFlag(boolean abstractFlag) {
-        this.abstractFlag = abstractFlag;
-    }
-
-    public boolean hasBeanClass() {
-        return (this.beanClass instanceof Class);
-    }
 
     protected AbstractBeanDefinition(BeanDefinition original) {
-        setParentName(original.getParentName());
         setBeanClassName(original.getBeanClassName());
         setScope(original.getScope());
         setAbstract(original.isAbstract());
         setLazyInit(original.isLazyInit());
         setFactoryBeanName(original.getFactoryBeanName());
         setFactoryMethodName(original.getFactoryMethodName());
-        //setSource(original.getSource());
-        //copyAttributesFrom(original);
+
 
         if (original instanceof AbstractBeanDefinition) {
             AbstractBeanDefinition originalAbd = (AbstractBeanDefinition) original;
@@ -151,8 +87,39 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
 
     }
 
+    public AbstractBeanDefinition() {
+    }
+
+
+    @Override
+    public String getBeanClassName() {
+        Object beanClassObject = this.beanClass;
+        if (beanClassObject instanceof Class) {
+            return ((Class<?>) beanClassObject).getName();
+        }
+        else {
+            return (String) beanClassObject;
+        }
+    }
+
+    @Override
+    public boolean isAbstract() {
+        return this.abstractFlag;
+    }
+
     private void setAbstract(boolean anAbstract) {
         this.abstractFlag = anAbstract;
+    }
+
+
+    @Override
+    public boolean isSingleton() {
+        return ScopeType.SINGLETON == this.scope;
+    }
+
+
+    public boolean hasBeanClass() {
+        return (this.beanClass instanceof Class);
     }
 
     @Override
@@ -167,9 +134,6 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
         return sb.toString();
     }
 
-    public void setBeanClass( Class<?> beanClass) {
-        this.beanClass = beanClass;
-    }
 
     @Override
     public Class<?> getBeanClass() throws IllegalStateException {
@@ -184,8 +148,7 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
         return (Class<?>) beanClassObject;
     }
 
-    public AbstractBeanDefinition() {
-    }
+
 
     public Class<?> resolveBeanClass( ClassLoader classLoader) throws ClassNotFoundException {
         String className = getBeanClassName();
@@ -201,9 +164,6 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
         return false;
     }
 
-    public void setInstanceSupplier( Supplier<?> instanceSupplier) {
-        this.instanceSupplier = instanceSupplier;
-    }
 
     @Override
     public MutablePropertyValues getPropertyValues() {
@@ -218,9 +178,6 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
 //        this.qualifiers.putAll(source.qualifiers);
 //    }
 
-    public boolean isSynthetic() {
-        return this.synthetic;
-    }
 
     public boolean hasConstructorArgumentValues() {
         return !this.constructorArgumentValues.isEmpty();

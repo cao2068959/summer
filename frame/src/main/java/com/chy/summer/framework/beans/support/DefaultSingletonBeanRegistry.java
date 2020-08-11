@@ -89,8 +89,11 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     }
 
     /**
+     *
      * 这里同样是获取单列对象.没有就会从 singletonFactory 里去调用 getObject 获取
-     * 这里在去拿单例对象的时候,会把 对应的 beanName 放入一个 singletonsCurrentlyInCreation 容器里,代表这个单例已经开始创建,用了解决循环依赖问题
+     * 其实这个方法就是用来生成对象后放入单例容器里面的,因为上了锁,并不适合频繁访问去获取单例对象
+     * 如果要获取单例请使用 #getSingleton(String beanName, boolean allowEarlyReference)
+     *
      * @param beanName
      * @param singletonFactory
      * @return
@@ -102,19 +105,16 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
             if (singletonObject == null) {
                 log.debug("开始创建单例对象 : {}",beanName);
                 beforeSingletonCreation(beanName);
-                boolean newSingleton = false;
                 try {
+                    //去生成真正的对象
                     singletonObject = singletonFactory.getObject();
-                    newSingleton = true;
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     throw new BeanCreationException(beanName,ex.getMessage());
                 }
 
                 //这里把创建好的对象给放入 单例容器
-                if (newSingleton) {
-                    addSingleton(beanName, singletonObject);
-                }
+                addSingleton(beanName, singletonObject);
             }
             return singletonObject;
         }

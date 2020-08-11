@@ -534,6 +534,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
     /**
      * 获取合并后的  BeanDefinition
+     * 这里不考虑 xml的逻辑,所以并不会去合并,只会生成 rootBeanDefinition
      * 这里有一层缓存
      *
      * @param beanName

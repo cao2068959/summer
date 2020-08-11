@@ -40,16 +40,6 @@ public class AnnotatedGenericBeanDefinition extends AbstractBeanDefinition imple
     }
 
     @Override
-    public void setParentName(String parentName) {
-
-    }
-
-    @Override
-    public String getParentName() {
-        return null;
-    }
-
-    @Override
     public void setDependsOn(String... dependsOn) {
 
     }
