@@ -6,11 +6,11 @@ import com.chy.summer.framework.annotation.stereotype.Service;
 import com.chy.summer.framework.context.annotation.Lazy;
 import org.checkerframework.checker.units.qual.A;
 
-//@Service("abc2222222")
-//@Lazy
+@Service("abc2222222")
+@Lazy
 public class Abc2 {
 
-    //@Autowired
+    @Autowired
     Abc abc;
 
     public void test(){

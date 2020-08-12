@@ -18,28 +18,17 @@ import java.lang.reflect.Method;
 public class RootBeanDefinition extends AbstractBeanDefinition {
 
 
+    @Getter
     private BeanDefinitionHolder decoratedDefinition;
 
-    private AnnotatedElement qualifiedElement;
-
-    boolean allowCaching = true;
 
     boolean isFactoryMethodUnique = false;
-
 
     /**
      * 前置处理或者后置处理是否开启
      */
     @Nullable
     volatile Boolean beforeInstantiationResolved;
-
-    @Getter
-    @Setter
-    private String factoryBeanName;
-
-    @Getter
-    @Setter
-    private String factoryMethodName;
 
     volatile ResolvableType targetType;
 
@@ -57,7 +46,6 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 
     Object[] preparedConstructorArguments;
 
-    final Object postProcessingLock = new Object();
 
     boolean postProcessed = false;
 
@@ -72,8 +60,6 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     public RootBeanDefinition(RootBeanDefinition original) {
         super(original);
         this.decoratedDefinition = original.decoratedDefinition;
-        this.qualifiedElement = original.qualifiedElement;
-        this.allowCaching = original.allowCaching;
         this.isFactoryMethodUnique = original.isFactoryMethodUnique;
         this.targetType = original.targetType;
     }
@@ -81,69 +67,6 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     public RootBeanDefinition(Class<?> beanClass) {
         super();
         setBeanClass(beanClass);
-    }
-
-    @Override
-    public void setParentName(String parentName) {
-
-    }
-
-    @Override
-    public String getParentName() {
-        return null;
-    }
-
-    @Override
-    public void setDependsOn(String... dependsOn) {
-
-    }
-
-    @Override
-    public String[] getDependsOn() {
-        return new String[0];
-    }
-
-    @Override
-    public void setAutowireCandidate(boolean autowireCandidate) {
-
-    }
-
-    @Override
-    public boolean isAutowireCandidate() {
-        return false;
-    }
-
-    @Override
-    public void setPrimary(boolean primary) {
-
-    }
-
-    @Override
-    public boolean isPrimary() {
-        return false;
-    }
-
-    @Override
-    public boolean isPrototype() {
-        return false;
-    }
-
-
-
-    @Override
-    public String getResourceDescription() {
-        return null;
-    }
-
-
-
-
-    public RootBeanDefinition cloneBeanDefinition() {
-        return new RootBeanDefinition(this);
-    }
-
-    public BeanDefinitionHolder getDecoratedDefinition() {
-        return this.decoratedDefinition;
     }
 
     public Class<?> getTargetType() {
@@ -165,6 +88,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 
     /**
      * 判断传进来的方法 是否是 工厂方法
+     *
      * @param candidate
      * @return
      */

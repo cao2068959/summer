@@ -15,42 +15,71 @@ import java.util.function.Supplier;
 
 public abstract class AbstractBeanDefinition extends AttributeAccessorSupport implements BeanDefinition {
 
+    /**
+     * 作用域
+     */
     @Getter
     @Setter
     private ScopeType scope = ScopeType.SINGLETON;
 
+    /**
+     * 是否懒加载
+     */
     @Getter
     @Setter
     private boolean lazyInit = false;
 
+    /**
+     *  标识这个beandefinition 是 "人造" 的而不是程序自动生成的
+     */
     @Getter
     private boolean synthetic = false;
 
+    /**
+     *  bean对象的原始数据
+     */
     @Getter
     @Setter
     private Resource resource;
 
+    /**
+     * 是否是抽象类
+     */
     private boolean abstractFlag = false;
 
+    /**
+     * 源对象bean所属的class
+     */
     @Setter
     private volatile Object beanClass;
 
+    /**
+     * 是否自动注入
+     */
     @Setter
     @Getter
     private Autowire autowireMode = Autowire.NO;
 
+    /**
+     * 初始化方法,在生成对应的bean对象之后,回去调用这个方法
+     */
     @Getter
     @Setter
     private String initMethodName;
 
+    /**
+     * bean销毁后会去调用
+     */
     @Setter
     @Getter
     private String destroyMethodName;
 
-    @Setter
-    private Supplier<?> instanceSupplier;
 
+    /**
+     * 工厂方法的名称
+     */
     @Setter
+    @Getter
     private String factoryMethodName;
 
     /** 代表了 这个beanDefinition 里的所有属性 */
@@ -59,10 +88,32 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
     /**
      * 构造器里所有参数放在这里
      */
-    @Getter
     @Setter
     private ConstructorArgumentValues constructorArgumentValues;
 
+
+    @Getter
+    @Setter
+    private String[] dependsOn;
+
+    /**
+     * 如果上了 @primary 注解这里就会true
+     */
+    @Getter
+    @Setter
+    private boolean primary = false;
+
+    /**
+     * 当前 bean作为自动注入的候选人
+     */
+    @Getter
+    @Setter
+    private boolean autowireCandidate = true;
+
+
+    @Getter
+    @Setter
+    private String factoryBeanName;
 
     protected AbstractBeanDefinition(BeanDefinition original) {
         setBeanClassName(original.getBeanClassName());
@@ -100,6 +151,11 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
         else {
             return (String) beanClassObject;
         }
+    }
+
+    @Override
+    public void setBeanClassName(String beanClassName) {
+        this.beanClass = beanClassName;
     }
 
     @Override
@@ -164,6 +220,11 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
         return false;
     }
 
+    @Override
+    public String getResourceDescription() {
+        return (this.resource != null ? this.resource.getDescription() : null);
+    }
+
 
     @Override
     public MutablePropertyValues getPropertyValues() {
@@ -180,6 +241,14 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
 
 
     public boolean hasConstructorArgumentValues() {
-        return !this.constructorArgumentValues.isEmpty();
+        return !getConstructorArgumentValues().isEmpty();
+    }
+
+    @Override
+    public ConstructorArgumentValues getConstructorArgumentValues() {
+        if (this.constructorArgumentValues == null) {
+            this.constructorArgumentValues = new ConstructorArgumentValues();
+        }
+        return this.constructorArgumentValues;
     }
 }

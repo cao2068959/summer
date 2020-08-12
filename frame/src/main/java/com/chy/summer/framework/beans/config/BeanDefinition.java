@@ -107,8 +107,6 @@ public interface BeanDefinition extends AttributeAccessor {
      boolean isSingleton();
 
 
-     boolean isPrototype();
-
      /**
       * 是否是抽象类
       * @return

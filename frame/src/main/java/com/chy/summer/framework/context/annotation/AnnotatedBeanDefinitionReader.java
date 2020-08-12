@@ -59,7 +59,6 @@ public class AnnotatedBeanDefinitionReader {
 
         AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(annotatedClass);
 
-        abd.setInstanceSupplier(instanceSupplier);
         //去解析这个class 上面的 @scope 注解
         ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
         abd.setScope(scopeMetadata.getScopeName());
