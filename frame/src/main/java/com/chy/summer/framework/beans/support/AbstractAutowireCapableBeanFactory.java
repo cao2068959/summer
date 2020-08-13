@@ -68,6 +68,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         log.debug("开始生成实例 {}", beanName);
         RootBeanDefinition mbdToUse = mbd;
         Class<?> resolvedClass = resolveBeanClass(mbdToUse);
+
+        //其实 基本 99.99999% 是进不去这里的
+        //如果真的进去了说明 class没有正确拿到,只能做一下clone 防止后面出什么问题了
         if (resolvedClass != null && !mbd.hasBeanClass() && mbd.getBeanClassName() != null) {
             //这里深拷贝,不污染入参
             mbdToUse = new RootBeanDefinition(mbd);

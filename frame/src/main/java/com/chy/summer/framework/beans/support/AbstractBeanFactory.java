@@ -90,11 +90,18 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         return resolveBeanClass(mbd);
     }
 
+    /**
+     * 获取 beanDefinition 里面 源类的 class
+     * @param mbd
+     * @return
+     */
     protected Class<?> resolveBeanClass(final RootBeanDefinition mbd) {
         try {
+            //没找到 beanClass 并不是代表 beanClass 属性没有值,而是可能 beanClass 里面是string类型的全路径,而不是 class类型
             if (mbd.hasBeanClass()) {
                 return mbd.getBeanClass();
             }
+            //把 string类型的全路径给转成 class类型
             return doResolveBeanClass(mbd);
         } catch (ClassNotFoundException | LinkageError e) {
             e.printStackTrace();
@@ -102,6 +109,12 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         }
     }
 
+    /**
+     * 把 beanDefinition 里的beanClass 值所记录的源bean 的全路径 转成 class类型
+     * @param mbd
+     * @return
+     * @throws ClassNotFoundException
+     */
     private Class<?> doResolveBeanClass(RootBeanDefinition mbd)
             throws ClassNotFoundException {
         return mbd.resolveBeanClass(ClassUtils.getDefaultClassLoader());

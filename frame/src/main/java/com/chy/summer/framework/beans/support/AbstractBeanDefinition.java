@@ -191,6 +191,11 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
     }
 
 
+    /**
+     * 获取 beanClass 这里beanClass 可能存的是这个 class的全路径(string) 需要调用 resolveBeanClass 转换一下
+     * @return
+     * @throws IllegalStateException
+     */
     @Override
     public Class<?> getBeanClass() throws IllegalStateException {
         Object beanClassObject = this.beanClass;
@@ -205,8 +210,15 @@ public abstract class AbstractBeanDefinition extends AttributeAccessorSupport im
     }
 
 
-
-    public Class<?> resolveBeanClass( ClassLoader classLoader) throws ClassNotFoundException {
+    /**
+     * 去设置 beanClass 的值
+     * 原本的 beanClass可能是一个字符串(类的全路径) 把这个路径给转成 class 类型
+     *
+     * @param classLoader
+     * @return
+     * @throws ClassNotFoundException
+     */
+    public Class<?> resolveBeanClass(ClassLoader classLoader) throws ClassNotFoundException {
         String className = getBeanClassName();
         if (className == null) {
             return null;
