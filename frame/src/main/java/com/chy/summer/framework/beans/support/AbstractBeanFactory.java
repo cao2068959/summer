@@ -44,6 +44,19 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     public abstract Comparator<Object> getDependencyComparator();
 
 
+    /**
+     *
+     * 匹配 beanName 对应的 实例 和 typeToMatch 传入进来的 class 是否匹配 或者 是继承关系
+     *
+     * 单列 : 调用 getSingleton 去获取实例对象 然后去匹配对应的class
+     * 非单列: 获取BeanDefinition 然后拿到 class去对比
+     *
+     *
+     * @param name
+     * @param typeToMatch
+     * @return
+     * @throws NoSuchBeanDefinitionException
+     */
     @Override
     public boolean isTypeMatch(String name, @Nullable Class<?> typeToMatch) throws NoSuchBeanDefinitionException {
         String beanName = transformedBeanName(name);
@@ -73,6 +86,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             return false;
         }
 
+        //下面是非单列对象, 那么去拿他的 BeanDefinition 然后去判断
         //去拿到对应name的 BeanDefinition
         RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
         Class<?> beanType = predictBeanType(mbd);

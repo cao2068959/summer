@@ -18,6 +18,9 @@ import java.lang.reflect.Method;
 public class RootBeanDefinition extends AbstractBeanDefinition {
 
 
+    /**
+     * 有这个值他可能是那么 这个 rootBeanDefinition 可能是一个代理对象,这里面放着原本的 beanDefinition 对象
+     */
     @Getter
     private BeanDefinitionHolder decoratedDefinition;
 

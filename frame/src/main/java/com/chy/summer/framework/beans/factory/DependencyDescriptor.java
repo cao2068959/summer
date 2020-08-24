@@ -28,6 +28,11 @@ public class DependencyDescriptor extends InjectionPoint {
     @Setter
     private Class<?> containingClass;
 
+    /**
+     *  对应这个 class上面所有的注解
+     */
+    private Annotation[] fieldAnnotations;
+
     public DependencyDescriptor(Field field, boolean required) {
         this(field, required, true);
     }
@@ -38,6 +43,20 @@ public class DependencyDescriptor extends InjectionPoint {
         this.fieldName = field.getName();
         this.required = required;
         this.eager = eager;
+    }
+
+    public Annotation[] getAnnotations() {
+        if (this.field != null) {
+            Annotation[] fieldAnnotations = this.fieldAnnotations;
+            if (fieldAnnotations == null) {
+                fieldAnnotations = this.field.getAnnotations();
+                this.fieldAnnotations = fieldAnnotations;
+            }
+            return fieldAnnotations;
+        }
+
+        //如果字段是Null,那么就去拿方法的
+        return obtainMethodParameter().getParameterAnnotations();
     }
 
     public DependencyDescriptor(MethodParameter methodParameter, boolean required) {

@@ -37,130 +37,141 @@ public class ConstructorResolver {
     }
 
     /**
-     * 用bd 里面的 工厂方法来生成对应的 实例对象
+     * 使用工厂方法来 创建对象 也就是 @Bean 注解标识的方法来创建
      *
      * @param beanName
      * @param mbd
+     * @param explicitArgs
      * @return
      */
     public BeanWrapper instantiateUsingFactoryMethod(
-            String beanName, RootBeanDefinition mbd) {
+            String beanName, RootBeanDefinition mbd, Object[] explicitArgs) {
 
         BeanWrapperImpl bw = new BeanWrapperImpl();
+        //初始化一下 BeanWrapperImpl 这里暂时什么都没有做
         this.beanFactory.initBeanWrapper(bw);
 
         Object factoryBean = null;
         Class<?> factoryClass = null;
         boolean isStatic = true;
 
+        //这里拿到的是 工厂bean的name, 比如
+        // @Configuration
+        // A{
+        //      @Bean
+        //      public B b();
+        // }
+        // 这里拿到的是 a 的名字, 而 beanName 拿到的是 b 的名字
         String factoryBeanName = mbd.getFactoryBeanName();
         if (factoryBeanName != null) {
             if (factoryBeanName.equals(beanName)) {
-                throw new BeanDefinitionStoreException("工厂方法持有 bean  的beanName [%s]  不能 和工厂方法 同名", beanName);
+                throw new BeanDefinitionStoreException("工厂bean [%s]  不能 和 工厂中生产的bean同名", beanName);
             }
-            //先把 工厂方法 的 持有者 的实例对象给拿出来
-            factoryBean = this.beanFactory.getBean(factoryBeanName);
+
             //如果是单例对象,并且 beanName 已经被占用,则抛出异常
             if (mbd.isSingleton() && this.beanFactory.containsSingleton(beanName)) {
                 throw new BeanDefinitionStoreException("beanName [%s] 已经被注册了 ", beanName);
             }
 
+            //先把 工厂方法 的 持有者 的实例对象给拿出来
+            factoryBean = this.beanFactory.getBean(factoryBeanName);
             factoryClass = factoryBean.getClass();
             isStatic = false;
         } else {
             //TODO 静态 工厂方法 暂时不考虑
+            //也就是 @Bean 标注的是一个 static 方法
         }
 
         Method factoryMethodToUse = null;
         ArgumentsHolder argsHolderToUse = null;
         Object[] argsToUse = null;
 
-        //TODO 如果工厂方法还有 参数这里还要有对应的解析
+        //TODO 然还有一个预先参数的解析,这个暂时不需要
 
-        if (factoryMethodToUse == null || argsToUse == null) {
+        //如果是代理对象 剥除代理的壳子,拿到真实的对象类型
+        factoryClass = ClassUtils.getUserClass(factoryClass);
 
-            //如果是代理对象 剥除代理的壳子,拿到真实的对象类型
-            factoryClass = ClassUtils.getUserClass(factoryClass);
+        //获取到 factoryBean 里面所有的方法
+        Method[] rawCandidates = getCandidateMethods(factoryClass, mbd);
+        //存放的是在一个 factoryBean里面 和 beanName 相同的方法, 因为在一个类里面会有方法重名,所以可能会找到多个 Method 存进去
+        List<Method> candidateList = new ArrayList<>();
 
-            //获取到 factoryBean 里面所有的方法
-            Method[] rawCandidates = getCandidateMethods(factoryClass, mbd);
-            List<Method> candidateList = new ArrayList<>();
+        for (Method candidate : rawCandidates) {
+            //遍历所有的方法,如果有方法是
+            if (Modifier.isStatic(candidate.getModifiers()) == isStatic && mbd.isFactoryMethod(candidate)) {
+                candidateList.add(candidate);
+            }
+        }
 
-            for (Method candidate : rawCandidates) {
-                //遍历所有的方法,如果有方法是
-                if (Modifier.isStatic(candidate.getModifiers()) == isStatic && mbd.isFactoryMethod(candidate)) {
-                    candidateList.add(candidate);
+        //list 转成数组
+        Method[] candidates = candidateList.toArray(new Method[0]);
+
+        //工厂方法排序 排序顺序是 public优先  参数多的优先
+        AutowireUtils.sortFactoryMethods(candidates);
+
+        ConstructorArgumentValues resolvedValues = null;
+
+        //是不是构造器注入
+        boolean autowiring = false;
+        if (mbd.getAutowireMode() == Autowire.CONSTRUCTOR) {
+            autowiring = true;
+        }
+
+
+        int minTypeDiffWeight = Integer.MAX_VALUE;
+        Set<Method> ambiguousFactoryMethods = null;
+
+        int minNrOfArgs = 0;
+        if (mbd.hasConstructorArgumentValues()) {
+            //TODO 如果有工厂方法有参数走这里面
+        }
+
+        RuntimeException exception = null;
+        for (Method candidate : candidates) {
+            Class<?>[] paramTypes = candidate.getParameterTypes();
+
+            if (paramTypes.length >= minNrOfArgs) {
+                ArgumentsHolder argsHolder;
+
+                String[] paramNames = null;
+                //去拿参数解析器
+                ParameterNameDiscoverer pnd = this.beanFactory.getParameterNameDiscoverer();
+                if (pnd != null) {
+                    //拿到这个方法里 的所有参数,并且转成 数组
+                    paramNames = pnd.getParameterNames(candidate);
+                }
+
+
+                // 去ioc容器里拿到参数的对象 并且把他们全部封装到一个对象里
+                //在spring中这里会去通过参数去计算偏差值来决定使用哪一个重载的方法,而这里简化这个操作,重载的优先级是
+                //参数多的优先 , 如果参数多的有属性不能在ioc找到就 处理参数第二多的,依次类推
+                try {
+                    argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames, candidate);
+                    factoryMethodToUse = candidate;
+                    argsHolderToUse = argsHolder;
+                    argsToUse = argsHolder.arguments;
+                    ambiguousFactoryMethods = null;
+
+                    break;
+                } catch (BeansException e) {
+                    exception = e;
+                    //这里如果异常了,说明参数在ioc中不存在,如果还有其他方法的重载就继续处理
+                    continue;
                 }
             }
+        }
 
-            Method[] candidates = candidateList.toArray(new Method[0]);
-            AutowireUtils.sortFactoryMethods(candidates);
-
-            ConstructorArgumentValues resolvedValues = null;
-
-            //是不是构造器注入
-            boolean autowiring = false;
-            if (mbd.getAutowireMode() == Autowire.CONSTRUCTOR) {
-                autowiring = true;
+        //没有找到到底要用哪一个方法,这边直接抛出异常了
+        //在spring里还给了一大段可能的原因,这边先忽略
+        if (factoryMethodToUse == null) {
+            //如果有异常记录就直接返回异常
+            if (exception != null) {
+                throw exception;
             }
+            throw new BeanCreationException("在类 [%s] 中没有找到对应的 工厂方法 [%s]", factoryClass.getName(), mbd.getFactoryMethodName());
 
-
-            int minTypeDiffWeight = Integer.MAX_VALUE;
-            Set<Method> ambiguousFactoryMethods = null;
-
-            int minNrOfArgs = 0;
-            if (mbd.hasConstructorArgumentValues()) {
-                //TODO 如果有工厂方法有参数走这里面
-            }
-
-            RuntimeException exception = null;
-            for (Method candidate : candidates) {
-                Class<?>[] paramTypes = candidate.getParameterTypes();
-
-                if (paramTypes.length >= minNrOfArgs) {
-                    ArgumentsHolder argsHolder;
-
-                    String[] paramNames = null;
-                    //去拿参数解析器
-                    ParameterNameDiscoverer pnd = this.beanFactory.getParameterNameDiscoverer();
-                    if (pnd != null) {
-                        //拿到这个方法里 的所有参数,并且转成 数组
-                        paramNames = pnd.getParameterNames(candidate);
-                    }
-                    // 去ioc容器里拿到参数的对象 并且把他们全部封装到一个对象里
-
-
-                    //在spring中这里会去通过参数去计算偏差值来决定使用哪一个重载的方法,而这里简化这个操作,重载的优先级是
-                    //参数多的优先 , 如果参数多的有属性不能在ioc找到就 处理参数第二多的,依次类推
-                    try {
-                        argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames, candidate);
-                        factoryMethodToUse = candidate;
-                        argsHolderToUse = argsHolder;
-                        argsToUse = argsHolder.arguments;
-                        ambiguousFactoryMethods = null;
-
-                        break;
-                    } catch (BeansException e) {
-                        exception = e;
-                        //这里如果异常了,说明参数在ioc中不存在,如果还有其他方法的重载就继续处理
-                        continue;
-                    }
-                }
-            }
-
-            //没有找到到底要用哪一个方法,这边直接抛出异常了
-            //在spring里还给了一大段可能的原因,这边先忽略
-            if (factoryMethodToUse == null) {
-                //如果有异常记录就直接返回异常
-                if (exception != null) {
-                    throw exception;
-                }
-                throw new BeanCreationException("在类 [%s] 中没有找到对应的 工厂方法 [%s]", factoryClass.getName(), mbd.getFactoryMethodName());
-
-            } else if (void.class == factoryMethodToUse.getReturnType()) {
-                throw new BeanCreationException("工厂方法 [%s] 的返回值不能 为 void", factoryMethodToUse.getName());
-            }
-
+        } else if (void.class == factoryMethodToUse.getReturnType()) {
+            throw new BeanCreationException("工厂方法 [%s] 的返回值不能 为 void", factoryMethodToUse.getName());
         }
 
         try {
@@ -206,7 +217,7 @@ public class ConstructorResolver {
             String paramName = (paramNames != null ? paramNames[paramIndex] : "");
             // Try to find matching constructor argument value, either indexed or generic.
             ConstructorArgumentValues.ValueHolder valueHolder = null;
-
+            //把 要执行的工厂方法/构造器 封装到 MethodParameter 对象里面
             MethodParameter methodParam = MethodParameter.forExecutable(executable, paramIndex);
 
             //去ioc 容器里把依赖的 参数对象给拉出来

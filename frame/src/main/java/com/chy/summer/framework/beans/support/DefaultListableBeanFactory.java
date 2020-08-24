@@ -64,17 +64,21 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     private final Map<Class<?>, String[]> singletonBeanNamesByType = new ConcurrentHashMap<>(64);
 
 
-    /** 正向的依赖  A 依赖 <B,C,D> */
+    /**
+     * 正向的依赖  A 依赖 <B,C,D>
+     */
     private final Map<String, Set<String>> dependentBeanMap = new ConcurrentHashMap<>(64);
 
-    /** 这里面存  B 被什么bean给依赖了 <A,C>  */
+    /**
+     * 这里面存  B 被什么bean给依赖了 <A,C>
+     */
     private final Map<String, Set<String>> dependenciesForBeanMap = new ConcurrentHashMap<>(64);
 
     private volatile boolean configurationFrozen = false;
 
 
     /**
-     *  自动注入解析器,可以通过自定义添加这个解析器来自定义 注入的行为, 比如 @value注解 里面 ${} 表达式的解析
+     * 自动注入解析器,可以通过自定义添加这个解析器来自定义 注入的行为, 比如 @value注解 里面 ${} 表达式的解析
      */
     @Getter
     private AutowireCandidateResolver autowireCandidateResolver = null;
@@ -84,7 +88,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 
     /**
+     * `
      * 把bean之间的依赖关系存入
+     *
      * @param beanName
      * @param dependentBeanName
      */
@@ -108,7 +114,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 
     /**
-     * 根据类型获取 bean的name
+     * 根据 class的类型,获取可能和他匹配的所有 beanName
      *
      * @param type
      * @param includeNonSingletons
@@ -125,7 +131,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         if (resolvedBeanNames != null) {
             return resolvedBeanNames;
         }
-        //真正去判断ioc容器里 有没对应类型的bean
+        //真正去判断ioc容器里 有没对应类型的bean,有的话把他生成出来
         resolvedBeanNames = doGetBeanNamesForType(ResolvableType.forClass(type), includeNonSingletons, allowEagerInit);
         //写入缓存
         cache.put(type, resolvedBeanNames);
@@ -148,26 +154,12 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             if (isAlias(beanName)) {
                 continue;
             }
-
             try {
                 //通过beanName名字拿到 RootBeanDefinition
                 RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
                 if (!mbd.isAbstract() && (allowEagerInit || !mbd.isLazyInit())) {
-                    //判断是不是 FactoryBean
-                    boolean isFactoryBean = isFactoryBean(beanName);
-                    BeanDefinitionHolder dbd = mbd.getDecoratedDefinition();
-                    boolean matchFound =
-                            (allowEagerInit || !isFactoryBean || (dbd != null && !mbd.isLazyInit()) || containsSingleton(beanName))
-                                    &&
-                                    (includeNonSingletons || (dbd != null ? mbd.isSingleton() : false))
-                                    &&
-                                    //这里是直接用beanName获取单例对象 然后用 instanceof 去对比类型
-                                    isTypeMatch(beanName, type.resolve());
-                    //如果比较失败,并且还是一个 FactoryBean 那么就加上& 再比较一次
-                    if (!matchFound && isFactoryBean) {
-                        beanName = FACTORY_BEAN_PREFIX + beanName;
-                        matchFound = (includeNonSingletons || mbd.isSingleton()) && isTypeMatch(beanName, type.resolve());
-                    }
+
+                    boolean matchFound = isMatchBean(beanName, allowEagerInit, includeNonSingletons, type, mbd);
                     if (matchFound) {
                         result.add(beanName);
                     }
@@ -178,7 +170,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
                 }
                 log.info("根据类型 [{}] 获取所有满足条件的beanName 失败 原因: [{}]", type, ex.getMessage());
             }
-
         }
 
         // 同样手动注册进去的单列也要检查
@@ -203,6 +194,51 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
         return StringUtils.toStringArray(result);
     }
+
+    private boolean isMatchBean(String beanName,
+                                boolean allowEagerInit,
+                                boolean includeNonSingletons,
+                                ResolvableType type,
+                                RootBeanDefinition mbd) {
+        //判断是否是 工厂bean
+        boolean isFactoryBean = isFactoryBean(beanName);
+        BeanDefinitionHolder beanDefinitionHolder = mbd.getDecoratedDefinition();
+        //如果半成品的 bean不参与匹配 ,那么将进入以下if去检查 bean到底是不是半成品
+        if (!allowEagerInit) {
+            if (!isFactoryBean || (beanDefinitionHolder != null && !mbd.isLazyInit()) || containsSingleton(beanName)) {
+                return false;
+            }
+        }
+
+
+        //如果非单例的 bean不允许匹配  就去检查一下 这个bean到底是不是单例
+        if (!includeNonSingletons) {
+            //如果他没设置了 beanDefinitionHolder 那么使用 isSingleton() 去判断单例,否则使用  mbd.isSingleton()
+            if (beanDefinitionHolder == null) {
+                if (!isSingleton(beanName)) {
+                    return false;
+                }
+            } else {
+                if (!mbd.isSingleton()) {
+                    return false;
+                }
+            }
+        }
+
+        //最后去匹配 beanName 对应的类型是否 匹配
+        boolean typeMatch = isTypeMatch(beanName, type.resolve());
+        if (typeMatch) {
+            return typeMatch;
+        }
+        //如果没有匹配上 但是确是是个  FactoryBean 那么就加上& 再比较一次
+        if (isFactoryBean && (includeNonSingletons || mbd.isSingleton())) {
+            beanName = FACTORY_BEAN_PREFIX + beanName;
+            return isTypeMatch(beanName, type.resolve());
+        }
+
+        return typeMatch;
+    }
+
 
     /**
      * 检查对应的beanName 是不是单例
@@ -318,7 +354,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         Assert.hasText(beanName, "'beanName' 不能为空");
         BeanDefinition bd = this.beanDefinitionMap.remove(beanName);
         if (bd == null) {
-            log.error("没有发现 bean name = [{}] 的 beanDefinition",beanName);
+            log.error("没有发现 bean name = [{}] 的 beanDefinition", beanName);
             throw new NoSuchBeanDefinitionException(beanName);
         }
 
@@ -329,8 +365,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
                 updatedDefinitions.remove(beanName);
                 this.beanDefinitionNames = updatedDefinitions;
             }
-        }
-        else {
+        } else {
             this.beanDefinitionNames.remove(beanName);
         }
         //除了从容器里删除了 bd 如果这个 bd 已经生成了 单例对象,执行了一些后置处理器,这边都需要全部撤回
@@ -351,6 +386,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
     /**
      * 删除单例对象
+     *
      * @param beanName
      */
     public void destroySingleton(String beanName) {
@@ -619,6 +655,18 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         return result;
     }
 
+    /**
+     * 去根据 依赖的 field/method 去寻找在IOC中可能的 bean对象
+     * 这里优先使用 Class 类型匹配, 找不到会使用 名称 匹配对应的beanName
+     * 同时还会做一些额外的操作来处理 当类型匹配到多个 bean对象的尴尬情况
+     *
+     *
+     * @param descriptor  存放 field/method 的对象
+     * @param beanName  宿主 beanName
+     * @param autowiredBeanNames 最终的 返回值是返回出一个 bean对象, 同时这里面会存放这个 bean对象的 beanName
+     * @return
+     * @throws BeansException
+     */
     public Object doResolveDependency(DependencyDescriptor descriptor, String beanName,
                                       Set<String> autowiredBeanNames) throws BeansException {
 
@@ -627,8 +675,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
         //getAutowireCandidateResolver().isAutowireCandidate()
 
-        //去找一找有可能会拿到的注入对象有哪些
+        //去找一找有可能 依赖的 bean对象是什么
         Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
+        //一个依赖的bean对象都没找到, 直接报错了
         if (matchingBeans.isEmpty()) {
             //如果设置了 required = true 那么 如果没有找到要注入对象是要抛异常的
             if (descriptor.isRequired()) {
@@ -643,15 +692,18 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
         // 大于1说明找到了多个可以注入的对象,需要一定的筛选策略
         if (matchingBeans.size() > 1) {
+            //去从多个 候选人里面去筛选出一个来注入
             autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
+            //找不到适合的候选人
             if (autowiredBeanName == null) {
-                //同样,如果没有从多个候选人里面选举出合适的候选人,那么抛出异常
+                // @Autowired(required=true) 代表一定要注入,但是现在我找到多个对象,没办法只好报错了
                 if (descriptor.isRequired()) {
                     throw new NoUniqueBeanDefinitionException("在bean [%s] 中注入属性 [%s] 失败 因为有多个候选人,不知道用谁,候选人名单为[%s]",
                             beanName, descriptor, matchingBeans.keySet());
                 }
                 return null;
             }
+            //找到候选人的名字,直接去拿对象了
             instanceCandidate = matchingBeans.get(autowiredBeanName);
         } else {
             //只有一个可候选对象直接拿了
@@ -688,14 +740,18 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     protected Map<String, Object> findAutowireCandidates(
             String beanName, Class<?> requiredType, DependencyDescriptor descriptor) {
 
-        String[] candidateNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
-                this, requiredType, true, descriptor.isEager());
+        //根据需要依赖的 class去寻找 他可能是哪些 beanName
+        String[] candidateNames = BeanFactoryUtils
+                .beanNamesForTypeIncludingAncestors(this, requiredType, true, descriptor.isEager());
+
         Map<String, Object> result = new LinkedHashMap<>(candidateNames.length);
 
+        //找到了一堆 beanName, 筛选一下可能是谁
         for (String candidate : candidateNames) {
-            //如果 找到的bean 不是自己依赖了自己,并且是 指定的注入对象(@Resource 或者 @Qualifler 注解指定) 那么就放入 result
+            //如果 找到的bean 不是自己依赖了自己,并且执行了 autowire 前置处理器, 通过前置处理器的考验才能继续注入
+            //@Qualifler  注解的判断就是在 isAutowireCandidate 里面执行的
             if (!isSelfReference(beanName, candidate) && isAutowireCandidate(candidate, descriptor)) {
-                //使用候选人的name 生成对应的对象,单例的话是 直接 getBean 拿了,这里其实就递归了
+                //使用候选人的name 生成对应的对象,单例的话是 直接 getBean 拿了, 如果是非单例 放入进去的是 beanName 对应的 Class
                 addCandidateEntry(result, candidate);
             }
         }
@@ -739,6 +795,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
     /**
      * 判断 beanName 对应的 类是不是 注入属性所需要的对象
+     * 可以理解成 这就是  Autowire 的filter 在 注入之前先来执行一下, 可以打断注入
+     * 比如 @Qualifier 注解的处理就是这里面执行的
      *
      * @param beanName
      * @param descriptor
@@ -762,6 +820,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         return false;
     }
 
+
     protected boolean isAutowireCandidate(String beanName, RootBeanDefinition mbd,
                                           DependencyDescriptor descriptor, AutowireCandidateResolver resolver) {
 
@@ -775,7 +834,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     /**
      * 拿到了注入对象的 拿到了多个候选人 那么从这些候选人里选出最合适的一个,或者直接异常
      * 选择策略: 1 . 看谁打了@primary 注解,如果有多个打了这个注解 就异常
-     *         2 . 比较属性的 名字是否和 候选人的beanName 一样
+     * 2 . 比较属性的 名字是否和 候选人的beanName 一样
+     *
      * @param candidates
      * @param descriptor
      * @return
@@ -792,7 +852,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         for (Map.Entry<String, Object> entry : candidates.entrySet()) {
             String candidateName = entry.getKey();
             Object beanInstance = entry.getValue();
-            if(matchesBeanName(candidateName, descriptor.getDependencyName())){
+            if (matchesBeanName(candidateName, descriptor.getDependencyName())) {
                 return candidateName;
             }
 
@@ -802,19 +862,20 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
     /**
      * 用来比较 beanName 的名字,这里会连别名一起比较
+     *
      * @param beanName
      * @param candidateName
      * @return
      */
     protected boolean matchesBeanName(String beanName, String candidateName) {
-        if(candidateName == null){
+        if (candidateName == null) {
             return false;
         }
-        if(candidateName.equals(beanName)){
+        if (candidateName.equals(beanName)) {
             return true;
         }
 
-        if(ObjectUtils.containsElement(getAliases(beanName), candidateName)){
+        if (ObjectUtils.containsElement(getAliases(beanName), candidateName)) {
             return true;
         }
         return false;
@@ -823,6 +884,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
     /**
      * 注入属性的时候 用来处理 @primary 注解
+     * 扫描所有的候选人,并且 去获取他们有没有 @primary 注解, 如果有多个人同时持有 @primary 注解 则会报错
+     *
      * @param candidates
      * @param requiredType
      * @return
@@ -844,6 +907,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             }
         }
         return primaryBeanName;
+
     }
 
     /**

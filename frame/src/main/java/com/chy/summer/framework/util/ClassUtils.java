@@ -844,10 +844,12 @@ public class ClassUtils {
     }
 
     /**
-     * Return the user-defined class for the given class: usually simply the given
-     * class, but the original class in case of a CGLIB-generated subclass.
-     * @param clazz the class to check
-     * @return the user-defined class
+     * 剥离代理对象的壳子拿到真正的对象类型
+     * 原理也很简单,动态代理就是 使用原本的class作为父类生成一个新的类来做代理对象
+     * 这里就直接拿代理对象的 父类就行
+     *
+     * @param clazz
+     * @return
      */
     public static Class<?> getUserClass(Class<?> clazz) {
         if (clazz.getName().contains(CGLIB_CLASS_SEPARATOR)) {

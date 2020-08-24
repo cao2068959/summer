@@ -217,6 +217,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * 去确定 一下 在 bd里面真正的目标类是什么(目标类:会真正实例化的类型)
      * 普通的 bean 确实目标类直接拿 targetType 就行了
      * 有普通就有特殊 比如 factoryBean 以及 @bean 标注过的 这些 bean的类型需要计算后才能获得
+     *
      * @param beanName
      * @param mbd
      * @param typesToMatch
@@ -245,6 +246,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     /**
      * 获取工厂类的返回值的类型,主要针对 @bean 的方法
+     *
      * @param beanName
      * @param mbd
      * @param typesToMatch
@@ -287,22 +289,22 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         Method[] candidates = ReflectionUtils.getUniqueDeclaredMethods(factoryClass);
         for (Method candidate : candidates) {
             //如果这个方法的 方法类型(对象方法/静态方法) 和 工厂方法的不同，就直接下一个
-            if(Modifier.isStatic(candidate.getModifiers()) != isStatic){
+            if (Modifier.isStatic(candidate.getModifiers()) != isStatic) {
                 continue;
             }
             //这里比较了 工厂方法的名字，和 目标方法是否一致
-            if(!mbd.isFactoryMethod(candidate)){
+            if (!mbd.isFactoryMethod(candidate)) {
                 continue;
             }
             //这里比较了方法参数的个数是否一致（因为可能会存在 可变参数的参数 所以 工厂方法的实际参数 少于 目标方法也是可以接受的）
-            if(candidate.getParameterCount() < minNrOfArgs){
+            if (candidate.getParameterCount() < minNrOfArgs) {
                 continue;
             }
 
             //如果有泛型
             if (candidate.getTypeParameters().length > 0) {
-            //TODO 如果方法的返回值是 泛型,这里先留一个坑
-            }else {
+                //TODO 如果方法的返回值是 泛型,这里先留一个坑
+            } else {
                 //如果遍历的时候找到了 多个方法(方法名字相同,但是参数不同的),这个参数就会变成
                 uniqueCandidate = (commonType == null ? candidate : null);
                 //获取 bean方法返回值的类型,如果找到了多个 同名的方法,那么比较后取子类 子类,如果多个方法的返回值类型都不同,那么直接返回null
@@ -439,14 +441,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
         //TODO 这里还有使用 jdk8的 Supplier 去创建对象,这里先留坑
 
-        //如果是 用工厂方法区创建 instantiate 的话走这里
-        if (mbd.getFactoryMethodName() != null)  {
+        //如果是 用工厂方法区创建 instantiate 的话走这里, @Bean 创建对象的逻辑
+        if (mbd.getFactoryMethodName() != null) {
             return instantiateUsingFactoryMethod(beanName, mbd, args);
         }
 
         //去找到目标clss 中的构造方法
         Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
-        if (ctors != null)  {
+        if (ctors != null) {
             //通过构造器去创建对象
             return autowireConstructor(beanName, mbd, ctors, args);
         }
@@ -458,6 +460,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     /**
      * 通过构造器去 创建对象
+     *
      * @param beanName
      * @param mbd
      * @param ctors
@@ -473,6 +476,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     /**
      * 通过 BeanPostProcessor 去找到有参构造器,这里默认工作的实际上是 @AutowiredAnnotationBeanPostProcessor
+     *
      * @param beanClass
      * @param beanName
      * @return
@@ -497,7 +501,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 
     /**
-     * 通过 工厂方法来实例化 bean 对象的
+     * 通过 工厂方法(@Bean) 来实例化 bean 对象的
+     *
      * @param beanName
      * @param mbd
      * @param explicitArgs
@@ -506,7 +511,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     protected BeanWrapper instantiateUsingFactoryMethod(
             String beanName, RootBeanDefinition mbd, @Nullable Object[] explicitArgs) {
 
-        return new ConstructorResolver(this).instantiateUsingFactoryMethod(beanName, mbd);
+        return new ConstructorResolver(this).instantiateUsingFactoryMethod(beanName, mbd, explicitArgs);
     }
 
     /**
@@ -536,7 +541,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     }
 
     public abstract Object resolveDependency(DependencyDescriptor descriptor, String requestingBeanName,
-                                    Set<String> autowiredBeanNames) throws BeansException;
+                                             Set<String> autowiredBeanNames) throws BeansException;
 
     public abstract void registerDependentBean(String beanName, String dependentBeanName);
 
