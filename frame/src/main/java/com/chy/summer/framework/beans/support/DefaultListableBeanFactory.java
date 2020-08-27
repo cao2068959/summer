@@ -97,8 +97,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public void registerDependentBean(String beanName, String dependentBeanName) {
         String canonicalName = canonicalName(beanName);
         synchronized (this.dependentBeanMap) {
-            Set<String> dependentBeans =
-                    this.dependentBeanMap.computeIfAbsent(canonicalName, k -> new LinkedHashSet<>(8));
+            Set<String> dependentBeans = this.dependentBeanMap.computeIfAbsent(canonicalName,
+                    k -> new LinkedHashSet<>(8));
             //添加失败,说明已经有对应的值了 后面就不执行了
             if (!dependentBeans.add(dependentBeanName)) {
                 return;
@@ -106,8 +106,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         }
 
         synchronized (this.dependenciesForBeanMap) {
-            Set<String> dependenciesForBean =
-                    this.dependenciesForBeanMap.computeIfAbsent(dependentBeanName, k -> new LinkedHashSet<>(8));
+            Set<String> dependenciesForBean = this.dependenciesForBeanMap.computeIfAbsent(dependentBeanName,
+                    k -> new LinkedHashSet<>(8));
             dependenciesForBean.add(canonicalName);
         }
     }

@@ -146,7 +146,7 @@ public class ConstructorResolver {
                 //在spring中这里会去通过参数去计算偏差值来决定使用哪一个重载的方法,而这里简化这个操作,重载的优先级是
                 //参数多的优先 , 如果参数多的有属性不能在ioc找到就 处理参数第二多的,依次类推
                 try {
-                    argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames, candidate);
+                    argsHolder = createArgumentArray(beanName, paramTypes, paramNames, candidate);
                     factoryMethodToUse = candidate;
                     argsHolderToUse = argsHolder;
                     argsToUse = argsHolder.arguments;
@@ -188,69 +188,6 @@ public class ConstructorResolver {
     }
 
 
-    /**
-     * 把 工厂方法上的参数 给全部封装到 ArgumentsHolder 对象里
-     * 同时还会更具方法的名字去 ioc 容器里获取对应的对象
-     *
-     * @param beanName
-     * @param mbd
-     * @param resolvedValues
-     * @param bw
-     * @param paramTypes
-     * @param paramNames
-     * @param executable
-     * @return
-     */
-    private ArgumentsHolder createArgumentArray(
-            String beanName, RootBeanDefinition mbd, ConstructorArgumentValues resolvedValues,
-            BeanWrapper bw, Class<?>[] paramTypes, String[] paramNames, Executable executable) {
-
-
-        ArgumentsHolder args = new ArgumentsHolder(paramTypes.length);
-        Set<ConstructorArgumentValues.ValueHolder> usedValueHolders = new HashSet<>(paramTypes.length);
-        Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
-
-        for (int paramIndex = 0; paramIndex < paramTypes.length; paramIndex++) {
-            //拿到参数的类型
-            Class<?> paramType = paramTypes[paramIndex];
-            //用参数的类型去换取参数的 name
-            String paramName = (paramNames != null ? paramNames[paramIndex] : "");
-            // Try to find matching constructor argument value, either indexed or generic.
-            ConstructorArgumentValues.ValueHolder valueHolder = null;
-            //把 要执行的工厂方法/构造器 封装到 MethodParameter 对象里面
-            MethodParameter methodParam = MethodParameter.forExecutable(executable, paramIndex);
-
-            //去ioc 容器里把依赖的 参数对象给拉出来
-            Object autowiredArgument = resolveAutowiredArgument(methodParam, beanName, autowiredBeanNames);
-            args.rawArguments[paramIndex] = autowiredArgument;
-            args.arguments[paramIndex] = autowiredArgument;
-            args.resolveNecessary = true;
-
-        }
-
-        //把依赖关系给存入进去
-        for (String autowiredBeanName : autowiredBeanNames) {
-            this.beanFactory.registerDependentBean(autowiredBeanName, beanName);
-
-        }
-
-        return args;
-    }
-
-
-    protected Object resolveAutowiredArgument(MethodParameter param, String beanName,
-                                              Set<String> autowiredBeanNames) {
-
-        DependencyDescriptor dependencyDescriptor = new DependencyDescriptor(param, true);
-        return this.beanFactory.resolveDependency(dependencyDescriptor, beanName, autowiredBeanNames);
-    }
-
-
-    private Method[] getCandidateMethods(Class<?> factoryClass, RootBeanDefinition mbd) {
-        //反射拿所有的方法
-        return ReflectionUtils.getAllDeclaredMethods(factoryClass);
-    }
-
 
     /**
      * 使用构造器去实例化对象
@@ -288,8 +225,7 @@ public class ConstructorResolver {
                 try {
                     //处理构造器器里面的参数,并且去Ioc 容器去拿对应参数,如果拿不到就去执行其他参数的构造器
                     //如果所有的构造器都拿不到,那么就抛出异常
-                    argsHolder = createArgumentArray(beanName, mbd, resolvedValues, beanWrapper, paramTypes, paramNames,
-                            getUserDeclaredConstructor(candidate));
+                    argsHolder = createArgumentArray(beanName, paramTypes, paramNames, getUserDeclaredConstructor(candidate));
                     constructorToUse = candidate;
                     argsHolderToUse = argsHolder;
                     argsToUse = argsHolderToUse.arguments;
@@ -336,6 +272,67 @@ public class ConstructorResolver {
         }
 
     }
+
+
+    /**
+     * 把 工厂方法上的参数 给全部封装到 ArgumentsHolder 对象里
+     * 同时还会更具方法的名字去 ioc 容器里获取对应的对象
+     *
+     * @param beanName
+     * @param paramTypes
+     * @param paramNames
+     * @param executable
+     * @return
+     */
+    private ArgumentsHolder createArgumentArray(String beanName, Class<?>[] paramTypes,
+                                                String[] paramNames, Executable executable) {
+
+
+        ArgumentsHolder args = new ArgumentsHolder(paramTypes.length);
+        Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
+
+        for (int paramIndex = 0; paramIndex < paramTypes.length; paramIndex++) {
+            //拿到参数的类型
+            Class<?> paramType = paramTypes[paramIndex];
+            //用参数的类型去换取参数的 name
+            String paramName = (paramNames != null ? paramNames[paramIndex] : "");
+            // Try to find matching constructor argument value, either indexed or generic.
+            ConstructorArgumentValues.ValueHolder valueHolder = null;
+            //把 要执行的工厂方法/构造器 封装到 MethodParameter 对象里面
+            MethodParameter methodParam = MethodParameter.forExecutable(executable, paramIndex);
+
+            //去ioc 容器里把依赖的 参数对象给拉出来
+            Object autowiredArgument = resolveAutowiredArgument(methodParam, beanName, autowiredBeanNames);
+            args.rawArguments[paramIndex] = autowiredArgument;
+            args.arguments[paramIndex] = autowiredArgument;
+            args.resolveNecessary = true;
+
+        }
+
+        //把依赖关系给存入进去
+        for (String autowiredBeanName : autowiredBeanNames) {
+            this.beanFactory.registerDependentBean(autowiredBeanName, beanName);
+        }
+
+        return args;
+    }
+
+
+    protected Object resolveAutowiredArgument(MethodParameter param, String beanName,
+                                              Set<String> autowiredBeanNames) {
+
+        DependencyDescriptor dependencyDescriptor = new DependencyDescriptor(param, true);
+        return this.beanFactory.resolveDependency(dependencyDescriptor, beanName, autowiredBeanNames);
+    }
+
+
+    private Method[] getCandidateMethods(Class<?> factoryClass, RootBeanDefinition mbd) {
+        //反射拿所有的方法
+        return ReflectionUtils.getAllDeclaredMethods(factoryClass);
+    }
+
+
+
 
     protected Constructor<?> getUserDeclaredConstructor(Constructor<?> constructor) {
         Class<?> declaringClass = constructor.getDeclaringClass();
