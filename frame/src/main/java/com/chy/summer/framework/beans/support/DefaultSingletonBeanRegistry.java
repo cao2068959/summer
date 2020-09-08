@@ -76,8 +76,10 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
                 singletonObject = this.earlySingletonObjects.get(beanName);
                 //半成品也没有，那么如果传入了 allowEarlyReference 允许现场造一个半成品
                 if (singletonObject == null && allowEarlyReference) {
+                    //对于循环依赖的情况来说, 当第二次访问到某个未完成的beanName的时候,会在 singletonFactories 里放入一个工厂方法,这个工厂方法执行后就能获取到那个未完成的bean
                     ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
                     if (singletonFactory != null) {
+                        //从工厂里生成真正的bean, 然后放入 earlySingletonObjects 容器里面
                         singletonObject = singletonFactory.getObject();
                         this.earlySingletonObjects.put(beanName, singletonObject);
                         this.singletonFactories.remove(beanName);

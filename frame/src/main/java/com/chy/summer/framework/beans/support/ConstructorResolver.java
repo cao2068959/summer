@@ -109,18 +109,6 @@ public class ConstructorResolver {
         //工厂方法排序 排序顺序是 public优先  参数多的优先
         AutowireUtils.sortFactoryMethods(candidates);
 
-        ConstructorArgumentValues resolvedValues = null;
-
-        //是不是构造器注入
-        boolean autowiring = false;
-        if (mbd.getAutowireMode() == Autowire.CONSTRUCTOR) {
-            autowiring = true;
-        }
-
-
-        int minTypeDiffWeight = Integer.MAX_VALUE;
-        Set<Method> ambiguousFactoryMethods = null;
-
         int minNrOfArgs = 0;
         if (mbd.hasConstructorArgumentValues()) {
             //TODO 如果有工厂方法有参数走这里面
@@ -129,10 +117,9 @@ public class ConstructorResolver {
         RuntimeException exception = null;
         for (Method candidate : candidates) {
             Class<?>[] paramTypes = candidate.getParameterTypes();
-
+            //有参数的情况下,去解析参数
             if (paramTypes.length >= minNrOfArgs) {
                 ArgumentsHolder argsHolder;
-
                 String[] paramNames = null;
                 //去拿参数解析器
                 ParameterNameDiscoverer pnd = this.beanFactory.getParameterNameDiscoverer();
@@ -141,17 +128,14 @@ public class ConstructorResolver {
                     paramNames = pnd.getParameterNames(candidate);
                 }
 
-
                 // 去ioc容器里拿到参数的对象 并且把他们全部封装到一个对象里
                 //在spring中这里会去通过参数去计算偏差值来决定使用哪一个重载的方法,而这里简化这个操作,重载的优先级是
                 //参数多的优先 , 如果参数多的有属性不能在ioc找到就 处理参数第二多的,依次类推
                 try {
                     argsHolder = createArgumentArray(beanName, paramTypes, paramNames, candidate);
                     factoryMethodToUse = candidate;
-                    argsHolderToUse = argsHolder;
                     argsToUse = argsHolder.arguments;
-                    ambiguousFactoryMethods = null;
-
+                    //成功找到了所有的参数,那么就直接选择他了,跳出循环
                     break;
                 } catch (BeansException e) {
                     exception = e;
@@ -175,11 +159,9 @@ public class ConstructorResolver {
         }
 
         try {
-            Object beanInstance;
-
-            beanInstance = this.beanFactory.getInstantiationStrategy().instantiate(
-                    mbd, beanName, this.beanFactory, factoryBean, factoryMethodToUse, argsToUse);
-
+            //使用 反射区执行对应的工厂方法
+            Object beanInstance = this.beanFactory.getInstantiationStrategy()
+                    .instantiate(mbd, beanName, this.beanFactory, factoryBean, factoryMethodToUse, argsToUse);
             bw.setBeanInstance(beanInstance);
             return bw;
         } catch (Throwable ex) {
@@ -214,7 +196,6 @@ public class ConstructorResolver {
         //排序走一波 也是参数多的放前面
         AutowireUtils.sortFactoryMethods(ctors);
 
-        Set<Constructor<?>> ambiguousConstructors = null;
         RuntimeException exception = null;
 
         for (Constructor<?> candidate : ctors) {
@@ -260,8 +241,8 @@ public class ConstructorResolver {
         //下面就是开始 实例化 bean 对象了
         try {
             final InstantiationStrategy strategy = beanFactory.getInstantiationStrategy();
-            Object beanInstance;
-            beanInstance = strategy.instantiate(mbd, beanName, this.beanFactory, constructorToUse, argsToUse);
+            //使用反射用构造器 生成了对象
+            Object beanInstance = strategy.instantiate(mbd, beanName, this.beanFactory, constructorToUse, argsToUse);
 
             beanWrapper.setBeanInstance(beanInstance);
             return beanWrapper;

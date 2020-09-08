@@ -12,6 +12,7 @@ import com.chy.summer.framework.beans.config.SmartInstantiationAwareBeanPostProc
 import com.chy.summer.framework.beans.factory.DependencyDescriptor;
 import com.chy.summer.framework.beans.support.RootBeanDefinition;
 import com.chy.summer.framework.beans.support.annotation.AutowiredFieldElement;
+import com.chy.summer.framework.beans.support.annotation.InjectedElement;
 import com.chy.summer.framework.beans.support.annotation.InjectionMetadata;
 import com.chy.summer.framework.core.BridgeMethodResolver;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
@@ -60,7 +61,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
      * 在生成 bean后回调做一些事情
      * 对于 AutowiredAnnotationBeanPostProcessor 来说,这个方法就是注入 这个bean中打了 @Autowired 等注解的 实现入口
      *
-     * @param pvs
+     * @param pvs  beanDefine 中持有的对象,代表着这个bean里面所有的属性
      * @param bean
      * @param beanName
      * @return
@@ -68,7 +69,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
      */
     @Override
     public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) throws BeansException {
-        //获取要注入的元数据对象,这里面保存了 那些已经被打了 @Autowired 注解的 元素和方法
+        //获取要注入的元数据对象,这里面保存了 那些已经被打了 @Autowired 注解的 元素和方法 这里是包括了父类里面的方法/字段
         InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
         try {
             metadata.inject(bean, beanName, pvs);
@@ -113,11 +114,11 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
      * @return
      */
     private InjectionMetadata buildAutowiringMetadata(Class<?> clazz) {
-        List<InjectionMetadata.InjectedElement> elements = new ArrayList<>();
+        List<InjectedElement> elements = new ArrayList<>();
         Class<?> targetClass = clazz;
 
         do {
-            final List<InjectionMetadata.InjectedElement> currElements = new ArrayList<>();
+            final List<InjectedElement> currElements = new ArrayList<>();
 
             //反射获取 目标class 里的所有属性,然后走这个匿名内部类的自定义方法
             ReflectionUtils.doWithLocalFields(targetClass, field -> {
@@ -152,7 +153,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
                         log.warn("Autowired 注解作用的方法最少要有一个参数 ： {}", method);
                     }
                     boolean required = determineRequiredStatus(ann);
-                    //获取对应 getter setter 方法的 PropertyDescriptor
+                    //这里会去获取这个类里面所有的 getter和setter 方法, 然后和打了注解的这个方法对比, 如果目标方法就是 PropertyDescriptor 方法那么返回
                     PropertyDescriptor pd = BeanUtils.findPropertyForMethod(bridgedMethod, clazz);
                     currElements.add(new AutowiredMethodElement(method, required, pd));
                 }
@@ -194,7 +195,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
         return required == this.requiredParameterValue;
     }
 
-    private class AutowiredMethodElement extends InjectionMetadata.InjectedElement {
+    private class AutowiredMethodElement extends InjectedElement {
 
         private final boolean required;
 
@@ -212,6 +213,9 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 
     /**
      * 在生成bean实例的时候,用来选择构造器的
+     * 虽然返回值是一个数组,但是这里仅仅只会选择一个 构造器
+     *
+     * 如果有多个构造器,那么选择打有 @Autowired 的那一个, 如果多个构造器谁也不打,那么就谁都不选择
      *
      * @param beanClass
      * @param beanName

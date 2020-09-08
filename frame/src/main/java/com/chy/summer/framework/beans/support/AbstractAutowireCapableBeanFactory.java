@@ -26,6 +26,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -121,12 +123,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             mbd.postProcessed = true;
         }
 
-        //是否面临了循环依赖的问题
-        //如果是正在创建中的单例对象，可能会有循环依赖问题
+        //如果是单例对象, 并且对应的bean已经开始初始化那么这么值就是true, singletonsCurrentlyInCreation 将会在 创建单例之前就把对应的beanName给存进去
         boolean earlySingletonExposure = (mbd.isSingleton() && isSingletonCurrentlyInCreation(beanName));
-        //如果会面临循环依赖的问题,那么 把这个半成品的bean 给放入单例容器里面
+        //如果进这个if 那么意味着可能存在循环依赖的问题, 这里的解决方案也很简单, 把这个没初始化完成的bean变成一个 FactoryBean 注册进单例容器里面
+        //后续流程再次获取 对应的bean的时候就不会直接去执行 创建bean 导致循序依赖,而是从这个 FactoryBean 里面拿到一个 未完成的bean, 继续后续流程
+        //这里的 getEarlyBeanReference 除了会返回未完成的bean 还会去执行  BeanPostProcessors 的 SmartInstantiationAwareBeanPostProcessor#getEarlyBeanReference
         if (earlySingletonExposure) {
-            //getEarlyBeanReference 这个其实就是直接返回入参的bean对象,只是在返回的时候会执行一下 半成品的后置处理器(如果存在的话)
             addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
         }
 
@@ -158,10 +160,61 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         //对BeanPostProcessor后置处理器的postProcessAfterInitialization
         //回调方法的调用，为Bean实例初始化之后做一些处理
         if (mbd == null || !mbd.isSynthetic()) {
+            wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
+        }
+
+        try {
+            //如果实现了 InitializingBean 接口去执行 bean的初始化方法
+            invokeInitMethods(beanName, wrappedBean, mbd);
+        } catch (Throwable throwable) {
+            throw new BeanCreationException(
+                    (mbd != null ? mbd.getResourceDescription() : null),
+                    beanName, "Invocation of init method failed", throwable);
+        }
+
+        if (mbd == null || !mbd.isSynthetic()) {
             wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
         }
+
         return wrappedBean;
     }
+
+
+    protected void invokeInitMethods(String beanName, final Object bean, @Nullable RootBeanDefinition mbd)
+            throws Throwable {
+
+        //如果实现接口 InitializingBean 则去执行 afterPropertiesSet 方法
+        if (bean instanceof InitializingBean) {
+            InitializingBean initializingBean = (InitializingBean) bean;
+            initializingBean.afterPropertiesSet();
+        }
+
+        //TODO 在 beanDefinition 里还有保存了一个 initMethodName 字段,将会用反射区执行这个初始化方法,不过因为summer暂时搞全注解配置,所以用不上
+    }
+
+
+    /**
+     * 调用BeanPostProcessor后置处理器实例对象初始化之前的处理方法
+     *
+     * @param existingBean
+     * @param beanName
+     * @return
+     * @throws BeansException
+     */
+    public Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName)
+            throws BeansException {
+
+        Object result = existingBean;
+        for (BeanPostProcessor processor : getBeanPostProcessors()) {
+            Object current = processor.postProcessBeforeInitialization(result, beanName);
+            if (current == null) {
+                return result;
+            }
+            result = current;
+        }
+        return result;
+    }
+
 
     /**
      * 调用BeanPostProcessor后置处理器实例对象初始化之后的处理方法
@@ -366,13 +419,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
                 }
             }
             if (bean instanceof BeanFactoryAware) {
-                ((BeanFactoryAware) bean).setBeanFactory(AbstractAutowireCapableBeanFactory.this);
+                ((BeanFactoryAware) bean).setBeanFactory(this);
             }
         }
     }
 
     private void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper instanceWrapper) {
-        PropertyDescriptor[] filteredPds = null;
+
         PropertyValues pvs = mbd.getPropertyValues();
         //在spring中，这里还有一个开关来控制是否有对应的后置处理器，来控制是否执行下面的 for循环，这里就补设置这个开关
         for (BeanPostProcessor bp : getBeanPostProcessors()) {
@@ -446,13 +499,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             return instantiateUsingFactoryMethod(beanName, mbd, args);
         }
 
-        //去找到目标clss 中的构造方法
+        //去找到目标 class 中的构造方法
         Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
         if (ctors != null) {
             //通过构造器去创建对象
             return autowireConstructor(beanName, mbd, ctors, args);
         }
-
 
         //如果没有定义构造函数,那么就直接使用 无参构造器去生成实例对象
         return instantiateBean(beanName, mbd);
@@ -484,15 +536,16 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      */
     protected Constructor<?>[] determineConstructorsFromBeanPostProcessors(@Nullable Class<?> beanClass, String beanName)
             throws BeansException {
+        if (beanClass == null) {
+            return null;
+        }
 
-        if (beanClass != null) {
-            for (BeanPostProcessor bp : getBeanPostProcessors()) {
-                if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
-                    SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
-                    Constructor<?>[] ctors = ibp.determineCandidateConstructors(beanClass, beanName);
-                    if (ctors != null) {
-                        return ctors;
-                    }
+        for (BeanPostProcessor bp : getBeanPostProcessors()) {
+            if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
+                SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
+                Constructor<?>[] ctors = ibp.determineCandidateConstructors(beanClass, beanName);
+                if (ctors != null) {
+                    return ctors;
                 }
             }
         }

@@ -285,7 +285,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     public <T> T doGetBean(final String name, final Class<T> requiredType, final Object[] args) throws BeansException {
         Object bean = null;
         final String beanName = transformedBeanName(name);
-        //先去单例的缓存里看看有没有对应的对象,这里拿到的可能是一个半成品的单例对象
+        //先去单例的缓存里看看有没有对应的对象, 如果是循环依赖的情况下这里拿到的可能是一个半成品的单例对象
         Object sharedInstance = getSingleton(beanName, true);
         if (sharedInstance != null && args == null) {
             //虽然已经拿到了单列对象，但是这个对象可以能还没初始化完成
