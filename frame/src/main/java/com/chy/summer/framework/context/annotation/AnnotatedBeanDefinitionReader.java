@@ -13,7 +13,11 @@ import java.lang.annotation.Annotation;
 import java.util.function.Supplier;
 
 /**
- * 注释bean的定义注册器，一种替代ClassPathBeanDefinitionScanner的方法，仅适用于明确注册的类
+ *  BeanDefinitionReader 之一
+ *
+ *  register(Class<?>... annotatedClasses)  为这个加载器的入口, 将会去解析传入class的注解,并且把他这个class 注册进入ioc容器中
+ *
+ *
  */
 public class AnnotatedBeanDefinitionReader {
 
@@ -48,7 +52,9 @@ public class AnnotatedBeanDefinitionReader {
 
 
     /**
-     * 开始真正注册
+     *
+     * 把扫描某个类的注解,如果符合条件就把他注册进入ioc容器中
+     *
      * @param annotatedClass  要注册的class
      * @param instanceSupplier 实例的父类
      * @param name             是否要指定对应的beanName 没有就直接用类名生成了

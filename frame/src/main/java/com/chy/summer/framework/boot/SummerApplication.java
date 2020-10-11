@@ -321,7 +321,8 @@ public class SummerApplication {
 
         //这里就是去 applicationContext 里拿 DefaultListableBeanFactory
         BeanDefinitionRegistry beanDefinitionRegistry = getBeanDefinitionRegistry(context);
-
+        //beanDefintion 的装载器, 这个装载器里在原本的spring里面有各种 读取器 比如 AnnotatedBeanDefinitionReader , XmlBeanDefinitionReader
+        //这里只考虑 注解的加载方式,所以只有 AnnotatedBeanDefinitionReader
         BeanDefinitionLoader loader = new BeanDefinitionLoader(beanDefinitionRegistry, sources);
 
         if (this.resourceLoader != null) {

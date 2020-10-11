@@ -56,6 +56,7 @@ public class MethodMetadataReadingVisitorHandle extends MethodVisitor implements
     @Override
     public AnnotationVisitor visitAnnotation(final String desc, boolean visible) {
         String className = Type.getType(desc).getClassName();
+        this.ownAllAnnotatedType.add(className);
         return new MetadataAnnotationVisitorHandle(className, this.ownAllAnnotated, this.ownAllAnnotatedType);
     }
 

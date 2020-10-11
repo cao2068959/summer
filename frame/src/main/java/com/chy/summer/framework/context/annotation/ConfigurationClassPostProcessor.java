@@ -106,12 +106,6 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
             return Integer.compare(i1, i2);
         });
 
-        //
-        SingletonBeanRegistry sbr = null;
-        if (registry instanceof SingletonBeanRegistry) {
-            sbr = (SingletonBeanRegistry) registry;
-        }
-
         if (this.environment == null) {
             this.environment = new StandardServletEnvironment();
         }

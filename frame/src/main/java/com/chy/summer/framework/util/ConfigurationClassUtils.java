@@ -42,6 +42,11 @@ public abstract class ConfigurationClassUtils {
 
     /**
      * 检查是不是 配置类,其实也就是看有没 @Configuration 标签
+     *
+     * 这里如果发现对应的beanBefinition 是配置类会给他标记上 full 或者 lite
+     * full: @Configuration 注解
+     * lite: @Component @ComponentScan @Import 拥有任何一个都算
+     *
      * @param beanDef
      * @return
      */

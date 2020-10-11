@@ -8,13 +8,11 @@ import com.chy.summer.framework.util.Assert;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ConfigurationClass {
 
+    @Getter
     private final AnnotationMetadata metadata;
     @Getter
     private  Resource resource;
@@ -36,6 +34,13 @@ public class ConfigurationClass {
     @Getter
     private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 
+    /**
+     * 如果是 @bean 方法被@Condition 给拦截了,那么把他给记录下来
+     */
+    final Set<String> skippedBeanMethods = new HashSet<>();
+
+
+
     public ConfigurationClass(AnnotationMetadata metadata, String beanName) {
         Assert.notNull(beanName, "BeanName 不能为空");
         this.metadata = metadata;
@@ -51,10 +56,6 @@ public class ConfigurationClass {
         this.metadata = metadataReader.getAnnotationMetadata();
         this.resource = metadataReader.getResource();
         this.importedBy.add(importedBy);
-    }
-
-    public AnnotationMetadata getMetadata() {
-        return metadata;
     }
 
     public void addBeanMethod(BeanMethod method) {

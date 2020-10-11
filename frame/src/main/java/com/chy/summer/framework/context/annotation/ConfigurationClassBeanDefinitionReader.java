@@ -8,7 +8,6 @@ import com.chy.summer.framework.beans.factory.annotation.AnnotatedGenericBeanDef
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.beans.support.RootBeanDefinition;
 import com.chy.summer.framework.context.annotation.condition.ConditionEvaluator;
-import com.chy.summer.framework.context.annotation.condition.ConfigurationCondition;
 import com.chy.summer.framework.context.annotation.constant.Autowire;
 import com.chy.summer.framework.context.annotation.utils.AnnotationConfigUtils;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
@@ -16,13 +15,14 @@ import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.type.AnnotationMetadata;
 import com.chy.summer.framework.core.type.MethodMetadata;
-import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
 import java.util.*;
+
+import static com.chy.summer.framework.context.annotation.condition.ConfigurationCondition.ConfigurationPhase.REGISTER_BEAN;
 
 @Slf4j
 public class ConfigurationClassBeanDefinitionReader {
@@ -83,6 +83,8 @@ public class ConfigurationClassBeanDefinitionReader {
         for (BeanMethod beanMethod : configClass.getBeanMethods()) {
             loadBeanDefinitionsForBeanMethod(beanMethod);
         }
+
+        //这里是执行 @Import 标注的类是 ImportBeanDefinitionRegistrar 实现类的时候, 这里会直接执行 registerBeanDefinitions() 方法
         loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
     }
 
@@ -97,14 +99,14 @@ public class ConfigurationClassBeanDefinitionReader {
         MethodMetadata metadata = beanMethod.getMetadata();
         String methodName = metadata.getMethodName();
 
-        // TODO 这是在配合注解 @Condition 使用的时候来自动判断是否去加载对应的bean
-       /* if (this.conditionEvaluator.shouldSkip(metadata, ConfigurationPhase.REGISTER_BEAN)) {
+        if (this.conditionEvaluator.shouldSkip(metadata, REGISTER_BEAN)) {
             configClass.skippedBeanMethods.add(methodName);
             return;
         }
+
         if (configClass.skippedBeanMethods.contains(methodName)) {
             return;
-        }*/
+        }
 
         //去拿 @Bean 注解上的所有属性
         AnnotationAttributes beanAnnotationAttributes = metadata.getAnnotationAttributes(Bean.class.getName());
@@ -163,7 +165,7 @@ public class ConfigurationClassBeanDefinitionReader {
     }
 
 
-    /**
+    /**-
      * 把 @Import 上标注过的类 解析 并且 注册进入 ioc 容器,成为 beanDefinition
      *
      * @param configClass
@@ -255,7 +257,7 @@ public class ConfigurationClassBeanDefinitionReader {
 
             if (skip == null) {
                 //真正去验证 conditional 的逻辑判断是否应该跳过
-                skip = conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationCondition.ConfigurationPhase.REGISTER_BEAN);
+                skip = conditionEvaluator.shouldSkip(configClass.getMetadata(), REGISTER_BEAN);
             }
             //写入缓存
             this.skipped.put(configClass, skip);

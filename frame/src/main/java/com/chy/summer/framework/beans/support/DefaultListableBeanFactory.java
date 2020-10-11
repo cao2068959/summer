@@ -205,9 +205,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         BeanDefinitionHolder beanDefinitionHolder = mbd.getDecoratedDefinition();
         //如果半成品的 bean不参与匹配 ,那么将进入以下if去检查 bean到底是不是半成品
         if (!allowEagerInit) {
-            if (!isFactoryBean || (beanDefinitionHolder != null && !mbd.isLazyInit()) || containsSingleton(beanName)) {
+           /* if (isFactoryBean || (beanDefinitionHolder != null && !mbd.isLazyInit()) || containsSingleton(beanName)) {
                 return false;
-            }
+            }*/
         }
 
 
