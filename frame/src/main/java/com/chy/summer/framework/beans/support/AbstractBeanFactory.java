@@ -1,16 +1,14 @@
 package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.BeanFactory;
+import com.chy.summer.framework.beans.ConfigurableBeanFactory;
 import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.beans.HierarchicalBeanFactory;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
 import com.chy.summer.framework.exception.*;
-import com.chy.summer.framework.util.Assert;
-import com.chy.summer.framework.util.BeanFactoryUtils;
-import com.chy.summer.framework.util.ClassUtils;
-import com.chy.summer.framework.util.StringUtils;
+import com.chy.summer.framework.util.*;
 import com.sun.istack.internal.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.chy.summer.framework.util.BeanFactoryUtils.transformedBeanName;
 
 @Slf4j
-public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements HierarchicalBeanFactory {
+public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements HierarchicalBeanFactory, ConfigurableBeanFactory {
 
     private final Set<String> alreadyCreated = Collections.newSetFromMap(new ConcurrentHashMap<>(256));
 
@@ -31,6 +29,12 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     private BeanFactory parentBeanFactory;
 
     protected final Map<String, RootBeanDefinition> mergedBeanDefinitions = new ConcurrentHashMap<>(256);
+
+
+    /**
+     * string 表达式的解析器, 也就是 用在 @Value 中值的解析等
+     */
+    private final List<StringValueResolver> embeddedValueResolvers = new LinkedList<>();
 
     /**
      * 判断是否已经开始创建 bean 对象了
@@ -394,5 +398,41 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             throw new BeanIsAbstractException("类 : [%s] 是抽象类,不能实例化", beanName);
         }
     }
+
+
+    @Override
+    public void addEmbeddedValueResolver(StringValueResolver valueResolver) {
+        Assert.notNull(valueResolver, "StringValueResolver must not be null");
+        this.embeddedValueResolvers.add(valueResolver);
+    }
+
+    @Override
+    public boolean hasEmbeddedValueResolver() {
+        return !this.embeddedValueResolvers.isEmpty();
+    }
+
+
+    /**
+     * 解析嵌入的表达式的值 比如 ${com.chy} 这里解析的就是 com.chy 对应的值
+     *
+     * @param value
+     * @return
+     */
+    @Override
+    public String resolveEmbeddedValue(@Nullable String value) {
+        if (value == null) {
+            return null;
+        }
+        String result = value;
+        for (StringValueResolver resolver : this.embeddedValueResolvers) {
+            result = resolver.resolveStringValue(result);
+            if (result == null) {
+                return null;
+            }
+        }
+        return result;
+    }
+
+
 
 }

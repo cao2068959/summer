@@ -673,7 +673,23 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         //获取了要注入的对象的类型
         Class<?> type = descriptor.getDependencyType();
 
-        //getAutowireCandidateResolver().isAutowireCandidate()
+        //这里去看看是不是打了 @Value 的注解,并且把他的值给拿出来
+        Object value = getAutowireCandidateResolver().getSuggestedValue(descriptor);
+
+
+        if (value != null) {
+            if (value instanceof String) {
+                //去解析嵌入表达式的值  ${com.chy} 这里就是去 解析 com.chy 获取对应的值
+                String strVal = resolveEmbeddedValue((String) value);
+                BeanDefinition bd = (beanName != null && containsBean(beanName) ? getMergedBeanDefinition(beanName) : null);
+                value = evaluateBeanDefinitionString(strVal, bd);
+            }
+            TypeConverter converter = (typeConverter != null ? typeConverter : getTypeConverter());
+            return (descriptor.getField() != null ?
+                    converter.convertIfNecessary(value, type, descriptor.getField()) :
+                    converter.convertIfNecessary(value, type, descriptor.getMethodParameter()));
+        }
+
 
         //去找一找有可能 依赖的 bean对象是什么
         Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
@@ -728,6 +744,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         }
         return result;
     }
+
 
     /**
      * 寻找可能注入的对象

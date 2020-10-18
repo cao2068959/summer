@@ -7,4 +7,6 @@ public interface AutowireCandidateResolver {
     default boolean isAutowireCandidate(BeanDefinitionHolder bdHolder, DependencyDescriptor descriptor) {
         return bdHolder.getBeanDefinition().isAutowireCandidate();
     }
+
+    Object getSuggestedValue(DependencyDescriptor descriptor);
 }

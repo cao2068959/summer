@@ -7,6 +7,8 @@ import com.chy.summer.framework.beans.factory.DependencyDescriptor;
 import com.chy.summer.framework.context.event.ApplicationEventMulticaster;
 import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
+import com.chy.summer.framework.util.StringValueResolver;
+import com.sun.istack.internal.Nullable;
 
 import java.util.Set;
 
@@ -48,4 +50,5 @@ public interface ConfigurableListableBeanFactory extends ListableBeanFactory,Con
     BeanDefinition getBeanDefinition(String beanName) throws NoSuchBeanDefinitionException;
 
     Object resolveDependency(DependencyDescriptor desc, String beanName, Set<String> autowiredBeanNames);
+
 }

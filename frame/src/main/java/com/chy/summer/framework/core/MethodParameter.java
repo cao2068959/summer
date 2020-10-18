@@ -3,6 +3,7 @@ package com.chy.summer.framework.core;
 import com.chy.summer.framework.util.Assert;
 import com.sun.istack.internal.Nullable;
 import lombok.Data;
+import lombok.Getter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -35,6 +36,7 @@ public class MethodParameter {
     private volatile Type genericParameterType;
 
     @Nullable
+    @Getter
     private volatile Annotation[] parameterAnnotations;
 
     @Nullable

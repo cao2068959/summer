@@ -72,8 +72,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
         //获取要注入的元数据对象,这里面保存了 那些已经被打了 @Autowired 注解的 元素和方法 这里是包括了父类里面的方法/字段
         InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
         try {
-            metadata.inject(bean, beanName, pvs);
-        } catch (BeanCreationException ex) {
+            metadata.inject(bean, beanName, pvs);        } catch (BeanCreationException ex) {
             throw ex;
         } catch (Throwable ex) {
             throw new BeanCreationException(beanName, " 注入属性异常 ", ex);

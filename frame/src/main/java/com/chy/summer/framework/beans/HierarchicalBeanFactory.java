@@ -1,5 +1,6 @@
 package com.chy.summer.framework.beans;
 
+import com.chy.summer.framework.util.StringValueResolver;
 import com.sun.istack.internal.Nullable;
 
 /**
@@ -17,5 +18,4 @@ public interface HierarchicalBeanFactory extends BeanFactory {
 	 * 判断本地工厂是否包含这个Bean（忽略其他所有父工厂）。
 	 */
 	boolean containsLocalBean(String name);
-
 }
