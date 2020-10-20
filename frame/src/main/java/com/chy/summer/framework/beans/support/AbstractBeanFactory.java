@@ -1,12 +1,11 @@
 package com.chy.summer.framework.beans.support;
 
-import com.chy.summer.framework.beans.BeanFactory;
-import com.chy.summer.framework.beans.ConfigurableBeanFactory;
-import com.chy.summer.framework.beans.FactoryBean;
-import com.chy.summer.framework.beans.HierarchicalBeanFactory;
+import com.chy.summer.framework.beans.*;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
+import com.chy.summer.framework.beans.converter.SimpleTypeConverter;
+import com.chy.summer.framework.beans.converter.TypeConverter;
 import com.chy.summer.framework.exception.*;
 import com.chy.summer.framework.util.*;
 import com.sun.istack.internal.Nullable;
@@ -47,14 +46,14 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     public abstract Comparator<Object> getDependencyComparator();
 
+    private TypeConverter typeConverter;
+
 
     /**
-     *
      * 匹配 beanName 对应的 实例 和 typeToMatch 传入进来的 class 是否匹配 或者 是继承关系
-     *
+     * <p>
      * 单列 : 调用 getSingleton 去获取实例对象 然后去匹配对应的class
      * 非单列: 获取BeanDefinition 然后拿到 class去对比
-     *
      *
      * @param name
      * @param typeToMatch
@@ -110,6 +109,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     /**
      * 获取 beanDefinition 里面 源类的 class
+     *
      * @param mbd
      * @return
      */
@@ -129,6 +129,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     /**
      * 把 beanDefinition 里的beanClass 值所记录的源bean 的全路径 转成 class类型
+     *
      * @param mbd
      * @return
      * @throws ClassNotFoundException
@@ -434,5 +435,14 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     }
 
 
+    public TypeConverter getTypeConverter() {
+        if (typeConverter != null) {
+            return typeConverter;
+        }
+        SimpleTypeConverter simpleTypeConverter = new SimpleTypeConverter();
+        typeConverter = simpleTypeConverter;
+        return typeConverter;
+
+    }
 
 }

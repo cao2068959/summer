@@ -58,7 +58,7 @@ public class QualifierAnnotationAutowireCandidateResolver implements AutowireCan
      * @return
      */
     protected Object findValue(Annotation[] annotationsToSearch) {
-        if (annotationsToSearch.length > 0) {
+        if (annotationsToSearch != null && annotationsToSearch.length > 0) {
             AnnotationAttributes attr = AnnotatedElementUtils
                     .getMergedAnnotationAttributes(AnnotatedElementUtils.forAnnotations(annotationsToSearch), this.valueAnnotationType);
             if (attr != null) {
@@ -80,6 +80,7 @@ public class QualifierAnnotationAutowireCandidateResolver implements AutowireCan
 
     /**
      * 判断这个注解是不是 @Qualifier
+     *
      * @param annotationType
      * @return
      */

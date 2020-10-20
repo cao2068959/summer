@@ -14,3 +14,7 @@ com.chy.summer.framework.boot.context.config.ConfigFileApplicationListener
 #配置文件的解析器
 com.chy.summer.framework.core.evn.PropertySourceLoader=\
 com.chy.summer.framework.core.evn.PropertiesPropertySourceLoader
+
+
+#自动配置
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\

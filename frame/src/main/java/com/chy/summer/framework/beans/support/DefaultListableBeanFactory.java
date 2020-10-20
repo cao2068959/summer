@@ -2,6 +2,7 @@ package com.chy.summer.framework.beans.support;
 
 import com.chy.summer.framework.beans.*;
 import com.chy.summer.framework.beans.config.*;
+import com.chy.summer.framework.beans.converter.TypeConverter;
 import com.chy.summer.framework.beans.factory.AutowireCandidateResolver;
 import com.chy.summer.framework.beans.factory.DependencyDescriptor;
 import com.chy.summer.framework.beans.factory.InjectionPoint;
@@ -680,14 +681,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         if (value != null) {
             if (value instanceof String) {
                 //去解析嵌入表达式的值  ${com.chy} 这里就是去 解析 com.chy 获取对应的值
-                String strVal = resolveEmbeddedValue((String) value);
-                BeanDefinition bd = (beanName != null && containsBean(beanName) ? getMergedBeanDefinition(beanName) : null);
-                value = evaluateBeanDefinitionString(strVal, bd);
+                value = resolveEmbeddedValue((String) value);
             }
-            TypeConverter converter = (typeConverter != null ? typeConverter : getTypeConverter());
-            return (descriptor.getField() != null ?
-                    converter.convertIfNecessary(value, type, descriptor.getField()) :
-                    converter.convertIfNecessary(value, type, descriptor.getMethodParameter()));
+            TypeConverter converter = getTypeConverter();
+            return converter.convertIfNecessary(value,type);
         }
 
 
@@ -744,6 +741,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         }
         return result;
     }
+
+
+
 
 
     /**
