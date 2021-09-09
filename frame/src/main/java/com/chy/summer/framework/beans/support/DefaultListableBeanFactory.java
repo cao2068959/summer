@@ -94,6 +94,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
      * @param beanName
      * @param dependentBeanName
      */
+    @Override
     public void registerDependentBean(String beanName, String dependentBeanName) {
         String canonicalName = canonicalName(beanName);
         synchronized (this.dependentBeanMap) {
@@ -660,9 +661,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
      * 这里优先使用 Class 类型匹配, 找不到会使用 名称 匹配对应的beanName
      * 同时还会做一些额外的操作来处理 当类型匹配到多个 bean对象的尴尬情况
      *
-     *
-     * @param descriptor  存放 field/method 的对象
-     * @param beanName  宿主 beanName
+     * @param descriptor         存放 field/method 的对象
+     * @param beanName           宿主 beanName
      * @param autowiredBeanNames 最终的 返回值是返回出一个 bean对象, 同时这里面会存放这个 bean对象的 beanName
      * @return
      * @throws BeansException
@@ -673,7 +673,16 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         //获取了要注入的对象的类型
         Class<?> type = descriptor.getDependencyType();
 
-        //getAutowireCandidateResolver().isAutowireCandidate()
+        Object value = getAutowireCandidateResolver().getSuggestedValue(descriptor);
+        if (value != null) {
+            if (value instanceof String) {
+                //如果是 表达式，那么将会去配置文件里获取
+                value = resolveEmbeddedValue((String) value);
+            }
+            //TypeConverter converter = (typeConverter != null ? typeConverter : getTypeConverter());
+            //return converter.convertIfNecessary(value, type, descriptor.getTypeDescriptor());
+            return value;
+        }
 
         //去找一找有可能 依赖的 bean对象是什么
         Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);

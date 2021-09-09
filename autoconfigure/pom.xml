@@ -7,21 +7,16 @@
         <groupId>chy.frame.summer</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>test</artifactId>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>autoconfigure</artifactId>
+
     <dependencies>
         <dependency>
             <groupId>chy.frame.summer</groupId>
             <artifactId>frame</artifactId>
-            <scope>compile</scope>
         </dependency>
-
-        <dependency>
-            <groupId>chy.frame.summer</groupId>
-            <artifactId>autoconfigure</artifactId>
-        </dependency>
-
 
     </dependencies>
 

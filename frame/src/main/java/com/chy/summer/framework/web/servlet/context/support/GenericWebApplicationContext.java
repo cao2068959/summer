@@ -1,5 +1,6 @@
 package com.chy.summer.framework.web.servlet.context.support;
 
+import com.chy.summer.framework.context.annotation.Configuration;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.exception.BeanDefinitionStoreException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;

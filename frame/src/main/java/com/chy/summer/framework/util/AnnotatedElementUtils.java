@@ -1,5 +1,6 @@
 package com.chy.summer.framework.util;
 
+import com.chy.summer.framework.core.annotation.AnnotatedElementForAnnotations;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.annotation.AnnotationUtils;
 
@@ -57,4 +58,13 @@ public abstract class AnnotatedElementUtils {
     }
 
 
+    /**
+     * 生成一个 虚拟的 AnnotatedElement对象，为了能够去方便的查找注解对象而已
+     *
+     * @param annotationsToSearch
+     * @return
+     */
+    public static AnnotatedElement forAnnotations(Annotation[] annotationsToSearch) {
+        return new AnnotatedElementForAnnotations(annotationsToSearch);
+    }
 }

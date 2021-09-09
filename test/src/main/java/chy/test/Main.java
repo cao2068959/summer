@@ -16,8 +16,6 @@ public class Main {
 
         ApplicationContext context = SummerApplication.run(Main.class, args);
         context.getBean("abc2222222", Abc2.class);
-
-
         Abc2 abc = context.getBean("abc2222222", Abc2.class);
         abc.test2();
         BeanDemo2 beanDemo33 = context.getBean("beanDemo33", BeanDemo2.class);

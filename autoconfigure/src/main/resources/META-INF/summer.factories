@@ -1,0 +1,2 @@
+com.chy.summer.framework.context.ApplicationContextInitializer=\
+com.chy.summer.framework.boot.context.config.DelegatingApplicationContextInitializer

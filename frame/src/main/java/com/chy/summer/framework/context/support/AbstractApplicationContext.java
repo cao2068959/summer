@@ -8,6 +8,7 @@ import com.chy.summer.framework.context.event.ApplicationEventMulticaster;
 import com.chy.summer.framework.context.event.ApplicationListener;
 import com.chy.summer.framework.context.event.SimpleApplicationEventMulticaster;
 import com.chy.summer.framework.core.evn.ConfigurableEnvironment;
+import com.chy.summer.framework.core.evn.resolver.PropertySourcesPlaceholderConfigurer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -20,6 +21,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 public abstract class AbstractApplicationContext implements ConfigurableApplicationContext {
+
+    /**
+     * application 的环境配置等信息
+     */
+    private ConfigurableEnvironment environment;
 
     /**
      * 用来refresh 的时候上锁
@@ -42,7 +48,7 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
-     *  beanFactory 后置处理器的列表,这里传入的优先级比 直接注册到ioc容器里的 后置处理器
+     * beanFactory 后置处理器的列表,这里传入的优先级比 直接注册到ioc容器里的 后置处理器
      */
     private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
 
@@ -57,7 +63,6 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     private Set<ApplicationEvent> earlyApplicationEvents;
 
     public static final String APPLICATION_EVENT_MULTICASTER_BEAN_NAME = "applicationEventMulticaster";
-
 
 
     /**
@@ -114,11 +119,10 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
                 finishRefresh();
 
 
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
                 throw new RuntimeException(e.getMessage());
             }
-
 
 
         }
@@ -165,7 +169,7 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
         return this.applicationListeners;
     }
 
-    public ApplicationEventMulticaster getApplicationEventMulticaster(){
+    public ApplicationEventMulticaster getApplicationEventMulticaster() {
         return this.applicationEventMulticaster;
     }
 
@@ -186,22 +190,21 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
         if (beanFactory.containsLocalBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME)) {
             this.applicationEventMulticaster =
                     beanFactory.getBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, ApplicationEventMulticaster.class);
-            log.debug("使用 自定义的 事件广播器 [%s]",applicationEventMulticaster);
-        }
-        else {
+            log.debug("使用 自定义的 事件广播器 [%s]", applicationEventMulticaster);
+        } else {
             //如果容器里没有已经初始化好的事件广播器,就自己创建一个
             //如果是 refresh 方法来的都是走这里
             this.applicationEventMulticaster = new SimpleApplicationEventMulticaster(beanFactory);
             beanFactory.registerSingleton(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, this.applicationEventMulticaster);
-            log.debug("使用 默认的 事件广播器 [%s]",applicationEventMulticaster);
+            log.debug("使用 默认的 事件广播器 [%s]", applicationEventMulticaster);
         }
     }
 
     private void initMessageSource() {
     }
 
-    private void  registerBeanPostProcessors(ConfigurableListableBeanFactory beanFactory){
-        PostProcessorRegistrationDelegate.registerBeanPostProcessors(beanFactory,this);
+    private void registerBeanPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+        PostProcessorRegistrationDelegate.registerBeanPostProcessors(beanFactory, this);
     }
 
     private void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
@@ -216,7 +219,8 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
 
 
     private void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
-        //TODO 用了给beanFactory 设置一些属性，添加一些可能忽略的类什么的
+        //TODO 用了给beanFactory 设置一些属性，添加一些可能忽略的类什么的， 同时也注册一些常用的bean进入 ioc容器中，现在这里仅仅选择必要的一部分
+        beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
     }
 
     private ConfigurableListableBeanFactory obtainFreshBeanFactory() {
@@ -233,6 +237,7 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
 
     //==========================GenericApplicationContext 来实现的模板方法==========================
 
+    @Override
     public abstract ConfigurableListableBeanFactory getBeanFactory();
 
     public abstract void freshBeanFactory();
@@ -241,12 +246,16 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     public abstract void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws IOException;
 
 
-
     //==========================ConfigurableApplicationContext 来实现的模板方法==========================
 
 
     @Override
     public void setEnvironment(ConfigurableEnvironment environment) {
+        this.environment = environment;
+    }
 
+    @Override
+    public ConfigurableEnvironment getEnvironment() {
+        return environment;
     }
 }

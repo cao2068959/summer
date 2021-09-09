@@ -13,10 +13,10 @@ import java.util.List;
 public class ConditionDemo2 {
 
     public ConditionDemo2() {
-        System.out.println("----------_>");
     }
 
     @Bean
+    @ConditionalB
     public Date xxx(){
         System.out.println("-------------> 初始化了 xxx");
         return new Date();

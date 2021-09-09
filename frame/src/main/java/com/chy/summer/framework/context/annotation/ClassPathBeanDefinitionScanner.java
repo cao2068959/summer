@@ -153,7 +153,7 @@ public class ClassPathBeanDefinitionScanner{
         //加上 classpath*: 前缀
         String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +basePackage;
         //扫描class文件，全部放入resource中，这里的实例类是FileSystemResource
-        //resources会保存文件的句柄d
+        //resources会保存文件的句柄
         Resource[] resources = getResourcePatternResolver().getResources(packageSearchPath);
         //拿到所有的class后用asm加载,判断是否有对应的注解,这里用 元数据处理器来解析
         for (Resource resource : resources) {

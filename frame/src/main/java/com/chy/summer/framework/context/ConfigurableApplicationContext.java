@@ -7,5 +7,7 @@ public interface ConfigurableApplicationContext extends ApplicationContext {
 
     void setEnvironment(ConfigurableEnvironment environment);
 
+    ConfigurableEnvironment getEnvironment();
+
     ConfigurableListableBeanFactory getBeanFactory();
 }

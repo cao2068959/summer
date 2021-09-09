@@ -46,7 +46,6 @@ public class AutowiredFieldElement extends InjectedElement {
         if (cached) {
             return cachedFieldValue;
         }
-
         //构造依赖注入的实体对象
         DependencyDescriptor desc = new DependencyDescriptor(field, this.required);
         //设置一下这个 需要注入的对象所依赖的父类
@@ -58,6 +57,7 @@ public class AutowiredFieldElement extends InjectedElement {
             if (cached) {
                 return cachedFieldValue;
             }
+            //去ioc容器中寻找依赖
             result = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames);
             cached = true;
             cachedFieldValue = result;

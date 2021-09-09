@@ -31,11 +31,10 @@ public class InjectionMetadata {
         return (metadata == null || metadata.targetClass != clazz);
     }
 
-    public void inject(Object target, String beanName,  PropertyValues pvs) throws Throwable {
-        Collection<InjectedElement> elementsToIterate = injectedElements;
-        if (!elementsToIterate.isEmpty()) {
-            for (InjectedElement element : elementsToIterate) {
-                log.debug("执行注入, beanName: {} , 注入属性: {}",beanName,element);
+    public void inject(Object target, String beanName, PropertyValues pvs) throws Throwable {
+        if (!injectedElements.isEmpty()) {
+            for (InjectedElement element : injectedElements) {
+                log.debug("执行注入, beanName: {} , 注入属性: {}", beanName, element);
                 element.inject(target, beanName, pvs);
             }
         }

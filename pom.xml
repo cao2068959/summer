@@ -7,7 +7,14 @@
     <groupId>chy.frame.summer</groupId>
     <artifactId>summer</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>${summer.version}</version>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <summer.version>1.0-SNAPSHOT</summer.version>
+    </properties>
+
+
     <build>
         <plugins>
             <plugin>
@@ -24,6 +31,7 @@
         <module>frame</module>
         <module>test</module>
         <module>link</module>
+        <module>autoconfigure</module>
     </modules>
 
 
@@ -102,6 +110,25 @@
                 <artifactId>vertx-core</artifactId>
                 <version>4.0.0-milestone3</version>
             </dependency>
+
+            <dependency>
+                <artifactId>frame</artifactId>
+                <groupId>chy.frame.summer</groupId>
+                <version>${summer.version}</version>
+            </dependency>
+
+            <dependency>
+                <artifactId>frame</artifactId>
+                <groupId>chy.frame.summer</groupId>
+                <version>${summer.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>chy.frame.summer</groupId>
+                <artifactId>autoconfigure</artifactId>
+                <version>${summer.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

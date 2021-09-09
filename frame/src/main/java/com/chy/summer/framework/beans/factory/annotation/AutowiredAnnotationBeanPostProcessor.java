@@ -96,6 +96,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
         //如果缓存是 Null，或者 metadata 里面的class和我传入的class不同，就需要刷新缓存
         if (InjectionMetadata.needsRefresh(metadata, clazz)) {
             synchronized (this.injectionMetadataCache) {
+                //双检查锁
                 metadata = this.injectionMetadataCache.get(cacheKey);
                 if (InjectionMetadata.needsRefresh(metadata, clazz)) {
                     metadata = buildAutowiringMetadata(clazz);

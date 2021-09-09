@@ -263,4 +263,7 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment  {
         return Collections.singleton(RESERVED_DEFAULT_PROFILE_NAME);
     }
 
+    public ConfigurablePropertyResolver getPropertyResolver() {
+        return propertyResolver;
+    }
 }

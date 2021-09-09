@@ -6,6 +6,7 @@ import com.chy.summer.framework.beans.HierarchicalBeanFactory;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanPostProcessor;
+import com.chy.summer.framework.core.StringValueResolver;
 import com.chy.summer.framework.exception.*;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.IllegalStateException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.chy.summer.framework.util.BeanFactoryUtils.transformedBeanName;
 
@@ -32,6 +34,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     protected final Map<String, RootBeanDefinition> mergedBeanDefinitions = new ConcurrentHashMap<>(256);
 
+    private final List<StringValueResolver> embeddedValueResolvers = new CopyOnWriteArrayList<>();
     /**
      * 判断是否已经开始创建 bean 对象了
      *
@@ -157,6 +160,9 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         }
     }
 
+    public void setParentBeanFactory(BeanFactory parentBeanFactory) {
+        this.parentBeanFactory = parentBeanFactory;
+    }
 
     public List<BeanPostProcessor> getBeanPostProcessors() {
         return this.beanPostProcessors;
@@ -173,6 +179,10 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         String beanName = transformedBeanName(name);
         return ((containsSingleton(beanName) || containsBeanDefinition(beanName)) &&
                 (!BeanFactoryUtils.isFactoryDereference(name)));
+    }
+
+    public void addEmbeddedValueResolvers(StringValueResolver stringValueResolver) {
+        embeddedValueResolvers.add(stringValueResolver);
     }
 
     /**
@@ -393,6 +403,26 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         if (mbd.isAbstract()) {
             throw new BeanIsAbstractException("类 : [%s] 是抽象类,不能实例化", beanName);
         }
+    }
+
+    /**
+     * 解析嵌入的表达式 ，比如 ${abc} 这样的值
+     *
+     * @param value
+     * @return
+     */
+    public String resolveEmbeddedValue(String value){
+        if (value == null) {
+            return null;
+        }
+        String result = value;
+        for (StringValueResolver resolver : this.embeddedValueResolvers) {
+            result = resolver.resolveStringValue(result);
+            if (result == null) {
+                return null;
+            }
+        }
+        return result;
     }
 
 }

@@ -59,6 +59,8 @@ public class ConfigurationClassParser {
 
     private final Map<String, ConfigurationClass> knownSuperclasses = new HashMap<>();
 
+    private final DeferredImportSelectorHandler deferredImportSelectorHandler = new DeferredImportSelectorHandler();
+
 
     public ConfigurationClassParser(MetadataReaderFactory metadataReaderFactory,
                                     Environment environment,
@@ -97,6 +99,8 @@ public class ConfigurationClassParser {
         }
         // 也是对 @Import 的解析
         //processDeferredImportSelectors();
+
+        this.deferredImportSelectorHandler.process();
     }
 
 
