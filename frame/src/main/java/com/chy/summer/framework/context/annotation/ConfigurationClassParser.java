@@ -8,6 +8,10 @@ import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.context.ComponentScanAnnotationParser;
 import com.chy.summer.framework.context.annotation.condition.ConditionEvaluator;
+import com.chy.summer.framework.context.imported.deferred.DeferredImportSelectorGrouping;
+import com.chy.summer.framework.context.imported.deferred.DeferredImportSelectorHandler;
+import com.chy.summer.framework.context.imported.deferred.DeferredImportSelectorHolder;
+import com.chy.summer.framework.context.imported.deferred.Group;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.core.io.ResourceLoader;
@@ -27,6 +31,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 import static com.chy.summer.framework.context.annotation.condition.ConfigurationCondition.ConfigurationPhase.PARSE_CONFIGURATION;
 
@@ -39,10 +44,13 @@ public class ConfigurationClassParser {
     private final MetadataReaderFactory metadataReaderFactory;
 
 
+    @Getter
     private final Environment environment;
 
+    @Getter
     private final ResourceLoader resourceLoader;
 
+    @Getter
     private final BeanDefinitionRegistry registry;
 
     private final ComponentScanAnnotationParser componentScanParser;
@@ -59,7 +67,7 @@ public class ConfigurationClassParser {
 
     private final Map<String, ConfigurationClass> knownSuperclasses = new HashMap<>();
 
-    private final DeferredImportSelectorHandler deferredImportSelectorHandler = new DeferredImportSelectorHandler();
+    private final DeferredImportSelectorHandler deferredImportSelectorHandler = new DeferredImportSelectorHandler(this);
 
 
     public ConfigurationClassParser(MetadataReaderFactory metadataReaderFactory,
@@ -234,8 +242,8 @@ public class ConfigurationClassParser {
      * @param importCandidates
      * @param checkForCircularImports
      */
-    private void processImports(ConfigurationClass configClass, SourceClass currentSourceClass,
-                                Collection<SourceClass> importCandidates, boolean checkForCircularImports) throws Exception {
+    public void processImports(ConfigurationClass configClass, SourceClass currentSourceClass,
+                               Collection<SourceClass> importCandidates, boolean checkForCircularImports) throws Exception {
 
         //如果没有 打上 @Import 注解就直接 跳过了
         if (importCandidates.isEmpty()) {
@@ -271,6 +279,12 @@ public class ConfigurationClassParser {
             this.importStack.pop();
         }
     }
+
+    public void processImports(ConfigurationClass configurationClass, String importClassName) throws Exception {
+        processImports(configurationClass, asSourceClass(configurationClass),
+                Collections.singleton(asSourceClass(importClassName)), false);
+    }
+
 
     /**
      * 检查 指定的类是不是已经在 栈里了,如果在说明这个类正在被执行.
@@ -468,6 +482,52 @@ public class ConfigurationClassParser {
             return this.imports.get(importedClass);
         }
 
+    }
+
+
+    public class DeferredImportSelectorGroupingHandler {
+
+        private final Map<Object, DeferredImportSelectorGrouping> groupings = new LinkedHashMap<>();
+
+        private final Map<AnnotationMetadata, ConfigurationClass> configurationClasses = new HashMap<>();
+
+        public void register(DeferredImportSelectorHolder deferredImport) {
+            Class<? extends Group> group = deferredImport.getImportSelector().getImportGroup();
+            DeferredImportSelectorGrouping grouping = this.groupings.computeIfAbsent(
+                    (group != null ? group : deferredImport),
+                    key -> new DeferredImportSelectorGrouping(createGroup(group)));
+            grouping.add(deferredImport);
+            this.configurationClasses.put(deferredImport.getConfigurationClass().getMetadata(),
+                    deferredImport.getConfigurationClass());
+        }
+
+        public void processGroupImports() {
+            for (DeferredImportSelectorGrouping grouping : this.groupings.values()) {
+                Predicate<String> exclusionFilter = grouping.getCandidateFilter();
+                grouping.getImports().forEach(entry -> {
+                    ConfigurationClass configurationClass = this.configurationClasses.get(entry.getMetadata());
+                    try {
+                        processImports(configurationClass, asSourceClass(configurationClass),
+                                Collections.singleton(asSourceClass(entry.getImportClassName())), false);
+
+                    } catch (BeanDefinitionStoreException ex) {
+                        throw ex;
+                    } catch (Throwable ex) {
+                        throw new BeanDefinitionStoreException(
+                                "Failed to process import candidates for configuration class [" +
+                                        configurationClass.getMetadata().getClassName() + "]", ex);
+                    }
+                });
+            }
+        }
+
+        private Group createGroup(Class<? extends Group> type) {
+            Class<? extends Group> effectiveType = (type != null ? type : DefaultDeferredImportSelectorGroup.class);
+            return ParserStrategyUtils.instantiateClass(effectiveType, Group.class,
+                    ConfigurationClassParser.this.environment,
+                    ConfigurationClassParser.this.resourceLoader,
+                    ConfigurationClassParser.this.registry);
+        }
     }
 
 
