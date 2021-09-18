@@ -8,10 +8,8 @@ import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.support.BeanNameGenerator;
 import com.chy.summer.framework.context.ComponentScanAnnotationParser;
 import com.chy.summer.framework.context.annotation.condition.ConditionEvaluator;
-import com.chy.summer.framework.context.imported.deferred.DeferredImportSelectorGrouping;
-import com.chy.summer.framework.context.imported.deferred.DeferredImportSelectorHandler;
-import com.chy.summer.framework.context.imported.deferred.DeferredImportSelectorHolder;
-import com.chy.summer.framework.context.imported.deferred.Group;
+import com.chy.summer.framework.context.imported.ImportSelector;
+import com.chy.summer.framework.context.imported.deferred.*;
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.core.io.ResourceLoader;
@@ -261,8 +259,23 @@ public class ConfigurationClassParser {
         try {
             //循环把 @Import 上的类都给初始化了
             for (SourceClass candidate : importCandidates) {
+                //判断实现类是否是 ImportSelector 的实现，自动配置 的入口 AutoConfigurationImportSelector 就是一个ImportSelector
+                if (candidate.isAssignable(ImportSelector.class)) {
+                    Class<?> candidateClass = candidate.loadClass();
+                    //使用反射去生成一个 ImportSelector 对象
+                    ImportSelector selector = ParserStrategyUtils.instantiateClass(candidateClass, ImportSelector.class,
+                            this.environment, this.resourceLoader, this.registry);
+                    if (selector instanceof DeferredImportSelector) {
+                        this.deferredImportSelectorHandler.handle(configClass, (DeferredImportSelector) selector);
+                    } else {
+                        String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());
+                        Collection<SourceClass> importSourceClasses = asSourceClass(importClassNames);
+                        processImports(configClass, currentSourceClass, importSourceClasses, false);
+                    }
+                }
+
                 //判断类是否实现了ImportBeanDefinitionRegistrar
-                if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
+                else if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
                     Class<?> candidateClass = candidate.loadClass();
                     ImportBeanDefinitionRegistrar registrar =
                             BeanUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class);
@@ -352,6 +365,15 @@ public class ConfigurationClassParser {
         }
         return new SourceClass(this.metadataReaderFactory.getMetadataReader(className));
     }
+
+    Collection<SourceClass> asSourceClass(String[] classNames) throws Exception {
+        List<SourceClass> result = new ArrayList<>();
+        for (String className : classNames) {
+            result.add(asSourceClass(className));
+        }
+        return result;
+    }
+
 
     SourceClass asSourceClass(Class<?> classType) throws Exception {
         return new SourceClass(classType);

@@ -38,8 +38,8 @@ public abstract class ParserStrategyUtils {
         }
     }
 
-    static <T> T instantiateClass(Class<?> clazz, Class<T> assignableTo, Environment environment,
-                                  ResourceLoader resourceLoader, BeanDefinitionRegistry registry) {
+    public static <T> T instantiateClass(Class<?> clazz, Class<T> assignableTo, Environment environment,
+                                         ResourceLoader resourceLoader, BeanDefinitionRegistry registry) {
 
         Assert.notNull(clazz, "Class must not be null");
         Assert.isAssignable(assignableTo, clazz);

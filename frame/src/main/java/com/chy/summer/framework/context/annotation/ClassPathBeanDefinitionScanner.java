@@ -2,6 +2,7 @@ package com.chy.summer.framework.context.annotation;
 
 import com.chy.summer.framework.beans.BeanNameAware;
 import com.chy.summer.framework.context.annotation.condition.ConditionEvaluator;
+import com.chy.summer.framework.context.annotation.condition.Conditional;
 import com.chy.summer.framework.core.evn.Environment;
 import com.chy.summer.framework.exception.BeanDefinitionCommonException;
 import com.chy.summer.framework.annotation.stereotype.Component;
@@ -146,6 +147,7 @@ public class ClassPathBeanDefinitionScanner{
      * @return
      * @throws IOException
      */
+
     public Set<BeanDefinition> scanCandidateComponents(String basePackage) throws IOException {
         Set<BeanDefinition> result = new LinkedHashSet<>();
         //先把路径里面的 . 全部变成 /

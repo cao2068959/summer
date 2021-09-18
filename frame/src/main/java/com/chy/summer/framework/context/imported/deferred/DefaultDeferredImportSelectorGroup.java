@@ -5,8 +5,6 @@ import com.chy.summer.framework.core.type.AnnotationMetadata;
 
 public class DefaultDeferredImportSelectorGroup implements Group {
 
-
-
     @Override
     public void process(AnnotationMetadata metadata, DeferredImportSelector selector) {
 

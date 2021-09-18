@@ -38,6 +38,8 @@ public class DeferredImportSelectorGroupingHandler {
 
     public void processGroupImports() {
         for (DeferredImportSelectorGrouping grouping : this.groupings.values()) {
+
+            //获取所有需要加载的数据，这里会包括了自动配置的类
             grouping.getImports().forEach(entry -> {
                 ConfigurationClass configurationClass = this.configurationClasses.get(entry.getMetadata());
                 try {

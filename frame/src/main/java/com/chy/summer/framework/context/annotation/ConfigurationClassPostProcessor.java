@@ -129,6 +129,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
             this.reader = new ConfigurationClassBeanDefinitionReader(registry, this.resourceLoader, this.environment,
                     this.importBeanNameGenerator);
         }
+
         //开始解析处理上面扫描出来的配置类, @bean注解 等配置的处理就在这里面
         this.reader.loadBeanDefinitions(configClasses);
         candidates.clear();
