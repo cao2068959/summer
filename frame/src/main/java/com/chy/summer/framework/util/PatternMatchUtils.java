@@ -1,6 +1,6 @@
 package com.chy.summer.framework.util;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 用于简单模式匹配的实用程序方法，尤其是典型的“ xxx *”，“ * xxx”和“ * xxx *”模式样式

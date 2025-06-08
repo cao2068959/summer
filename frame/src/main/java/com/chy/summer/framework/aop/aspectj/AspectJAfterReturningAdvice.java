@@ -4,7 +4,7 @@ import com.chy.summer.framework.aop.AfterAdvice;
 import com.chy.summer.framework.aop.AfterReturningAdvice;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.TypeUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;

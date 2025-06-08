@@ -1,6 +1,6 @@
 package com.chy.summer.link.api;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;

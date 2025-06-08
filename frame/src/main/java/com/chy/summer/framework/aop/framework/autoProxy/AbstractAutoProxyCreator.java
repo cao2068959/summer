@@ -16,7 +16,7 @@ import com.chy.summer.framework.beans.config.SmartInstantiationAwareBeanPostProc
 import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.StringUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;

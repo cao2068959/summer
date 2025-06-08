@@ -5,7 +5,7 @@ import com.chy.summer.framework.aop.aopalliance.intercept.MethodInterceptor;
 import com.chy.summer.framework.aop.aopalliance.intercept.MethodInvocation;
 import com.chy.summer.framework.aop.support.AopUtils;
 import com.chy.summer.framework.core.BridgeMethodResolver;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;

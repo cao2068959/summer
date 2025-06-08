@@ -1,10 +1,10 @@
 package com.chy.summer.framework.beans.support;
 
-import com.chy.summer.framework.beans.*;
+import com.chy.summer.framework.beans.BeanFactoryAware;
+import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.beans.config.*;
 import com.chy.summer.framework.beans.factory.AutowireCandidateResolver;
 import com.chy.summer.framework.beans.factory.DependencyDescriptor;
-import com.chy.summer.framework.beans.factory.InjectionPoint;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.exception.*;
 import com.chy.summer.framework.util.*;
@@ -12,18 +12,14 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.IllegalStateException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 
 import static com.chy.summer.framework.util.BeanFactoryUtils.transformedBeanName;
-import static sun.awt.datatransfer.DataTransferer.canonicalName;
 
 @Slf4j
 public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory implements ConfigurableListableBeanFactory, BeanDefinitionRegistry {
@@ -110,6 +106,17 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             Set<String> dependenciesForBean = this.dependenciesForBeanMap.computeIfAbsent(dependentBeanName,
                     k -> new LinkedHashSet<>(8));
             dependenciesForBean.add(canonicalName);
+        }
+    }
+
+    private String canonicalName(String encoding) {
+        if (encoding == null) {
+            return null;
+        }
+        try {
+            return Charset.forName(encoding).name();
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException icne) {
+            return encoding;
         }
     }
 

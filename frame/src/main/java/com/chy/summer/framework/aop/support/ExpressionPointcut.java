@@ -1,7 +1,7 @@
 package com.chy.summer.framework.aop.support;
 
 import com.chy.summer.framework.aop.Pointcut;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 使用字符串表达式的切入点的接口

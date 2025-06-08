@@ -9,7 +9,7 @@ import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.support.RootBeanDefinition;
 import com.chy.summer.framework.core.ordered.Ordered;
 import com.chy.summer.framework.util.Assert;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;

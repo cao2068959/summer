@@ -15,7 +15,7 @@ import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ObjectUtils;
 import com.chy.summer.framework.util.ReflectionUtils;
 import com.chy.summer.framework.util.StringUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -596,6 +596,6 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     public abstract Object resolveDependency(DependencyDescriptor descriptor, String requestingBeanName,
                                              Set<String> autowiredBeanNames) throws BeansException;
 
-    public abstract void registerDependentBean(String beanName, String dependentBeanName);
+    public abstract void registerDependentBean(String beanName, String dependentBeanName) throws ClassNotFoundException;
 
 }

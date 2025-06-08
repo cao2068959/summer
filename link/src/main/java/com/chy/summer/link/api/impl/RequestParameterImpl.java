@@ -1,7 +1,7 @@
 package com.chy.summer.link.api.impl;
 
 import com.chy.summer.link.api.RequestParameter;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 

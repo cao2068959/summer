@@ -138,9 +138,10 @@ public class ConstructorResolver {
                     //成功找到了所有的参数,那么就直接选择他了,跳出循环
                     break;
                 } catch (BeansException e) {
-                    exception = e;
                     //这里如果异常了,说明参数在ioc中不存在,如果还有其他方法的重载就继续处理
-                    continue;
+                    exception = e;
+                } catch (ClassNotFoundException e) {
+                    exception = new RuntimeException(e);
                 }
             }
         }
@@ -212,8 +213,8 @@ public class ConstructorResolver {
                     argsToUse = argsHolderToUse.arguments;
                     //如果没抛出异常就算成功找到了,结束循环
                     break;
-                } catch (BeansException e) {
-                    exception = e;
+                } catch (BeansException | ClassNotFoundException e) {
+                    exception = new RuntimeException(e);
                     //这里如果异常了,说明参数在ioc中不存在,如果还有其他方法的重载就继续处理
                     continue;
                 }
@@ -266,7 +267,7 @@ public class ConstructorResolver {
      * @return
      */
     private ArgumentsHolder createArgumentArray(String beanName, Class<?>[] paramTypes,
-                                                String[] paramNames, Executable executable) {
+                                                String[] paramNames, Executable executable) throws ClassNotFoundException {
 
 
         ArgumentsHolder args = new ArgumentsHolder(paramTypes.length);

@@ -3,7 +3,7 @@ package com.chy.summer.framework.aop.framework;
 import com.chy.summer.framework.aop.TargetSource;
 import com.chy.summer.framework.aop.aopalliance.intercept.Interceptor;
 import com.chy.summer.framework.util.ClassUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 用于AOP代理的工厂，以编程的方式使用，而不是通过bean工厂中的声明设置

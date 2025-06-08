@@ -5,7 +5,7 @@ import com.chy.summer.framework.aop.aspectj.autoproxy.AspectJAwareAdvisorAutoPro
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.beans.config.ListableBeanFactory;
 import com.chy.summer.framework.util.Assert;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -2,7 +2,7 @@ package com.chy.summer.framework.aop.framework.autoProxy;
 
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 public class InfrastructureAdvisorAutoProxyCreator extends AbstractAdvisorAutoProxyCreator {
 

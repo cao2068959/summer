@@ -2,7 +2,7 @@ package com.chy.summer.framework.beans.config;
 
 import com.chy.summer.framework.beans.PropertyValues;
 import com.chy.summer.framework.exception.BeansException;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.beans.PropertyDescriptor;
 

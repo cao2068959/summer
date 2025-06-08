@@ -5,7 +5,7 @@ import com.chy.summer.framework.util.core.ConcurrencyThrottleSupport;
 import com.chy.summer.framework.util.core.CustomizableThreadCreator;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;

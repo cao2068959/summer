@@ -1,7 +1,7 @@
 package com.chy.summer.framework.core.type;
 
 import com.chy.summer.framework.core.annotation.AnnotationAttributes;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.util.List;

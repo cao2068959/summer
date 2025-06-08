@@ -2,7 +2,7 @@ package com.chy.summer.framework.beans;
 
 import com.chy.summer.framework.exception.BaseRuntimeException;
 import com.chy.summer.framework.exception.BeansException;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;

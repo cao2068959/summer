@@ -5,7 +5,7 @@ import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.BeanDefinitionHolder;
 import com.chy.summer.framework.beans.config.BeanDefinitionRegistry;
 import com.chy.summer.framework.beans.support.RootBeanDefinition;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 用于创建作用域代理的实用程序类。 由ScopedProxyBeanDefinitionDecorator和ClassPathBeanDefinitionScanner使用

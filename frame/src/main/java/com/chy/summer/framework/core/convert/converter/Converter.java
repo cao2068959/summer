@@ -1,6 +1,6 @@
 package com.chy.summer.framework.core.convert.converter;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 @FunctionalInterface
 public interface Converter<S, T> {

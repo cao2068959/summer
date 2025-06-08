@@ -1,7 +1,7 @@
 package com.chy.summer.framework.aop.aspectj;
 
 import com.chy.summer.framework.aop.MethodBeforeAdvice;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;

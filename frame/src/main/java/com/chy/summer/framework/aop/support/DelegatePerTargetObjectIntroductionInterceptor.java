@@ -5,7 +5,7 @@ import com.chy.summer.framework.aop.IntroductionInterceptor;
 import com.chy.summer.framework.aop.ProxyMethodInvocation;
 import com.chy.summer.framework.aop.aopalliance.intercept.MethodInvocation;
 import com.chy.summer.framework.util.ReflectionUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.Map;
 import java.util.WeakHashMap;

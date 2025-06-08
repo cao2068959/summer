@@ -1,7 +1,7 @@
 package com.chy.summer.framework.core;
 
 import com.chy.summer.framework.util.Assert;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import lombok.Data;
 
 import java.lang.annotation.Annotation;

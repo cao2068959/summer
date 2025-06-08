@@ -1,6 +1,6 @@
 package com.chy.summer.framework.core;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -11,7 +11,7 @@ import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.exception.FactoryBeanNotInitializedException;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.lang.reflect.Modifier;
 

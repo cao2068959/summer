@@ -4,7 +4,7 @@ import com.chy.summer.link.client.predicate.ResponsePredicate;
 import com.chy.summer.link.client.predicate.ResponsePredicateResult;
 import com.chy.summer.link.common.codec.BodyCodec;
 import com.chy.summer.link.common.multipart.MultipartForm;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;

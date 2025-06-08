@@ -1,7 +1,7 @@
 package com.chy.summer.framework.core.ordered;
 
 import com.chy.summer.framework.core.PriorityOrdered;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.Comparator;
 
