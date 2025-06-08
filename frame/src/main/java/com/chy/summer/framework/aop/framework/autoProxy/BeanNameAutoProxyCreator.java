@@ -6,7 +6,7 @@ import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.PatternMatchUtils;
 import com.chy.summer.framework.util.StringUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;

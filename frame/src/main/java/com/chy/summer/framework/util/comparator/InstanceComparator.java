@@ -1,7 +1,7 @@
 package com.chy.summer.framework.util.comparator;
 
 import com.chy.summer.framework.util.Assert;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.Comparator;
 

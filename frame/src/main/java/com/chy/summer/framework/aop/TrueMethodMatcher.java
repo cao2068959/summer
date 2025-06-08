@@ -1,6 +1,6 @@
 package com.chy.summer.framework.aop;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;

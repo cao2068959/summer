@@ -1,6 +1,6 @@
 package com.chy.summer.framework.beans;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 提供父容器的访问功能

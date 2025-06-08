@@ -2,7 +2,7 @@ package com.chy.summer.framework.core.annotation;
 
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ObjectUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;

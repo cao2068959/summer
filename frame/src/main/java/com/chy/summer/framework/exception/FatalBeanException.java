@@ -1,6 +1,6 @@
 package com.chy.summer.framework.exception;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 在Bean或bean的子类包中遇到不可恢复的问题时抛出

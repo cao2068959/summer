@@ -4,7 +4,7 @@ import com.chy.summer.framework.core.io.DefaultResourceLoader;
 import com.chy.summer.framework.core.io.ResourceLoader;
 import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.util.ClassUtils;
-import jdk.internal.org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassReader;
 
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;

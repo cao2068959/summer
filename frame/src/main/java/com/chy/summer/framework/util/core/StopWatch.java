@@ -1,6 +1,6 @@
 package com.chy.summer.framework.util.core;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.text.NumberFormat;
 import java.util.LinkedList;

@@ -1,6 +1,6 @@
 package com.chy.summer.framework.util;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;

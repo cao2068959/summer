@@ -6,10 +6,10 @@ import com.chy.summer.framework.exception.AsmException;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ObjectUtils;
 import com.chy.summer.framework.util.StringUtils;
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
 import lombok.Setter;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;

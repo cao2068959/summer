@@ -1,6 +1,6 @@
 package com.chy.summer.framework.beans;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 代表大量属性的接口，一般放在 beanDefintion 里面，这样就代表了一个类上的所有属性

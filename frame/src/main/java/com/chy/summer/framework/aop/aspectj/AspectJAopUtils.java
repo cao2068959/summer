@@ -4,7 +4,7 @@ import com.chy.summer.framework.aop.Advisor;
 import com.chy.summer.framework.aop.AfterAdvice;
 import com.chy.summer.framework.aop.BeforeAdvice;
 import com.chy.summer.framework.aop.aopalliance.Advice;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 使用advisors的工具类

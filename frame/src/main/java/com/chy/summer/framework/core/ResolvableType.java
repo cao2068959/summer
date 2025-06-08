@@ -5,7 +5,7 @@ import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ObjectUtils;
 import com.chy.summer.framework.util.StringUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;

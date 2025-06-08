@@ -9,7 +9,7 @@ import com.chy.summer.framework.beans.FactoryBean;
 import com.chy.summer.framework.beans.InitializingBean;
 import com.chy.summer.framework.exception.FactoryBeanNotInitializedException;
 import com.chy.summer.framework.util.ClassUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 便捷的FactoryBean类型的超类，用于生成单例作用域的代理对象

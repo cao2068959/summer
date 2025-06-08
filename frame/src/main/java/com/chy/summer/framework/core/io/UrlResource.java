@@ -4,8 +4,7 @@ import com.chy.summer.framework.core.io.support.AbstractFileResolvingResource;
 import com.chy.summer.framework.core.io.support.Resource;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.StringUtils;
-import com.sun.istack.internal.Nullable;
-import org.apache.tools.ant.util.ResourceUtils;
+import javax.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;

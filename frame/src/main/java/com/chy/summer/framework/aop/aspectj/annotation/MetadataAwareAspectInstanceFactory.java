@@ -1,7 +1,7 @@
 package com.chy.summer.framework.aop.aspectj.annotation;
 
 import com.chy.summer.framework.aop.aspectj.AspectInstanceFactory;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 返回与aspectj注释类关联的AspectMetadata的AspectInstanceFactory子接口。

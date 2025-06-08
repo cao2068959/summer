@@ -1,7 +1,7 @@
 package com.chy.summer.framework.aop.framework;
 
 import com.chy.summer.framework.core.NamedThreadLocal;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 包含用于获取有关当前AOP调用信息的静态方法的类。

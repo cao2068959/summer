@@ -2,7 +2,7 @@ package com.chy.summer.link.client;
 
 import com.chy.summer.link.common.codec.BodyCodec;
 import com.chy.summer.link.common.codec.impl.BodyCodecImpl;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;

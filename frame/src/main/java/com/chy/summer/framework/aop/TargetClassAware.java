@@ -1,6 +1,7 @@
 package com.chy.summer.framework.aop;
 
-import com.sun.istack.internal.Nullable;
+
+import javax.annotation.Nullable;
 
 /**
  * 用于将目标类暴露在代理之后的最小接口。

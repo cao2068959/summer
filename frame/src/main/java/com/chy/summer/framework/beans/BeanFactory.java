@@ -3,7 +3,7 @@ package com.chy.summer.framework.beans;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.exception.BeansException;
 import com.chy.summer.framework.exception.NoSuchBeanDefinitionException;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 public interface BeanFactory {
 

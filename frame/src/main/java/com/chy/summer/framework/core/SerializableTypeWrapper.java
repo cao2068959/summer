@@ -3,7 +3,7 @@ package com.chy.summer.framework.core;
 
 import com.chy.summer.framework.util.ObjectUtils;
 import com.chy.summer.framework.util.ReflectionUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;

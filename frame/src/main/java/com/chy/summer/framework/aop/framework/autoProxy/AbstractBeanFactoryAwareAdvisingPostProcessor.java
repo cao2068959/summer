@@ -5,7 +5,7 @@ import com.chy.summer.framework.aop.framework.ProxyFactory;
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.BeanFactoryAware;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 public abstract class AbstractBeanFactoryAwareAdvisingPostProcessor extends AbstractAdvisingBeanPostProcessor
 		implements BeanFactoryAware {

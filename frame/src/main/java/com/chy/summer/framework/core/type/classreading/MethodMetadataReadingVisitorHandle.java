@@ -1,16 +1,14 @@
 package com.chy.summer.framework.core.type.classreading;
 
-import aj.org.objectweb.asm.Opcodes;
+
 import com.chy.summer.framework.core.annotation.AnnotationAttributeHolder;
-import com.chy.summer.framework.core.annotation.AnnotationAttributes;
-import com.chy.summer.framework.core.annotation.AnnotationUtils;
 import com.chy.summer.framework.core.type.DefaultAnnotationBehavior;
 import com.chy.summer.framework.core.type.MethodMetadata;
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -49,6 +47,7 @@ public class MethodMetadataReadingVisitorHandle extends MethodVisitor implements
 
     /**
      * 方法上每有一个注解就会调用一次这个方法
+     *
      * @param desc
      * @param visible
      * @return

@@ -8,7 +8,7 @@ import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.util.Assert;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.List;
 
