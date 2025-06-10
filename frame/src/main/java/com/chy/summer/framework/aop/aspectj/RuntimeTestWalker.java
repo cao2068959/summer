@@ -2,7 +2,7 @@ package com.chy.summer.framework.aop.aspectj;
 
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ReflectionUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import org.aspectj.weaver.ReferenceType;
 import org.aspectj.weaver.ReferenceTypeDelegate;
 import org.aspectj.weaver.ResolvedType;

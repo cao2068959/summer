@@ -6,7 +6,7 @@ import com.chy.summer.framework.context.annotation.ConfigurationClassPostProcess
 import com.chy.summer.framework.context.annotation.constant.Autowire;
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.util.ClassUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 

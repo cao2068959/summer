@@ -3,7 +3,7 @@ package com.chy.summer.framework.aop.framework.autoProxy;
 import com.chy.summer.framework.beans.config.BeanDefinition;
 import com.chy.summer.framework.beans.config.ConfigurableListableBeanFactory;
 import com.chy.summer.framework.util.Assert;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 用于自动代理识别组件的工具类

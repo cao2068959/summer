@@ -7,7 +7,7 @@ import com.chy.summer.framework.aop.aspectj.AspectJPrecedenceInformation;
 import com.chy.summer.framework.aop.aspectj.InstantiationModelAwarePointcutAdvisor;
 import com.chy.summer.framework.aop.support.DynamicMethodMatcherPointcut;
 import com.chy.summer.framework.aop.support.Pointcuts;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import org.aspectj.lang.reflect.PerClauseKind;
 
 import java.io.IOException;

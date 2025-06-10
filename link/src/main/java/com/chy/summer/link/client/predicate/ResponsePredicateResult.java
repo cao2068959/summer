@@ -2,7 +2,7 @@ package com.chy.summer.link.client.predicate;
 
 import com.chy.summer.link.client.HttpResponse;
 import com.chy.summer.link.client.impl.predicate.ResponsePredicateResultImpl;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import io.vertx.core.buffer.Buffer;
 
 /**

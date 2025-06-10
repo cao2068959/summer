@@ -8,7 +8,7 @@ import com.chy.summer.framework.aop.target.SingletonTargetSource;
 import com.chy.summer.framework.core.DecoratingProxy;
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ObjectUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;

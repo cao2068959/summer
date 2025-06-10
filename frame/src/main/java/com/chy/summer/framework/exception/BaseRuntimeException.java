@@ -2,7 +2,7 @@ package com.chy.summer.framework.exception;
 
 
 import com.chy.summer.framework.util.BaseExceptionUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 public abstract class BaseRuntimeException extends RuntimeException {
 

@@ -13,7 +13,7 @@ import com.chy.summer.framework.core.convert.converter.ConvertingComparator;
 import com.chy.summer.framework.util.ReflectionUtils;
 import com.chy.summer.framework.util.StringUtils;
 import com.chy.summer.framework.util.comparator.InstanceComparator;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.*;
 

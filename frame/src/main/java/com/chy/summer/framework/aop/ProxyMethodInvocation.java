@@ -1,7 +1,7 @@
 package com.chy.summer.framework.aop;
 
 import com.chy.summer.framework.aop.aopalliance.intercept.MethodInvocation;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 允许访问通过其方法调用的代理

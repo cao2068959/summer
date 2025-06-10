@@ -20,7 +20,7 @@ import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.BeanFactoryUtils;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.ObjectUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;

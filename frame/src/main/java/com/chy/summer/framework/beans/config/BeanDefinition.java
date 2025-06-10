@@ -3,7 +3,7 @@ package com.chy.summer.framework.beans.config;
 import com.chy.summer.framework.beans.MutablePropertyValues;
 import com.chy.summer.framework.beans.factory.ConstructorArgumentValues;
 import com.chy.summer.framework.context.annotation.constant.ScopeType;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.List;
 

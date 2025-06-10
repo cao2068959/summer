@@ -1,7 +1,7 @@
 package com.chy.summer.framework.aop.framework.autoProxy;
 
 import com.chy.summer.framework.core.NamedThreadLocal;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 自动代理创建者公开的当前代理创建上下文的持有者

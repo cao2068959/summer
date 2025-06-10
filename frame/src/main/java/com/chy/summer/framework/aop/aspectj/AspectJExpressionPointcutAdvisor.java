@@ -4,7 +4,7 @@ import com.chy.summer.framework.aop.Pointcut;
 import com.chy.summer.framework.aop.support.AbstractGenericPointcutAdvisor;
 import com.chy.summer.framework.beans.BeanFactory;
 import com.chy.summer.framework.beans.BeanFactoryAware;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 可以用于任何AspectJ切入点表达式的AOP Advisor。

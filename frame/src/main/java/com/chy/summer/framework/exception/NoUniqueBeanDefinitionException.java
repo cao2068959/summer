@@ -1,7 +1,7 @@
 package com.chy.summer.framework.exception;
 
 import com.chy.summer.framework.util.StringUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;

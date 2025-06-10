@@ -14,7 +14,7 @@ import com.chy.summer.framework.context.support.AbstractApplicationContext;
 import com.chy.summer.framework.core.BridgeMethodResolver;
 import com.chy.summer.framework.core.ordered.AnnotationAwareOrderComparator;
 import com.chy.summer.framework.util.*;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;

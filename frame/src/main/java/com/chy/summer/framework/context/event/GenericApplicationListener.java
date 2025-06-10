@@ -2,7 +2,7 @@ package com.chy.summer.framework.context.event;
 
 import com.chy.summer.framework.core.ResolvableType;
 import com.chy.summer.framework.core.ordered.Ordered;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 public interface GenericApplicationListener extends ApplicationListener<ApplicationEvent>, Ordered {
 

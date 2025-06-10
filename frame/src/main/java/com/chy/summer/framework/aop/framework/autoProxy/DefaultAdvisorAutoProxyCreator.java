@@ -1,7 +1,7 @@
 package com.chy.summer.framework.aop.framework.autoProxy;
 
 import com.chy.summer.framework.beans.BeanNameAware;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 基于当前BeanFactory中的所有候选advisor创建AOP代理的BeanPostProcessor实现

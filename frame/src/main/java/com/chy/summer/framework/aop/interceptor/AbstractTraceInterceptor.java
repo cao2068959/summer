@@ -3,7 +3,7 @@ package com.chy.summer.framework.aop.interceptor;
 import com.chy.summer.framework.aop.aopalliance.intercept.MethodInterceptor;
 import com.chy.summer.framework.aop.aopalliance.intercept.MethodInvocation;
 import com.chy.summer.framework.aop.support.AopUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

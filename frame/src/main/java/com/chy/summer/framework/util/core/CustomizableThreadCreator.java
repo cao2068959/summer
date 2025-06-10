@@ -1,7 +1,7 @@
 package com.chy.summer.framework.util.core;
 
 import com.chy.summer.framework.util.ClassUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;

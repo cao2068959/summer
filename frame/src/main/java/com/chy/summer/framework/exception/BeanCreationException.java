@@ -1,6 +1,6 @@
 package com.chy.summer.framework.exception;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;

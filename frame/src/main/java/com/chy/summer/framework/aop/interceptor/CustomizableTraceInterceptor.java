@@ -5,7 +5,7 @@ import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
 import com.chy.summer.framework.util.StringUtils;
 import com.chy.summer.framework.util.core.StopWatch;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 
 import java.util.HashSet;

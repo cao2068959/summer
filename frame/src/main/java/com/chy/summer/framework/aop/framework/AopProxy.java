@@ -1,6 +1,6 @@
 package com.chy.summer.framework.aop.framework;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 用于配置的AOP代理的委托接口，允许创建代理对象实例

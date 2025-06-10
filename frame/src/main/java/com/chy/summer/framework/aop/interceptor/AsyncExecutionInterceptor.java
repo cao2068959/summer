@@ -9,7 +9,7 @@ import com.chy.summer.framework.core.ordered.Ordered;
 import com.chy.summer.framework.core.task.AsyncTaskExecutor;
 import com.chy.summer.framework.core.task.SimpleAsyncTaskExecutor;
 import com.chy.summer.framework.util.ClassUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;

@@ -3,7 +3,7 @@ package com.chy.summer.framework.aop.framework;
 import com.chy.summer.framework.beans.BeanClassLoaderAware;
 import com.chy.summer.framework.core.ordered.Ordered;
 import com.chy.summer.framework.util.ClassUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.Closeable;
 

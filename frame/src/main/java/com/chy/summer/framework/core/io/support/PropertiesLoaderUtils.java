@@ -2,7 +2,7 @@ package com.chy.summer.framework.core.io.support;
 
 import com.chy.summer.framework.util.Assert;
 import com.chy.summer.framework.util.ClassUtils;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;

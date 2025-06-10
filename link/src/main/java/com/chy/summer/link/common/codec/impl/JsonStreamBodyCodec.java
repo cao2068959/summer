@@ -2,7 +2,7 @@ package com.chy.summer.link.common.codec.impl;
 
 import com.chy.summer.link.common.codec.BodyCodec;
 import com.chy.summer.link.common.codec.spi.BodyStream;
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;

@@ -17,7 +17,7 @@
 package com.chy.summer.framework.util;
 
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * Helper class for implementing exception classes which are capable of

@@ -2,9 +2,6 @@ package com.chy.summer.framework.core.io.support;
 
 import com.chy.summer.framework.core.io.DefaultResourceLoader;
 import com.chy.summer.framework.core.io.ResourceLoader;
-import com.chy.summer.framework.core.type.classreading.DefaultMetadataReaderFactory;
-import com.chy.summer.framework.core.type.classreading.MetadataReaderFactory;
-import jdk.internal.org.objectweb.asm.ClassReader;
 
 import java.io.File;
 import java.io.IOException;
